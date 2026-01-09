@@ -27,6 +27,16 @@
 		    -webkit-text-size-adjust: 100%;
 		}
 		
+		header, footer {
+    touch-action: none;
+    user-select: none;
+}
+
+#chatContainer {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+}
+		
 		code {
 		    font-family: 'JetBrains Mono', monospace;
 		}
