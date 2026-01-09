@@ -108,12 +108,16 @@
 		}
 		
 		.app-container {
-		    height: 100dvh;
-		    display: flex;
-		    flex-direction: column;
-		    overflow: hidden;
-		    background-color: #ffffff;
-		}
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: 72px 1fr auto;
+    grid-template-areas: 
+        "header"
+        "main"
+        "footer";
+    overflow: hidden;
+    background-color: #ffffff;
+}
 		
 		.content-width {
 		    width: 100%;
@@ -143,49 +147,49 @@
 <body class="text-slate-900 overflow-hidden">
 
     <div class="app-container">
-        <header class="h-[72px] border-b border-slate-100 shrink-0 bg-white z-20 w-full px-4 md:px-8">
-            <div class="h-full flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <div class="bg-indigo-600 p-2 rounded-xl">
-                        <i data-lucide="brain" class="text-white w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-extrabold text-lg tracking-tight leading-none uppercase text-indigo-600">SINTA</h1>
-                    </div>
-                </div>
-                <button id="clearBtn" class="p-2.5 hover:bg-slate-50 text-slate-400 rounded-xl transition-all active:scale-95">
-                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+        <header class="border-b border-slate-100 bg-white z-20 w-full px-4 md:px-8" style="grid-area: header;">
+    <div class="h-full flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 p-2 rounded-xl">
+                <i data-lucide="brain" class="text-white w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-lg tracking-tight leading-none uppercase text-indigo-600">SINTA</h1>
+            </div>
+        </div>
+        <button id="clearBtn" class="p-2.5 hover:bg-slate-50 text-slate-400 rounded-xl transition-all active:scale-95">
+            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+        </button>
+    </div>
+</header>
+
+<main id="chatContainer" class="overflow-y-auto custom-scroll bg-white" style="grid-area: main;">
+    <div class="content-width px-4 md:px-8 pt-4 md:pt-8 pb-0 space-y-4">
+        <div id="messagesArea" class="space-y-4 pb-2"></div>
+    </div>
+</main>
+
+<footer class="bg-white z-20 pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-6 w-full border-t border-slate-50" style="grid-area: footer;">
+    <div class="content-width px-4 md:px-8 py-4">
+        <form id="chatForm" class="w-full flex items-center gap-3">
+            <div class="relative flex-1 flex items-center bg-slate-50 rounded-[28px] px-2 py-1.5 transition-all focus-within:bg-slate-100">
+                <textarea
+                    id="userInput"
+                    placeholder="Tulis pesan..."
+                    rows="1"
+                    class="w-full bg-transparent border-none py-3 px-4 focus:ring-0 text-sm font-semibold resize-none overflow-hidden placeholder:text-slate-400"
+                ></textarea>
+                <button
+                    type="submit"
+                    id="sendBtn"
+                    class="p-2.5 bg-slate-800 text-white rounded-full hover:bg-slate-900 shadow-sm transition-all active:scale-95 shrink-0 flex items-center justify-center min-w-[40px] h-[40px]"
+                >
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
                 </button>
             </div>
-        </header>
-
-        <main id="chatContainer" class="flex-1 overflow-y-auto custom-scroll bg-white">
-		    <div class="content-width px-4 md:px-8 pt-4 md:pt-8 pb-0 space-y-4">
-		        <div id="messagesArea" class="space-y-4 pb-8"></div>
-		    </div>
-		</main>
-
-        <footer class="bg-white shrink-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-6 w-full border-t border-slate-50">
-            <div class="content-width px-4 md:px-8 py-4">
-                <form id="chatForm" class="w-full flex items-center gap-3">
-                    <div class="relative flex-1 flex items-center bg-slate-50 rounded-[28px] px-2 py-1.5 transition-all focus-within:bg-slate-100">
-                        <textarea
-                            id="userInput"
-                            placeholder="Tulis pesan..."
-                            rows="1"
-                            class="w-full bg-transparent border-none py-3 px-4 focus:ring-0 text-sm font-semibold resize-none overflow-hidden placeholder:text-slate-400"
-                        ></textarea>
-                        <button
-						    type="submit"
-						    id="sendBtn"
-						    class="p-2.5 bg-slate-800 text-white rounded-full hover:bg-slate-900 shadow-sm transition-all active:scale-95 shrink-0 flex items-center justify-center min-w-[40px] h-[40px]"
-						>
-						    <i data-lucide="arrow-right" class="w-5 h-5"></i>
-						</button>
-                    </div>
-                </form>
-            </div>
-        </footer>
+        </form>
+    </div>
+</footer>
     </div>
 
     <script>
