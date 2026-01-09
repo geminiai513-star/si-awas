@@ -238,12 +238,11 @@
 		}
 
         userInput.addEventListener('input', function() {
-		    this.style.height = 'auto';
-		    const newHeight = Math.min(this.scrollHeight, 150);
-		    this.style.height = newHeight + 'px';
-		    this.style.overflowY = this.scrollHeight > 150 ? 'auto' : 'hidden';
-		    window.scrollTo(0, 0);
-		});
+            this.style.height = 'auto';
+            const newHeight = Math.min(this.scrollHeight, 150);
+            this.style.height = newHeight + 'px';
+            this.style.overflowY = this.scrollHeight > 150 ? 'auto' : 'hidden';
+        });
 
         function appendMessageToUI(role, text, animate = true) {
             const isUser = role === 'user';
@@ -438,6 +437,10 @@
 		
 		document.addEventListener('gesturestart', function (event) {
 		    event.preventDefault();
+		});
+		
+		userInput.addEventListener('blur', () => {
+		    window.scrollTo(0, 0);
 		});
 
         init();
