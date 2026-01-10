@@ -32,7 +32,6 @@
             touch-action: manipulation;
         }
 
-       /* Arsitektur Utama */
 #appInterface {
     width: 100%;
     height: 100%;
@@ -40,12 +39,12 @@
     top: 0;
     left: 0;
     display: none;
-    flex-direction: column; /* Mengatur aliran vertikal yang stabil */
+    flex-direction: column;
     background-color: #ffffff;
 }
 
 header {
-    flex: 0 0 auto; /* Tinggi tetap */
+    flex: 0 0 auto;
     background: white;
     border-bottom: 1px solid #f1f5f9;
     padding-top: env(safe-area-inset-top, 0px);
@@ -53,7 +52,7 @@ header {
 }
 
 main {
-    flex: 1 1 auto; /* Mengambil sisa ruang secara matematis */
+    flex: 1 1 auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     background-color: #ffffff;
@@ -61,28 +60,25 @@ main {
 }
 
 footer {
-    flex: 0 0 auto; /* Tetap di bawah tanpa celah */
+    flex: 0 0 auto;
     background-color: #ffffff;
     z-index: 100;
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    border-top: 1px solid #f1f5f9;
 }
 
-/* Penyelarasan Lebar Presisi */
 .footer-content {
     width: 100%;
     max-width: 48rem;
     margin: 0 auto;
-    padding: 0.75rem 1rem; /* Identik dengan padding chat mobile */
+    padding: 0.4rem 1rem;
 }
 
 @media (min-width: 768px) {
     .footer-content {
-        padding: 0.75rem 2rem; /* Identik dengan padding chat desktop */
+        padding: 0.5rem 2rem;
     }
 }
 
-/* Standarisasi Input */
 #userInput {
     width: 100%;
     background: transparent;
@@ -90,7 +86,7 @@ footer {
     outline: none;
     resize: none;
     padding: 12px 8px;
-    font-size: 15px; /* Font seragam 15px */
+    font-size: 15px;
     font-weight: 600;
     color: #1f2937;
     line-height: 20px;
@@ -262,7 +258,7 @@ footer {
 		<footer>
     <div class="footer-content">
         <form id="chatForm" class="w-full">
-            <div class="relative flex items-center bg-slate-50 rounded-[24px] px-2 py-1">
+            <div class="relative flex items-center bg-slate-50 rounded-[24px] px-2 py-0.5">
                 <textarea
                     id="userInput"
                     placeholder="Tulis pesan..."
