@@ -58,12 +58,11 @@
         }
 
         #chatContainer {
-            overflow-y: auto;
-            overscroll-behavior-y: contain;
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-            overflow-anchor: auto;
-        }
+		    overflow-y: auto;
+		    overscroll-behavior-y: contain;
+		    -webkit-overflow-scrolling: touch;
+		    overflow-anchor: auto;
+		}
 
         code { font-family: 'JetBrains Mono', monospace; }
 
@@ -85,17 +84,25 @@
             font-size: 0.85rem;
         }
 
-        .prose ul {
-            list-style-type: disc;
-            margin-left: 1.5rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .prose ol {
-            list-style-type: decimal;
-            margin-left: 1.5rem;
-            margin-bottom: 0.75rem;
-        }
+        .prose ul, .prose ol {
+		    padding-left: 1.5rem;
+		    margin-left: 0;
+		    margin-bottom: 0.75rem;
+		    list-style-position: outside;
+		}
+		
+		.prose ul {
+		    list-style-type: disc;
+		}
+		
+		.prose ol {
+		    list-style-type: decimal;
+		}
+		
+		.prose li {
+		    margin-bottom: 0.25rem;
+		    padding-left: 0.25rem;
+		}
 
         .prose table {
             width: 100%;
@@ -168,33 +175,33 @@
             </div>
         </header>
 
-        <main id="chatContainer" class="custom-scroll bg-white">
-            <div class="content-width px-4 md:px-8 pt-4 md:pt-8 pb-0 space-y-4">
-                <div id="messagesArea" class="space-y-4 pb-2"></div>
-            </div>
-        </main>
-
-        <footer class="bg-white pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-6 w-full border-t border-slate-50">
-            <div class="content-width px-4 md:px-8 py-4">
-                <form id="chatForm" class="w-full flex items-center gap-3">
-                    <div class="relative flex-1 flex items-center bg-slate-50 rounded-[28px] px-2 py-1.5 transition-all focus-within:bg-slate-100">
-                        <textarea
-                            id="userInput"
-                            placeholder="Tulis pesan..."
-                            rows="1"
-                            class="w-full bg-transparent border-none py-3 px-4 focus:ring-0 text-sm font-semibold resize-none overflow-hidden placeholder:text-slate-400"
-                        ></textarea>
-                        <button
-                            type="submit"
-                            id="sendBtn"
-                            class="p-2.5 bg-slate-800 text-white rounded-full hover:bg-slate-900 shadow-sm transition-all active:scale-95 shrink-0 flex items-center justify-center min-w-[40px] h-[40px]"
-                        >
-                            <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </footer>
+		<main id="chatContainer" class="custom-scroll bg-white">
+		    <div class="content-width px-4 md:px-8 pt-4 md:pt-8 pb-0 space-y-4">
+		        <div id="messagesArea" class="space-y-4 pb-8"></div>
+		    </div>
+		</main>
+		
+		<footer class="bg-white pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:pb-6 w-full border-t border-slate-50">
+		    <div class="content-width px-4 md:px-8 py-2">
+		        <form id="chatForm" class="w-full flex items-center gap-3">
+		            <div class="relative flex-1 flex items-center bg-slate-50 rounded-[28px] px-2 py-1.5 transition-all focus-within:bg-slate-100">
+		                <textarea
+		                    id="userInput"
+		                    placeholder="Tulis pesan..."
+		                    rows="1"
+		                    class="w-full bg-transparent border-none py-3 px-4 focus:ring-0 text-sm font-semibold resize-none overflow-hidden placeholder:text-slate-400"
+		                ></textarea>
+		                <button
+		                    type="submit"
+		                    id="sendBtn"
+		                    class="p-2.5 bg-slate-800 text-white rounded-full hover:bg-slate-900 shadow-sm transition-all active:scale-95 shrink-0 flex items-center justify-center min-w-[40px] h-[40px]"
+		                >
+		                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+		                </button>
+		            </div>
+		        </form>
+		    </div>
+		</footer>
     </div>
 
     <script>
@@ -256,16 +263,15 @@
         }
 
         userInput.addEventListener('input', function() {
-            this.style.height = 'auto';
-            const newHeight = Math.min(this.scrollHeight, 150);
-            this.style.height = newHeight + 'px';
-            this.style.overflowY = this.scrollHeight > 150 ? 'auto' : 'hidden';
-            window.scrollTo(0, 0);
-        });
-
-        userInput.addEventListener('blur', () => {
-            window.scrollTo(0, 0);
-        });
+		    this.style.height = 'auto';
+		    const newHeight = Math.min(this.scrollHeight, 150);
+		    this.style.height = newHeight + 'px';
+		    this.style.overflowY = this.scrollHeight > 150 ? 'auto' : 'hidden';
+		});
+		
+		userInput.addEventListener('blur', () => {
+		    window.scrollTo(0, 0);
+		});
 
         function appendMessageToUI(role, text, animate = true) {
             const isUser = role === 'user';
@@ -344,86 +350,99 @@
         }
 
         function setGeneratingState(state) {
-            isGenerating = state;
-            if (state) {
-                sendBtn.innerHTML = '<i data-lucide="square" class="w-5 h-5 text-red-600" fill="currentColor"></i>';
-                sendBtn.classList.remove('bg-gray-800', 'text-white');
-                sendBtn.classList.add('bg-gray-100');
-            } else {
-                sendBtn.innerHTML = '<i data-lucide="arrow-right" class="w-5 h-5 text-white"></i>';
-                sendBtn.classList.remove('bg-gray-100');
-                sendBtn.classList.add('bg-gray-800', 'text-white');
-            }
-            lucide.createIcons();
-        }
+		    isGenerating = state;
+		    if (state) {
+		        sendBtn.innerHTML = '<i data-lucide="square" class="w-4 h-4 text-slate-500" fill="currentColor"></i>';
+		        sendBtn.className = 'p-2.5 bg-slate-100 text-slate-500 rounded-full shadow-sm transition-all active:scale-95 shrink-0 flex items-center justify-center min-w-[40px] h-[40px]';
+		    } else {
+		        sendBtn.innerHTML = '<i data-lucide="arrow-right" class="w-5 h-5 text-white"></i>';
+		        sendBtn.className = 'p-2.5 bg-slate-800 text-white rounded-full hover:bg-slate-900 shadow-sm transition-all active:scale-95 shrink-0 flex items-center justify-center min-w-[40px] h-[40px]';
+		    }
+		    lucide.createIcons();
+		}
 
         async function sendMessage(e) {
-            e.preventDefault();
-            if (isGenerating) {
-                if (abortController) abortController.abort();
-                setGeneratingState(false);
-                return;
-            }
-            const prompt = userInput.value.trim();
-            if (!prompt) return;
+		    if (e) e.preventDefault();
+		    
+		    if (isGenerating) {
+		        if (abortController) abortController.abort();
+		        setGeneratingState(false);
+		        return;
+		    }
+		
+		    const prompt = userInput.value.trim();
+		    if (!prompt) return;
+		
+		    userInput.blur();
+		    
+		    userInput.value = '';
+		    userInput.style.height = 'auto';
+		    userInput.disabled = true;
+		    setGeneratingState(true);
+		    abortController = new AbortController();
+		
+		    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+		    localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
+		
+		    appendMessageToUI('user', prompt);
+		    showTyping();
+		
+		    try {
+		        const response = await fetch(`${PROXY_URL}?model=${MODEL_NAME}&action=generateContent`, {
+		            method: 'POST',
+		            headers: { 
+		                'Content-Type': 'application/json',
+		                'apikey': SUPABASE_KEY,
+		                'Authorization': `Bearer ${SUPABASE_KEY}`
+		            },
+		            signal: abortController.signal,
+		            body: JSON.stringify({
+		                contents: chatHistory,
+		                tools: [{ google_search: {} }],
+		                generationConfig: { temperature: 1, maxOutputTokens: 65536 }
+		            })
+		        });
+		
+		        const data = await response.json();
+		        if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+		
+		        const parts = data.candidates?.[0]?.content?.parts || [];
+		        let finalResponse = "";
+		        parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
+		
+		        hideTyping();
+		        if (finalResponse) {
+		            const aiContainer = appendMessageToUI('model', "");
+		            await streamText(aiContainer, finalResponse);
+		            if (isGenerating) { 
+		                chatHistory.push({ role: "model", parts: [{ text: finalResponse }] });
+		                localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
+		            }
+		        }
+		    } catch (error) {
+		        hideTyping();
+		        if (error.name !== 'AbortError') {
+		            appendMessageToUI('error', `ERROR:\n${error.message}`);
+		        }
+		    } finally {
+		        setGeneratingState(false);
+		        userInput.disabled = false;
+		        abortController = null;
+		    }
+		}
 
-            userInput.value = '';
-            userInput.style.height = 'auto';
-            userInput.disabled = true;
-            setGeneratingState(true);
-            abortController = new AbortController();
-
-            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
-
-            appendMessageToUI('user', prompt);
-            showTyping();
-
-            try {
-                const response = await fetch(`${PROXY_URL}?model=${MODEL_NAME}&action=generateContent`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`
-                    },
-                    signal: abortController.signal,
-                    body: JSON.stringify({
-                        contents: chatHistory,
-                        generationConfig: { temperature: 1, maxOutputTokens: 65536 }
-                    })
-                });
-
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
-
-                const parts = data.candidates?.[0]?.content?.parts || [];
-                let finalResponse = "";
-                parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
-
-                hideTyping();
-                if (finalResponse) {
-                    const aiContainer = appendMessageToUI('model', "");
-                    await streamText(aiContainer, finalResponse);
-                    if (isGenerating) { 
-                        chatHistory.push({ role: "model", parts: [{ text: finalResponse }] });
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
-                    }
-                }
-            } catch (error) {
-                hideTyping();
-                if (error.name !== 'AbortError') {
-                    appendMessageToUI('error', `ERROR:\n${error.message}`);
-                }
-            } finally {
-                setGeneratingState(false);
-                userInput.disabled = false;
-                abortController = null;
-                userInput.focus();
-            }
-        }
-
-        chatForm.addEventListener('submit', sendMessage);
+        sendBtn.addEventListener('pointerdown', (e) => {
+		    const prompt = userInput.value.trim();
+		    if (prompt && !isGenerating) {
+		        e.preventDefault();
+		        sendMessage(e);
+		    }
+		});
+		
+		chatForm.addEventListener('submit', (e) => {
+		    e.preventDefault();
+		    if (!isGenerating) sendMessage(e);
+		});
         
         clearBtn.addEventListener('click', () => {
             if (confirm("Hapus semua riwayat percakapan?")) {
