@@ -73,7 +73,7 @@
             flex: 0 0 auto;
             background-color: #ffffff;
             border-top: 1px solid #f1f5f9;
-            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
             z-index: 100;
         }
 
@@ -145,7 +145,7 @@
             width: 100%;
             max-width: 48rem;
             margin: 0 auto;
-            padding: 0.75rem 1rem 0 1rem;
+            padding: 0.5rem 1rem;
         }
     </style>
 </head>
@@ -287,7 +287,7 @@
                 renderHistory();
             }
 
-            chatContainer.addEventListener('scroll', () => {
+            const preventStick = () => {
                 const top = chatContainer.scrollTop;
                 const totalScroll = chatContainer.scrollHeight;
                 const currentScroll = top + chatContainer.offsetHeight;
@@ -297,13 +297,16 @@
                 } else if (currentScroll === totalScroll) {
                     chatContainer.scrollTop = top - 1;
                 }
-            });
+            };
+
+            chatContainer.addEventListener('scroll', preventStick);
+            chatContainer.addEventListener('touchstart', preventStick);
         }
 
         function showApp() {
             loginScreen.style.display = 'none';
             appInterface.style.display = 'flex';
-            setTimeout(() => scrollBottom(true), 100);
+            setTimeout(() => scrollBottom(true, 'auto'), 50);
         }
 
         loginForm.addEventListener('submit', async (e) => {
@@ -326,12 +329,12 @@
 		    }
 		});
 
-        function scrollBottom(force = false) {
+        function scrollBottom(force = false, behavior = 'smooth') {
             if (!chatContainer) return;
             if (force) {
                 chatContainer.scrollTo({
                     top: chatContainer.scrollHeight,
-                    behavior: 'smooth'
+                    behavior: behavior
                 });
             } else {
                 const threshold = 150;
@@ -339,7 +342,7 @@
                 if (isNearBottom) {
                     chatContainer.scrollTo({
                         top: chatContainer.scrollHeight,
-                        behavior: 'smooth'
+                        behavior: behavior
                     });
                 }
             }
@@ -359,6 +362,10 @@
 		    this.style.height = newHeight + 'px';
 		    this.style.overflowY = this.scrollHeight > 150 ? 'auto' : 'hidden';
 		});
+
+        userInput.addEventListener('focus', () => {
+            setTimeout(() => scrollBottom(true, 'auto'), 300);
+        });
 
         function appendMessageToUI(role, text, animate = true) {
             const isUser = role === 'user';
