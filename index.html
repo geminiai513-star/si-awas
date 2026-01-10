@@ -149,9 +149,9 @@
 
     <div id="loginScreen" class="fixed inset-0 bg-white z-[100] flex items-center justify-center p-6">
 	    <div class="w-full max-w-[360px] bg-slate-50 rounded-[32px] p-8 flex flex-col items-center border-none">
-	        <div class="bg-indigo-600 p-4 rounded-2xl mb-8 flex items-center justify-center shadow-sm">
-	            <i data-lucide="lock" class="w-8 h-8 text-white"></i>
-	        </div>
+	        <div class="mb-8 flex items-center justify-center">
+			    <i data-lucide="lock" class="w-10 h-10 text-indigo-600"></i>
+			</div>
 	        <form id="loginForm" class="w-full space-y-4">
 	            <input 
 	                type="email" 
@@ -246,6 +246,8 @@
         const appInterface = document.getElementById('appInterface');
         const loginForm = document.getElementById('loginForm');
         const loginError = document.getElementById('loginError');
+		const emailInput = document.getElementById('emailInput');
+		const passwordInput = document.getElementById('passwordInput');
         
         const chatForm = document.getElementById('chatForm');
         const userInput = document.getElementById('userInput');
@@ -333,6 +335,18 @@
 		    const newHeight = Math.min(this.scrollHeight, 150);
 		    this.style.height = newHeight + 'px';
 		    this.style.overflowY = this.scrollHeight > 150 ? 'auto' : 'hidden';
+		});
+		
+		userInput.addEventListener('blur', () => {
+		    window.scrollTo(0, 0);
+		});
+		
+		emailInput.addEventListener('blur', () => {
+		    window.scrollTo(0, 0);
+		});
+		
+		passwordInput.addEventListener('blur', () => {
+		    window.scrollTo(0, 0);
 		});
 
         function appendMessageToUI(role, text, animate = true) {
