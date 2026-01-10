@@ -365,7 +365,12 @@
 		    loginScreen.style.display = 'none';
 		    appInterface.style.display = 'flex';
 		    
-		    chatContainer.scrollTop = chatContainer.scrollHeight;
+		    requestAnimationFrame(() => {
+		        chatContainer.scrollTop = chatContainer.scrollHeight;
+		        requestAnimationFrame(() => {
+		            chatContainer.scrollTop = chatContainer.scrollHeight;
+		        });
+		    });
 		}
 		
 		function scrollBottom(force = false, behavior = 'auto') {
