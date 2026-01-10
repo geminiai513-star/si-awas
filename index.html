@@ -207,10 +207,10 @@
 </head>
 <body class="text-slate-900">
 
-    <div id="loginScreen" class="fixed inset-0 bg-white z-[100] flex items-center justify-center p-6">
-	    <div class="w-full max-w-[360px] bg-slate-50 rounded-[32px] p-8 flex flex-col items-center border-none">
+   <div id="loginScreen" class="fixed inset-0 bg-white z-[100] flex items-center justify-center p-6">
+	    <div class="w-full max-w-[360px] bg-white rounded-[32px] px-4 py-8 flex flex-col items-center shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
 	        <div class="mb-8 flex items-center justify-center">
-	            <i data-lucide="lock" class="w-10 h-10 text-indigo-600"></i>
+	            <i data-lucide="lock" class="w-10 h-10 text-slate-900"></i>
 	        </div>
 	        <form id="loginForm" class="w-full space-y-4">
 	            <input 
@@ -218,23 +218,23 @@
 	                id="emailInput" 
 	                placeholder="Email" 
 	                required 
-                    onblur="window.scrollTo(0,0)"
-	                class="w-full px-5 py-4 bg-white rounded-2xl text-sm font-semibold border-none outline-none focus:ring-0"
+	                onblur="window.scrollTo(0,0)"
+	                class="w-full px-5 py-4 bg-gray-50 rounded-2xl text-sm font-semibold border-none outline-none focus:ring-0"
 	            >
 	            <input 
 	                type="password" 
 	                id="passwordInput" 
 	                placeholder="Password" 
 	                required 
-                    onblur="window.scrollTo(0,0)"
-	                class="w-full px-5 py-4 bg-white rounded-2xl text-sm font-semibold border-none outline-none focus:ring-0"
+	                onblur="window.scrollTo(0,0)"
+	                class="w-full px-5 py-4 bg-gray-50 rounded-2xl text-sm font-semibold border-none outline-none focus:ring-0"
 	            >
 	            <button 
 	                type="submit" 
 	                id="loginBtn" 
-	                class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-all mt-2"
+	                class="w-full py-4 bg-black text-white rounded-2xl font-bold text-sm active:scale-95 transition-all mt-2 uppercase"
 	            >
-	                MASUK
+	                Masuk
 	            </button>
 	        </form>
 	        <div id="loginError" class="text-red-500 text-[10px] mt-6 font-bold hidden text-center uppercase"></div>
