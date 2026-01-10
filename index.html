@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SINTA - Thinking AI</title>
-	
 	<meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#ffffff">
@@ -14,6 +13,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
@@ -32,10 +32,7 @@
         .app-container {
             display: grid;
             grid-template-rows: 72px 1fr auto;
-            grid-template-areas: 
-                "header"
-                "main"
-                "footer";
+            grid-template-areas: "header" "main" "footer";
             overflow: hidden;
             position: absolute;
             top: 0;
@@ -43,6 +40,18 @@
             right: 0;
             bottom: 0;
             background-color: #ffffff;
+            display: none;
+        }
+
+        #loginScreen {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
         }
 
         header { grid-area: header; }
@@ -73,56 +82,24 @@
             overflow-x: auto;
         }
 
-        .prose pre code {
-            background: transparent !important;
-            padding: 0 !important;
-        }
-
-        .prose code {
-            color: #1f2937;
-            font-size: 0.85rem;
-        }
-
         .prose ul, .prose ol {
-		    padding-left: 1.75rem;
-		    margin-left: 0;
+		    padding-left: 1.5rem;
 		    margin-bottom: 0.75rem;
-		    list-style-position: outside;
 		}
 		
-		.prose ul {
-		    list-style-type: disc;
-		}
-		
-		.prose ol {
-		    list-style-type: decimal;
-		}
-		
-		.prose li {
-		    margin-bottom: 0.25rem;
-		    padding-left: 0.25rem;
-		}
+		.prose ul { list-style-type: disc; }
+		.prose ol { list-style-type: decimal; }
 
         .prose table {
             width: 100%;
             border-collapse: collapse;
             margin: 0.75rem 0;
-            font-size: 0.875rem;
         }
 
         .prose th, .prose td {
             border: 1px solid #e5e7eb;
             padding: 0.5rem 0.75rem;
-            text-align: left;
         }
-
-        .prose th {
-            background-color: #f9fafb;
-            font-weight: 600;
-        }
-
-        .prose p { margin-bottom: 0.5rem; }
-        .prose *:last-child { margin-bottom: 0 !important; }
 
         .custom-scroll::-webkit-scrollbar { width: 5px; }
         .custom-scroll::-webkit-scrollbar-thumb {
@@ -133,13 +110,19 @@
         .content-width {
             width: 100%;
             max-width: 48rem;
-            margin-left: auto;
-            margin-right: auto;
+            margin: 0 auto;
+            padding: 0 1rem;
         }
 
-        textarea:focus {
-            outline: none;
-            box-shadow: none;
+        @media (min-width: 768px) {
+            .content-width { padding: 0 2rem; }
+        }
+
+        textarea:focus, input:focus {
+            outline: none !important;
+            box-shadow: none !important;
+            border: none !important;
+            --tw-ring-width: 0px !important;
         }
 
         @keyframes dots {
@@ -153,37 +136,81 @@
             content: '';
             animation: dots 1.5s steps(4, end) infinite;
         }
+
+        .footer-content {
+            width: 100%;
+            max-width: 48rem;
+            margin: 0 auto;
+            padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
+        }
     </style>
 </head>
 <body class="text-slate-900">
 
-    <div class="app-container">
+    <div id="loginScreen" class="fixed inset-0 bg-white z-[100] flex items-center justify-center p-6">
+	    <div class="w-full max-w-[360px] bg-slate-50 rounded-[32px] p-8 flex flex-col items-center border-none">
+	        <div class="bg-indigo-600 p-4 rounded-2xl mb-8 flex items-center justify-center shadow-sm">
+	            <i data-lucide="lock" class="w-8 h-8 text-white"></i>
+	        </div>
+	        <form id="loginForm" class="w-full space-y-4">
+	            <input 
+	                type="email" 
+	                id="emailInput" 
+	                placeholder="Email" 
+	                required 
+	                class="w-full px-5 py-4 bg-white rounded-2xl text-sm font-semibold border-none outline-none focus:ring-0"
+	            >
+	            <input 
+	                type="password" 
+	                id="passwordInput" 
+	                placeholder="Password" 
+	                required 
+	                class="w-full px-5 py-4 bg-white rounded-2xl text-sm font-semibold border-none outline-none focus:ring-0"
+	            >
+	            <button 
+	                type="submit" 
+	                id="loginBtn" 
+	                class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-all mt-2"
+	            >
+	                MASUK
+	            </button>
+	        </form>
+	        <div id="loginError" class="text-red-500 text-[10px] mt-6 font-bold hidden text-center uppercase"></div>
+	    </div>
+	</div>
+
+    <div id="appInterface" class="app-container">
         <header class="border-b border-slate-100 bg-white w-full px-4 md:px-8">
-            <div class="h-full flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <div class="bg-indigo-600 p-2 rounded-xl">
-                        <i data-lucide="brain" class="text-white w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-extrabold text-lg tracking-tight leading-none uppercase text-indigo-600">SINTA</h1>
-                    </div>
-                </div>
-                <button id="clearBtn" class="p-2.5 hover:bg-slate-50 text-slate-400 rounded-xl transition-all active:scale-95">
-                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
-                </button>
-            </div>
-        </header>
+		    <div class="h-full flex justify-between items-center">
+		        <div class="flex items-center gap-3">
+		            <div class="bg-indigo-600 p-2 rounded-xl">
+		                <i data-lucide="brain" class="text-white w-5 h-5"></i>
+		            </div>
+		            <div>
+		                <h1 class="font-extrabold text-lg tracking-tight leading-none uppercase text-indigo-600">SINTA</h1>
+		            </div>
+		        </div>
+		        <div class="flex items-center gap-1">
+		            <button id="clearBtn" class="p-2.5 hover:bg-slate-50 text-slate-400 rounded-xl transition-all active:scale-95">
+		                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+		            </button>
+		            <button id="logOutBtn" class="p-2.5 hover:bg-red-50 text-red-400 rounded-xl transition-all active:scale-95">
+		                <i data-lucide="log-out" class="w-5 h-5"></i>
+		            </button>
+		        </div>
+		    </div>
+		</header>
 
 		<main id="chatContainer" class="custom-scroll bg-white">
-		    <div class="content-width px-4 md:px-8 pt-4 md:pt-8 pb-0 space-y-4">
+		    <div class="content-width pt-4 md:pt-8 pb-0">
 		        <div id="messagesArea" class="space-y-4 pb-8"></div>
 		    </div>
 		</main>
 		
 		<footer class="bg-white w-full border-t border-slate-50">
-		    <div class="content-width px-4 md:px-8 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+		    <div class="footer-content">
 		        <form id="chatForm" class="w-full flex items-center gap-3">
-		            <div class="relative flex-1 flex items-center bg-slate-50 rounded-[28px] px-2 py-1.5 transition-all focus-within:bg-slate-100">
+		            <div class="relative flex-1 flex items-center bg-slate-50 rounded-[28px] px-2 py-1.5">
 		                <textarea
 		                    id="userInput"
 		                    placeholder="Tulis pesan..."
@@ -204,23 +231,22 @@
     </div>
 
     <script>
-        lucide.createIcons();
-
-        marked.setOptions({
-            gfm: true,
-            breaks: true,
-            headerIds: false,
-            mangle: false
-        });
-
-        const PROXY_URL = "https://eofuiyhnyyxrapxilank.supabase.co/functions/v1/ai-proxy-v2";
+        const SUPABASE_URL = "https://eofuiyhnyyxrapxilank.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZnVpeWhueXl4cmFweGlsYW5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5Mzc3NTEsImV4cCI6MjA4MTUxMzc1MX0.aogUNcs5K2-q7h8cDHpgRwYN5dTO9sm2P2aHlKeUlvc";
+        const PROXY_URL = `${SUPABASE_URL}/functions/v1/ai-proxy-v2`;
         const MODEL_NAME = "gemini-3-flash-preview";
         const STORAGE_KEY = "sinta_chat_history";
         
         const STREAM_SPEED = 8; 
         const STREAM_CHUNK_SIZE = 5; 
 
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const loginScreen = document.getElementById('loginScreen');
+        const appInterface = document.getElementById('appInterface');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+        
         const chatForm = document.getElementById('chatForm');
         const userInput = document.getElementById('userInput');
         const chatContainer = document.getElementById('chatContainer');
@@ -233,68 +259,21 @@
         let isGenerating = false;
         let abortController = null;
 
-        function scrollBottom(force = false) {
-    if (!chatContainer) return;
-    const threshold = 150; 
-    const isNearBottom = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + threshold;
+        lucide.createIcons();
 
-    if (force || isNearBottom) {
-        chatContainer.scrollTo({
-            top: chatContainer.scrollHeight,
-            behavior: force ? 'auto' : 'smooth'
+        marked.setOptions({
+            gfm: true,
+            breaks: true,
+            headerIds: false,
+            mangle: false
         });
-    }
-}
 
-async function streamText(element, text) {
-    let cursor = 0;
-    while (cursor < text.length) {
-        if (!isGenerating) break;
-        cursor += STREAM_CHUNK_SIZE;
-        const currentDisplay = text.substring(0, cursor);
-        element.innerHTML = marked.parse(currentDisplay);
-        
-        scrollBottom(true);
-        
-        await new Promise(resolve => setTimeout(resolve, STREAM_SPEED));
-    }
-    element.innerHTML = marked.parse(text);
-    if (window.hljs) {
-        element.querySelectorAll('pre code').forEach(hljs.highlightElement);
-    }
-    lucide.createIcons();
-    scrollBottom(true);
-}
-
-function showTyping() {
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    typingBubble = document.createElement('div');
-    typingBubble.className = "w-full animate-in fade-in slide-in-from-bottom-2 duration-300 mb-2";
-    typingBubble.innerHTML = `
-        <div class="w-full bg-slate-50 rounded-2xl p-4 shadow-sm border-none">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-1 mb-0.5">
-                <span class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">SINTA</span>
-                <span class="text-[10px] font-bold text-slate-300 uppercase">${timeStr}</span>
-            </div>
-            <div class="flex items-baseline">
-                <span class="text-[14px] leading-relaxed font-medium italic text-gray-600 thinking-text">sedang mikir</span>
-            </div>
-        </div>
-    `;
-    messagesArea.appendChild(typingBubble);
-    scrollBottom(true);
-}
-
-        function renderHistory() {
-            messagesArea.innerHTML = '';
-            chatHistory.forEach(msg => {
-                const role = msg.role === 'user' ? 'user' : 'model';
-                appendMessageToUI(role, msg.parts[0].text, false);
-            });
-            setTimeout(() => scrollBottom(false), 100);
-        }
-        
-        function init() {
+        async function init() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                showApp();
+            }
+            
             const savedHistory = localStorage.getItem(STORAGE_KEY);
             if (savedHistory) {
                 chatHistory = JSON.parse(savedHistory);
@@ -302,15 +281,58 @@ function showTyping() {
             }
         }
 
+        function showApp() {
+            loginScreen.style.display = 'none';
+            appInterface.style.display = 'grid';
+            setTimeout(() => scrollBottom(false), 100);
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+		    e.preventDefault();
+		    const btn = document.getElementById('loginBtn');
+		    btn.disabled = true;
+		    loginError.classList.add('hidden');
+		
+		    const { error } = await _supabase.auth.signInWithPassword({
+		        email: emailInput.value,
+		        password: passwordInput.value
+		    });
+		
+		    if (error) {
+		        loginError.innerText = error.message.toUpperCase();
+		        loginError.classList.remove('hidden');
+		        btn.disabled = false;
+		    } else {
+		        showApp();
+		    }
+		});
+
+        function scrollBottom(force = false) {
+            if (!chatContainer) return;
+            const threshold = 150;
+            const isNearBottom = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + threshold;
+
+            if (force || isNearBottom) {
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: force ? 'auto' : 'smooth'
+                });
+            }
+        }
+
+        function renderHistory() {
+            messagesArea.innerHTML = '';
+            chatHistory.forEach(msg => {
+                const role = msg.role === 'user' ? 'user' : 'model';
+                appendMessageToUI(role, msg.parts[0].text, false);
+            });
+        }
+
         userInput.addEventListener('input', function() {
 		    this.style.height = 'auto';
 		    const newHeight = Math.min(this.scrollHeight, 150);
 		    this.style.height = newHeight + 'px';
 		    this.style.overflowY = this.scrollHeight > 150 ? 'auto' : 'hidden';
-		});
-		
-		userInput.addEventListener('blur', () => {
-		    window.scrollTo(0, 0);
 		});
 
         function appendMessageToUI(role, text, animate = true) {
@@ -343,6 +365,40 @@ function showTyping() {
             return div.querySelector('.prose-container');
         }
 
+        async function streamText(element, text) {
+            let cursor = 0;
+            while (cursor < text.length) {
+                if (!isGenerating) break;
+                cursor += STREAM_CHUNK_SIZE;
+                element.innerHTML = marked.parse(text.substring(0, cursor));
+                scrollBottom(true);
+                await new Promise(resolve => setTimeout(resolve, STREAM_SPEED));
+            }
+            element.innerHTML = marked.parse(text);
+            if (window.hljs) element.querySelectorAll('pre code').forEach(hljs.highlightElement);
+            lucide.createIcons();
+            scrollBottom(true);
+        }
+
+        function showTyping() {
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            typingBubble = document.createElement('div');
+            typingBubble.className = "w-full animate-in fade-in slide-in-from-bottom-2 duration-300 mb-2";
+            typingBubble.innerHTML = `
+                <div class="w-full bg-slate-50 rounded-2xl p-4 shadow-sm border-none">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-1 mb-0.5">
+                        <span class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">SINTA</span>
+                        <span class="text-[10px] font-bold text-slate-300 uppercase">${timeStr}</span>
+                    </div>
+                    <div class="flex items-baseline">
+                        <span class="text-[14px] leading-relaxed font-medium italic text-gray-600 thinking-text">sedang mikir</span>
+                    </div>
+                </div>
+            `;
+            messagesArea.appendChild(typingBubble);
+            scrollBottom(true);
+        }
+
         function hideTyping() {
             if (typingBubble) {
                 typingBubble.remove();
@@ -354,42 +410,35 @@ function showTyping() {
 		    isGenerating = state;
 		    if (state) {
 		        sendBtn.innerHTML = '<i data-lucide="square" class="w-4 h-4 text-slate-500" fill="currentColor"></i>';
-		        sendBtn.className = 'p-2.5 bg-slate-100 text-slate-500 rounded-full shadow-sm transition-all active:scale-95 shrink-0 flex items-center justify-center min-w-[40px] h-[40px]';
+		        sendBtn.className = 'p-2.5 bg-slate-100 text-slate-500 rounded-full shrink-0 flex items-center justify-center min-w-[40px] h-[40px]';
 		    } else {
 		        sendBtn.innerHTML = '<i data-lucide="arrow-right" class="w-5 h-5 text-white"></i>';
-		        sendBtn.className = 'p-2.5 bg-slate-800 text-white rounded-full hover:bg-slate-900 shadow-sm transition-all active:scale-95 shrink-0 flex items-center justify-center min-w-[40px] h-[40px]';
+		        sendBtn.className = 'p-2.5 bg-slate-800 text-white rounded-full hover:bg-slate-900 shrink-0 flex items-center justify-center min-w-[40px] h-[40px]';
 		    }
 		    lucide.createIcons();
 		}
 
         async function sendMessage(e) {
 		    if (e) e.preventDefault();
-		    
 		    if (isGenerating) {
 		        if (abortController) abortController.abort();
 		        setGeneratingState(false);
 		        return;
 		    }
-		
 		    const prompt = userInput.value.trim();
 		    if (!prompt) return;
-		
 		    userInput.blur();
-		    
 		    userInput.value = '';
 		    userInput.style.height = 'auto';
 		    userInput.disabled = true;
 		    setGeneratingState(true);
 		    abortController = new AbortController();
-		
 		    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 		    localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
-		
 		    appendMessageToUI('user', prompt);
 		    showTyping();
-		
 		    try {
-		        const response = await fetch(`${PROXY_URL}?model=${MODEL_NAME}&action=generateContent`, {
+		        const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
 		            method: 'POST',
 		            headers: { 
 		                'Content-Type': 'application/json',
@@ -403,14 +452,11 @@ function showTyping() {
 		                generationConfig: { temperature: 1, maxOutputTokens: 65536 }
 		            })
 		        });
-		
 		        const data = await response.json();
 		        if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
-		
 		        const parts = data.candidates?.[0]?.content?.parts || [];
 		        let finalResponse = "";
 		        parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
-		
 		        hideTyping();
 		        if (finalResponse) {
 		            const aiContainer = appendMessageToUI('model', "");
@@ -422,9 +468,7 @@ function showTyping() {
 		        }
 		    } catch (error) {
 		        hideTyping();
-		        if (error.name !== 'AbortError') {
-		            appendMessageToUI('error', `ERROR:\n${error.message}`);
-		        }
+		        if (error.name !== 'AbortError') appendMessageToUI('error', `ERROR:\n${error.message}`);
 		    } finally {
 		        setGeneratingState(false);
 		        userInput.disabled = false;
@@ -433,8 +477,7 @@ function showTyping() {
 		}
 
         sendBtn.addEventListener('pointerdown', (e) => {
-		    const prompt = userInput.value.trim();
-		    if (prompt && !isGenerating) {
+		    if (userInput.value.trim() && !isGenerating) {
 		        e.preventDefault();
 		        sendMessage(e);
 		    }
@@ -452,32 +495,18 @@ function showTyping() {
                 messagesArea.innerHTML = '';
             }
         });
+		
+		const logOutBtn = document.getElementById('logOutBtn');
 
-        document.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 1) e.preventDefault();
-        }, { passive: false });
-
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', (e) => {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) e.preventDefault();
-            lastTouchEnd = now;
-        }, false);
-
-        document.addEventListener('gesturestart', (e) => e.preventDefault());
-
-        const lockElements = document.querySelectorAll('header, footer');
-        lockElements.forEach(el => {
-            el.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
-        });
-
-        chatContainer.addEventListener('touchstart', () => {
-            const top = chatContainer.scrollTop;
-            const totalScroll = chatContainer.scrollHeight;
-            const currentScroll = top + chatContainer.offsetHeight;
-            if (top === 0) chatContainer.scrollTop = 1;
-            else if (currentScroll === totalScroll) chatContainer.scrollTop = top - 1;
-        }, { passive: true });
+		logOutBtn.addEventListener('click', async () => {
+		    if (confirm("Keluar dari akun?")) {
+		        const { error } = await _supabase.auth.signOut();
+		        if (!error) {
+		            localStorage.removeItem(STORAGE_KEY);
+		            location.reload(); 
+		        }
+		    }
+		});
 
         init();
     </script>
