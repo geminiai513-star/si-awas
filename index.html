@@ -136,12 +136,14 @@
 		}
 
 		.prose code {
-			background-color: #e5e7eb !important;
-			color: #1f2937 !important;
-			padding: 3px 6px !important;
-			border-radius: 6px !important;
+			background-color: #e2e8f0 !important;
+			color: #0f172a !important;
+			padding: 2px 5px !important;
+			border-radius: 4px !important;
 			font-weight: 500 !important;
-			font-size: 0.9em !important;
+			font-size: 0.85em !important;
+			font-family: 'JetBrains Mono', monospace !important;
+			vertical-align: 1px;
 		}
 
 		.prose pre code {
@@ -319,16 +321,22 @@
 			<div class="footer-content">
 				<form id="chatForm" class="w-full">
 					<div id="inputWrapper"
-						class="relative flex items-center bg-slate-50 rounded-full px-2 py-1.5 transition-all duration-200">
+						class="relative flex items-center bg-slate-50 rounded-full px-1 py-1.5 transition-all duration-200">
 						<button type="button" id="uploadBtn"
-							class="p-2 text-slate-400 hover:text-slate-600 transition-colors shrink-0 mr-1">
-							<i data-lucide="plus" class="w-5 h-5"></i>
+							class="p-2 text-slate-400 hover:text-slate-600 transition-colors shrink-0">
+							<i data-lucide="plus" class="w-6 h-6"></i>
 						</button>
 						<textarea id="userInput" placeholder="Tulis pesan..." rows="1"
+							class="flex-1 w-full bg-transparent border-none outline-none resize-none px-2 text-[15px] font-medium text-slate-900 leading-[24px] max-h-[150px] block placeholder:text-slate-400"
 							onblur="window.scrollTo(0,0)"></textarea>
 						<button type="submit" id="sendBtn"
-							class="p-2.5 bg-slate-800 text-white rounded-full hover:bg-slate-900 shadow-sm transition-all active:scale-95 shrink-0 flex items-center justify-center min-w-[40px] h-[40px]">
-							<i data-lucide="arrow-right" class="w-5 h-5"></i>
+							class="p-2 text-slate-800 hover:text-indigo-600 transition-colors shrink-0">
+							<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6"
+								fill="currentColor">
+								<path
+									d="M21.66,12a2,2,0,0,1-1.14,1.81L5.87,20.75A2.08,2.08,0,0,1,5,21a2,2,0,0,1-1.82-2.82L5.46,13H11a1,1,0,0,0,0-2H5.46L3.18,5.87A2,2,0,0,1,5.86,3.25h0l14.65,6.94A2,2,0,0,1,21.66,12Z">
+								</path>
+							</svg>
 						</button>
 					</div>
 				</form>
@@ -492,23 +500,24 @@
 			const isUser = role === 'user';
 			const isError = role === 'error';
 			const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-			const nameLabel = isUser ? 'USER' : (isError ? 'SYSTEM ERROR' : 'SINTA');
+			const nameLabel = isUser ? 'ANDA' : (isError ? 'SYSTEM ERROR' : 'SINTA');
+			const nameColorClass = isUser ? 'text-slate-900' : (isError ? 'text-red-600' : 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500');
 
 			const div = document.createElement('div');
 			div.className = `w-full ${animate ? 'animate-in fade-in slide-in-from-bottom-2 duration-300' : ''} mb-2`;
 
 			div.innerHTML = `
-                <div class="w-full bg-slate-50 rounded-2xl p-4 shadow-sm border-none group relative">
+                <div class="w-full bg-slate-50 rounded-2xl p-4 ${!isUser && !isError ? 'pb-8' : ''} shadow-sm border-none group relative">
                     <div class="flex justify-between items-center border-b border-slate-100 pb-1 mb-0.5">
-                        <span class="text-[11px] font-black text-indigo-600 uppercase tracking-widest">${nameLabel}</span>
+                        <span class="text-[11px] font-black ${nameColorClass} uppercase tracking-widest">${nameLabel}</span>
                         <span class="text-[11px] font-bold text-slate-300 uppercase">${timeStr}</span>
                     </div>
                     <div class="w-full prose-container prose prose-sm max-w-none text-slate-600 text-[15px] leading-relaxed font-medium">
                         ${isError ? `<div class="text-red-600 text-xs font-mono whitespace-pre-wrap">${text}</div>` : marked.parse(text)}
                     </div>
                     ${!isUser && !isError ? `
-                        <button class="copy-btn absolute bottom-2 right-2 p-1 text-slate-400 hover:text-slate-600 rounded-md opacity-0 group-hover:opacity-100 transition-all active:scale-95" title="Salin pesan">
-                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <button class="copy-btn absolute bottom-2 right-2 p-1 text-slate-400 hover:text-slate-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity" title="Salin pesan">
+                            <i data-lucide="copy" class="w-3 h-3"></i>
                         </button>
                     ` : ''}
                 </div>
@@ -523,10 +532,10 @@
 					copyBtn.addEventListener('click', () => {
 						const contentToCopy = copyBtn.getAttribute('data-content') || text;
 						navigator.clipboard.writeText(contentToCopy).then(() => {
-							copyBtn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-green-500"></i>';
+							copyBtn.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-green-500"></i>';
 							lucide.createIcons();
 							setTimeout(() => {
-								copyBtn.innerHTML = '<i data-lucide="copy" class="w-3.5 h-3.5"></i>';
+								copyBtn.innerHTML = '<i data-lucide="copy" class="w-3 h-3"></i>';
 								lucide.createIcons();
 							}, 2000);
 						});
@@ -563,7 +572,7 @@
 			typingBubble.innerHTML = `
 		        <div class="w-full bg-slate-50 rounded-2xl p-4 shadow-sm border-none">
 		            <div class="flex justify-between items-center border-b border-slate-100 pb-1 mb-1">
-		                <span class="text-[11px] font-black text-indigo-600 uppercase tracking-widest">SINTA</span>
+		                <span class="text-[11px] font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 uppercase tracking-widest">SINTA</span>
 		                <span class="text-[11px] font-bold text-slate-300 uppercase">${timeStr}</span>
 		            </div>
 		            <div class="typing-indicator">
@@ -590,11 +599,12 @@
 				sendBtn.innerHTML = '<i data-lucide="square" class="w-4 h-4 text-slate-500" fill="currentColor"></i>';
 				sendBtn.className = 'p-2.5 bg-slate-100 text-slate-500 rounded-full shrink-0 flex items-center justify-center min-w-[40px] h-[40px]';
 			} else {
-				sendBtn.innerHTML = '<i data-lucide="arrow-right" class="w-5 h-5 text-white"></i>';
-				sendBtn.className = 'p-2.5 bg-slate-800 text-white rounded-full hover:bg-slate-900 shrink-0 flex items-center justify-center min-w-[40px] h-[40px]';
+				sendBtn.innerHTML = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor"><path d="M21.66,12a2,2,0,0,1-1.14,1.81L5.87,20.75A2.08,2.08,0,0,1,5,21a2,2,0,0,1-1.82-2.82L5.46,13H11a1,1,0,0,0,0-2H5.46L3.18,5.87A2,2,0,0,1,5.86,3.25h0l14.65,6.94A2,2,0,0,1,21.66,12Z"></path></svg>';
+				sendBtn.className = 'p-2 text-slate-800 hover:text-indigo-600 transition-colors shrink-0';
 			}
 			lucide.createIcons();
 		}
+
 
 		async function sendMessage(e) {
 			if (e) e.preventDefault();
