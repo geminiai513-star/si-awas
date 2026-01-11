@@ -265,6 +265,38 @@
 </head>
 
 <body class="text-slate-900">
+	<!-- Sidebar Overlay -->
+	<div id="sidebarOverlay"
+		class="fixed inset-0 bg-black/20 z-[150] hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+
+	<!-- Sidebar -->
+	<div id="mainSidebar"
+		class="fixed inset-y-0 left-0 w-[280px] bg-white z-[160] transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col border-r border-slate-100 shadow-2xl">
+		<!-- User Info -->
+		<div class="p-5 border-b border-slate-100 bg-slate-50/50">
+			<div class="flex items-center gap-3 mb-4">
+				<div
+					class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-md shrink-0">
+					<i data-lucide="user" class="w-5 h-5"></i>
+				</div>
+				<div class="flex-1 min-w-0">
+					<p id="sidebarEmail" class="text-sm font-bold text-slate-800 truncate">user@example.com</p>
+					<p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Free Plan</p>
+				</div>
+			</div>
+			<button id="newChatSidebarBtn"
+				class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-black transition-all active:scale-95 shadow-sm group">
+				<i data-lucide="plus" class="w-4 h-4 group-hover:rotate-90 transition-transform"></i>
+				<span class="font-bold text-xs uppercase tracking-wide">Percakapan Baru</span>
+			</button>
+		</div>
+
+		<!-- History List -->
+		<div class="flex-1 overflow-y-auto custom-scroll p-3 space-y-6" id="historyList">
+			<!-- Dynamic content will be loaded here -->
+		</div>
+	</div>
+
 
 	<div id="loginScreen" class="fixed inset-0 bg-white z-[100] flex items-center justify-center p-6">
 		<div
@@ -306,6 +338,10 @@
 					<button id="logOutBtn"
 						class="p-2.5 hover:bg-red-50 text-red-400 rounded-xl transition-all active:scale-95">
 						<i data-lucide="log-out" class="w-5 h-5"></i>
+					</button>
+					<button id="menuBtn"
+						class="p-2.5 hover:bg-slate-50 text-slate-400 rounded-xl transition-all active:scale-95 ml-1">
+						<i data-lucide="menu" class="w-5 h-5"></i>
 					</button>
 				</div>
 			</div>
@@ -349,7 +385,8 @@
 		const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZnVpeWhueXl4cmFweGlsYW5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5Mzc3NTEsImV4cCI6MjA4MTUxMzc1MX0.aogUNcs5K2-q7h8cDHpgRwYN5dTO9sm2P2aHlKeUlvc";
 		const PROXY_URL = `${SUPABASE_URL}/functions/v1/ai-proxy-v2`;
 		const MODEL_NAME = "gemini-3-flash-preview";
-		const STORAGE_KEY = "sinta_chat_history";
+		const STORAGE_KEY = "sinta_chat_sessions";
+		const ACTIVE_SESSION_KEY = "sinta_active_session_id";
 
 		const STREAM_SPEED = 8;
 		const STREAM_CHUNK_SIZE = 5;
@@ -367,8 +404,16 @@
 		const messagesArea = document.getElementById('messagesArea');
 		const clearBtn = document.getElementById('clearBtn');
 		const sendBtn = document.getElementById('sendBtn');
+		const menuBtn = document.getElementById('menuBtn');
+		const sidebar = document.getElementById('mainSidebar');
+		const overlay = document.getElementById('sidebarOverlay');
+		const sidebarEmail = document.getElementById('sidebarEmail');
+		const newChatSidebarBtn = document.getElementById('newChatSidebarBtn');
+
+		const historyListEl = document.getElementById('historyList');
 
 		let chatHistory = [];
+		let currentSessionId = null;
 		let typingBubble = null;
 		let isGenerating = false;
 		let abortController = null;
@@ -385,13 +430,20 @@
 		async function init() {
 			const { data: { session } } = await _supabase.auth.getSession();
 
-			const savedHistory = localStorage.getItem(STORAGE_KEY);
-			if (savedHistory) {
-				chatHistory = JSON.parse(savedHistory);
-				renderHistory();
+			const savedActiveID = localStorage.getItem(ACTIVE_SESSION_KEY);
+			if (savedActiveID) {
+				currentSessionId = savedActiveID;
+				loadSession(currentSessionId);
+			} else {
+				startNewSession();
 			}
 
+			loadSidebarHistory();
+
 			if (session) {
+				if (session.user && session.user.email) {
+					sidebarEmail.innerText = session.user.email;
+				}
 				showApp();
 			} else {
 				loginScreen.style.display = 'flex';
@@ -622,7 +674,7 @@
 			setGeneratingState(true);
 			abortController = new AbortController();
 			chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
+			saveCurrentSession();
 			appendMessageToUI('user', prompt);
 			showTyping();
 			try {
@@ -657,7 +709,7 @@
 
 					if (isGenerating) {
 						chatHistory.push({ role: "model", parts: [{ text: finalResponse }] });
-						localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
+						saveCurrentSession();
 					}
 				}
 			} catch (error) {
@@ -685,8 +737,9 @@
 		clearBtn.addEventListener('click', () => {
 			if (confirm("Hapus semua riwayat percakapan?")) {
 				chatHistory = [];
-				localStorage.removeItem(STORAGE_KEY);
 				messagesArea.innerHTML = '';
+				// Also clear storage if needed, or primarily reset current session
+				saveCurrentSession();
 			}
 		});
 
@@ -720,6 +773,146 @@
 		document.addEventListener('gesturestart', function (event) {
 			event.preventDefault();
 		});
+
+		function toggleSidebar(show) {
+			if (show) {
+				sidebar.classList.remove('-translate-x-full');
+				overlay.classList.remove('hidden');
+				setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+			} else {
+				sidebar.classList.add('-translate-x-full');
+				overlay.classList.add('opacity-0');
+				setTimeout(() => overlay.classList.add('hidden'), 300);
+			}
+		}
+
+		if (menuBtn) {
+			menuBtn.addEventListener('click', () => toggleSidebar(true));
+		}
+		if (overlay) {
+			overlay.addEventListener('click', () => toggleSidebar(false));
+		}
+
+		if (newChatSidebarBtn) {
+			newChatSidebarBtn.addEventListener('click', () => {
+				startNewSession();
+				toggleSidebar(false);
+			});
+		}
+
+		function startNewSession() {
+			currentSessionId = Date.now().toString();
+			chatHistory = [];
+			messagesArea.innerHTML = '';
+			localStorage.setItem(ACTIVE_SESSION_KEY, currentSessionId);
+			saveCurrentSession();
+			loadSidebarHistory();
+		}
+
+		function loadSession(id) {
+			const sessions = getAllSessions();
+			const session = sessions.find(s => s.id === id);
+			if (session) {
+				currentSessionId = id;
+				chatHistory = session.history || [];
+				localStorage.setItem(ACTIVE_SESSION_KEY, currentSessionId);
+				renderHistory();
+				loadSidebarHistory();
+				toggleSidebar(false);
+			} else {
+				startNewSession();
+			}
+		}
+
+		function saveCurrentSession() {
+			const sessions = getAllSessions();
+			const existingIndex = sessions.findIndex(s => s.id === currentSessionId);
+
+			let title = "Percakapan Baru";
+			const firstUserMsg = chatHistory.find(m => m.role === 'user');
+			if (firstUserMsg && firstUserMsg.parts && firstUserMsg.parts[0] && firstUserMsg.parts[0].text) {
+				title = firstUserMsg.parts[0].text.substring(0, 30) + (firstUserMsg.parts[0].text.length > 30 ? "..." : "");
+			}
+
+			const sessionData = {
+				id: currentSessionId,
+				title: title,
+				timestamp: Date.now(),
+				history: chatHistory
+			};
+
+			if (existingIndex >= 0) {
+				sessions[existingIndex] = sessionData;
+			} else {
+				sessions.unshift(sessionData);
+			}
+
+			saveAllSessions(sessions);
+			loadSidebarHistory();
+		}
+
+		function deleteSession(id, event) {
+			if (event) event.stopPropagation();
+			if (confirm("Hapus percakapan ini?")) {
+				let sessions = getAllSessions();
+				sessions = sessions.filter(s => s.id !== id);
+				saveAllSessions(sessions);
+
+				if (id === currentSessionId) {
+					startNewSession();
+				} else {
+					loadSidebarHistory();
+				}
+			}
+		}
+
+		function getAllSessions() {
+			const stored = localStorage.getItem(STORAGE_KEY);
+			return stored ? JSON.parse(stored) : [];
+		}
+
+		function saveAllSessions(sessions) {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+		}
+
+		function loadSidebarHistory() {
+			const sessions = getAllSessions();
+			sessions.sort((a, b) => b.timestamp - a.timestamp);
+
+			if (!historyListEl) return;
+			historyListEl.innerHTML = '';
+
+			if (sessions.length === 0) {
+				historyListEl.innerHTML = '<div class="text-center text-xs text-slate-400 mt-4">Belum ada riwayat.</div>';
+				return;
+			}
+
+			const ul = document.createElement('div');
+			ul.className = "space-y-1";
+
+			sessions.forEach(session => {
+				const isActive = session.id === currentSessionId;
+
+				const item = document.createElement('div');
+				item.className = `w-full relative group rounded-lg transition-all duration-200 ${isActive ? 'bg-slate-50' : ''}`;
+				item.innerHTML = `
+                    <button onclick="loadSession('${session.id}')" class="w-full text-left px-3 py-3 text-sm font-medium truncate transition-all flex items-center gap-3 ${isActive ? 'text-indigo-600 font-bold' : 'text-slate-600'}">
+                        <i data-lucide="message-square" class="w-4 h-4 shrink-0 ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'} transition-colors"></i>
+                        <span class="truncate pr-6">${session.title}</span>
+                    </button>
+                    <button onclick="deleteSession('${session.id}', event)" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-300 hover:text-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-all z-10" title="Hapus">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                `;
+				ul.appendChild(item);
+			});
+
+			historyListEl.appendChild(ul);
+			lucide.createIcons();
+		}
+
+		window.loadSession = loadSession;
+		window.deleteSession = deleteSession;
 
 		init();
 	</script>
