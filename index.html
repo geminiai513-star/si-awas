@@ -296,7 +296,7 @@
 		</div>
 
 		<!-- Bottom Controls -->
-		<div class="p-3 pb-6 border-t border-slate-50 space-y-1 bg-white">
+		<div class="p-3 pb-6 border-t border-slate-50 space-y-0 bg-white">
 			<button id="newChatSidebarBtn"
 				class="w-full flex items-center justify-start gap-3 px-3 py-2 text-slate-600 hover:text-indigo-600 transition-all group">
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -369,7 +369,7 @@
 			<div class="footer-content">
 				<form id="chatForm" class="w-full">
 					<div id="inputWrapper"
-						class="relative flex items-center bg-slate-50 rounded-full px-1 py-1.5 transition-all duration-200">
+						class="relative flex items-center bg-slate-50 rounded-full px-1 py-1.5 transition-colors duration-200">
 						<button type="button" id="uploadBtn"
 							class="p-2 text-slate-400 hover:text-slate-600 transition-colors shrink-0">
 							<i data-lucide="plus" class="w-6 h-6"></i>
@@ -535,7 +535,7 @@
 			this.style.height = newHeight + 'px';
 
 			const wrapper = document.getElementById('inputWrapper');
-			if (this.scrollHeight > 50) { // Adjusted threshold
+			if (this.scrollHeight > 42) { // Adjusted threshold for instant change
 				wrapper.classList.remove('rounded-full');
 				wrapper.classList.add('rounded-[24px]');
 			} else {
@@ -931,7 +931,7 @@
 					groupDiv.className = "mb-4";
 
 					const header = document.createElement('h3');
-					header.className = "px-3 text-[10px] font-black text-slate-300 mb-2 uppercase tracking-widest";
+					header.className = "px-3 text-[11px] font-black text-slate-300 mb-2 uppercase tracking-widest";
 					header.innerText = label;
 					groupDiv.appendChild(header);
 
@@ -947,7 +947,7 @@
 
 						item.innerHTML = `
                                 <div class="flex items-center w-full relative px-3 transition-colors cursor-pointer" id="item-con-${itemId}" onclick="handleContainerClick('${itemId}', event)">
-                                    <button onclick="handleNameClick('${itemId}', event)" class="flex-1 text-left py-1.5 text-[13px] font-medium truncate transition-colors ${isActive ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-900'}">
+                                    <button onclick="handleNameClick('${itemId}', event)" class="flex-1 text-left py-1.5 text-[14px] font-medium truncate transition-colors ${isActive ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-900'}">
                                         ${session.title}
                                     </button>
                                     
