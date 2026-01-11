@@ -280,7 +280,7 @@
 					<i data-lucide="user" class="w-4 h-4"></i>
 				</div>
 				<div class="flex-1 min-w-0">
-					<p id="sidebarEmail" class="text-[15px] font-bold text-slate-700 truncate font-sans">
+					<p id="sidebarEmail" class="text-[14px] font-bold text-slate-700 truncate font-sans">
 						user@example.com</p>
 					<div class="flex items-center gap-1.5 mt-0.5">
 						<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
@@ -307,13 +307,13 @@
 					<path d="M8 12h8" />
 					<path d="M12 8v8" />
 				</svg>
-				<span class="font-bold text-[15px] tracking-wide">Percakapan Baru</span>
+				<span class="font-bold text-[14px] tracking-wide">Percakapan Baru</span>
 			</button>
 			<button id="sidebarLogoutBtn"
 				class="w-full flex items-center justify-start gap-3 px-3 py-2 text-slate-500 hover:text-red-500 transition-all group">
 				<i data-lucide="log-out" stroke-width="2.5"
 					class="w-[18px] h-[18px] text-slate-400 group-hover:text-red-500 transition-colors"></i>
-				<span class="font-bold text-[15px] tracking-wide">Keluar</span>
+				<span class="font-bold text-[14px] tracking-wide">Keluar</span>
 			</button>
 		</div>
 	</div>
@@ -394,10 +394,11 @@
 	</div>
 
 	<script>
-		const SUPABASE_URL = "https://eofuiyhnyyxrapxilank.supabase.co";
-		const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZnVpeWhueXl4cmFweGlsYW5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5Mzc3NTEsImV4cCI6MjA4MTUxMzc1MX0.aogUNcs5K2-q7h8cDHpgRwYN5dTO9sm2P2aHlKeUlvc";
-		const PROXY_URL = `${SUPABASE_URL}/functions/v1/ai-proxy-v2`;
+		const SUPABASE_URL = "https://wluwdfbvkyafscotpils.supabase.co";
+		const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsdXdkZmJ2a3lhZnNjb3RwaWxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMjgwNjIsImV4cCI6MjA4MzcwNDA2Mn0.RpCI9gd2v8_K6aEp2rKLTv3OWf952kTWkdlxo8NfozU";
+		const PROXY_URL = `${SUPABASE_URL}/functions/v1/gemini-proxy`;
 		const MODEL_NAME = "gemini-3-flash-preview";
+		const IMAGE_MODEL_NAME = "gemini-2.5-flash-image";
 		const STORAGE_KEY = "sinta_chat_sessions";
 		const ACTIVE_SESSION_KEY = "sinta_active_session_id";
 
@@ -429,6 +430,63 @@
 		let typingBubble = null;
 		let isGenerating = false;
 		let abortController = null;
+
+		const DB_NAME = "Sinta_Images_DB";
+		const DB_VERSION = 1;
+		const STORE_NAME = "images";
+		let dbInstance = null;
+
+		function initDB() {
+			return new Promise((resolve, reject) => {
+				if (dbInstance) return resolve(dbInstance);
+				const request = indexedDB.open(DB_NAME, DB_VERSION);
+				request.onupgradeneeded = (event) => {
+					const db = event.target.result;
+					if (!db.objectStoreNames.contains(STORE_NAME)) {
+						db.createObjectStore(STORE_NAME, { keyPath: "id" });
+					}
+				};
+				request.onsuccess = (event) => {
+					dbInstance = event.target.result;
+					resolve(dbInstance);
+				};
+				request.onerror = (event) => reject("DB Error: " + event.target.error);
+			});
+		}
+
+		async function saveImageToIDB(id, blob) {
+			const db = await initDB();
+			return new Promise((resolve, reject) => {
+				const tx = db.transaction(STORE_NAME, "readwrite");
+				const store = tx.objectStore(STORE_NAME);
+				const request = store.put({ id, blob, timestamp: Date.now() });
+				request.onsuccess = () => resolve(id);
+				request.onerror = () => reject(request.error);
+			});
+		}
+
+		async function getImageFromIDB(id) {
+			const db = await initDB();
+			return new Promise((resolve, reject) => {
+				const tx = db.transaction(STORE_NAME, "readonly");
+				const store = tx.objectStore(STORE_NAME);
+				const request = store.get(id);
+				request.onsuccess = (e) => {
+					resolve(e.target.result ? e.target.result.blob : null);
+				};
+				request.onerror = () => resolve(null);
+			});
+		}
+
+		async function deleteImageFromIDB(id) {
+			const db = await initDB();
+			return new Promise((resolve, reject) => {
+				const tx = db.transaction(STORE_NAME, "readwrite");
+				const store = tx.objectStore(STORE_NAME);
+				store.delete(id);
+				tx.oncomplete = () => resolve();
+			});
+		}
 
 		lucide.createIcons();
 
@@ -536,7 +594,7 @@
 			this.style.height = newHeight + 'px';
 
 			const wrapper = document.getElementById('inputWrapper');
-			if (this.scrollHeight > 50) { // Adjusted threshold for instant change
+			if (this.scrollHeight > 50) {
 				wrapper.classList.remove('rounded-full');
 				wrapper.classList.add('rounded-[24px]');
 			} else {
@@ -560,7 +618,7 @@
 			}
 		});
 
-		function appendMessageToUI(role, text, animate = true) {
+		function appendMessageToUI(role, text, animate = true, isRawHtml = false) {
 			const isUser = role === 'user';
 			const isError = role === 'error';
 			const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -577,7 +635,7 @@
                         <span class="text-[11px] font-bold text-slate-300 uppercase">${timeStr}</span>
                     </div>
                     <div class="w-full prose-container prose prose-sm max-w-none text-slate-600 text-[15px] leading-relaxed font-medium">
-                        ${isError ? `<div class="text-red-600 text-xs font-mono whitespace-pre-wrap">${text}</div>` : marked.parse(text)}
+                        ${isError ? `<div class="text-red-600 text-xs font-mono whitespace-pre-wrap">${text}</div>` : (isRawHtml ? text : marked.parse(text))}
                     </div>
                     ${!isUser && !isError ? `
                         <button class="copy-btn absolute bottom-2 right-2 p-1 text-slate-400 hover:text-slate-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity" title="Salin pesan">
@@ -611,7 +669,32 @@
 				div.querySelectorAll('pre code').forEach(hljs.highlightElement);
 			}
 			if (animate) scrollBottom(true, 'auto');
+
+			resolveIdbImages(div, animate);
+
 			return div.querySelector('.prose-container');
+		}
+
+		function resolveIdbImages(container, animate = false) {
+			container.querySelectorAll('img').forEach(async (img) => {
+				const src = img.getAttribute('src');
+				if (src && src.startsWith('idb://')) {
+					const id = src.replace('idb://', '');
+					try {
+						const blob = await getImageFromIDB(id);
+						if (blob) {
+							const url = URL.createObjectURL(blob);
+							img.src = url;
+							img.onload = () => {
+								if (animate) scrollBottom(true, 'auto');
+							};
+						} else {
+						}
+					} catch (e) {
+						console.error("IDB Image Load Error", e);
+					}
+				}
+			});
 		}
 
 		async function streamText(element, text) {
@@ -677,17 +760,41 @@
 				setGeneratingState(false);
 				return;
 			}
-			const prompt = userInput.value.trim();
-			if (!prompt) return;
+			const rawInput = userInput.value.trim();
+			if (!rawInput) return;
+
+			const imageMatch = rawInput.match(/\[image\]\s*([\s\S]*?)\s*\[\/image\]/i);
+
 			userInput.blur();
 			userInput.value = '';
 			userInput.style.height = 'auto';
 			userInput.disabled = true;
 			setGeneratingState(true);
 			abortController = new AbortController();
-			chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+			if (imageMatch) {
+				const imagePrompt = imageMatch[1].trim();
+				chatHistory.push({ role: "user", parts: [{ text: rawInput }] });
+				saveCurrentSession();
+				appendMessageToUI('user', rawInput);
+				showTyping();
+
+				try {
+					await generateImage(imagePrompt);
+				} catch (error) {
+					hideTyping();
+					appendMessageToUI('error', `IMAGE ERROR:\n${error.message}`);
+				} finally {
+					setGeneratingState(false);
+					userInput.disabled = false;
+					abortController = null;
+				}
+				return;
+			}
+
+			chatHistory.push({ role: "user", parts: [{ text: rawInput }] });
 			saveCurrentSession();
-			appendMessageToUI('user', prompt);
+			appendMessageToUI('user', rawInput);
 			showTyping();
 			try {
 				const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
@@ -699,6 +806,9 @@
 					},
 					signal: abortController.signal,
 					body: JSON.stringify({
+						system_instruction: {
+							parts: [{ text: "Anda adalah SINTA, asisten AI yang cerdas dan kreatif. Anda memiliki kemampuan untuk MENGE-GENERATE GAMBAR. Jika pengguna meminta gambar, visualisasi, atau lukisan, JANGAN menolak. Sebaliknya, buatlah prompt gambar yang deskriptif dan bungkus dengan tag [image]...[/image]. Contoh: User: 'Buatkan gambar kucing', Anda Jawab: 'Tentu, ini gambar kucingnya:\n[image] kucing lucu realistis, bulu halus, pencahayaan sinematik [/image]'. JANGAN gunakan blok kode untuk tag ini." }]
+						},
 						contents: chatHistory,
 						tools: [{ google_search: {} }],
 						generationConfig: { temperature: 1, maxOutputTokens: 65536 }
@@ -709,19 +819,35 @@
 				const parts = data.candidates?.[0]?.content?.parts || [];
 				let finalResponse = "";
 				parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
+
 				hideTyping();
+
 				if (finalResponse) {
+					const imageMatch = finalResponse.match(/\[image\](.*?)\[\/image\]/s);
+					let textToDisplay = finalResponse;
+					let imagePrompt = null;
+
+					if (imageMatch) {
+						imagePrompt = imageMatch[1].trim();
+						textToDisplay = finalResponse.replace(/\[image\](.*?)\[\/image\]/s, "").trim();
+						if (!textToDisplay) textToDisplay = "Sedang membuat gambar...";
+					}
+
 					const aiContainer = appendMessageToUI('model', "");
-					await streamText(aiContainer, finalResponse);
+					await streamText(aiContainer, textToDisplay);
 
 					const copyBtn = aiContainer.closest('.group').querySelector('.copy-btn');
 					if (copyBtn) {
-						copyBtn.setAttribute('data-content', finalResponse);
+						copyBtn.setAttribute('data-content', textToDisplay);
 					}
 
 					if (isGenerating) {
-						chatHistory.push({ role: "model", parts: [{ text: finalResponse }] });
+						chatHistory.push({ role: "model", parts: [{ text: textToDisplay }] });
 						saveCurrentSession();
+
+						if (imagePrompt) {
+							await generateImage(imagePrompt, aiContainer);
+						}
 					}
 				}
 			} catch (error) {
@@ -732,6 +858,135 @@
 				userInput.disabled = false;
 				abortController = null;
 			}
+		}
+
+		async function generateImage(prompt, targetContainer = null) {
+			let loaderId = `loader-${Date.now()}`;
+			if (targetContainer) {
+				const loaderHTML = `
+					<div id="${loaderId}" class="mt-2 flex items-center gap-1 text-slate-400 text-xs font-medium animate-in fade-in duration-300">
+						<span>Membuat Gambar</span>
+						<div class="flex gap-0.5 items-center pt-1">
+							<span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce"></span>
+							<span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+							<span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+						</div>
+					</div>
+				`;
+				targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
+				lucide.createIcons();
+				scrollBottom(true, 'auto');
+			} else {
+				showTyping();
+			}
+
+			const response = await fetch(PROXY_URL + `?model=${IMAGE_MODEL_NAME}&action=generateContent`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'apikey': SUPABASE_KEY,
+					'Authorization': `Bearer ${SUPABASE_KEY}`
+				},
+				signal: abortController.signal,
+				body: JSON.stringify({
+					contents: [{ role: "user", parts: [{ text: prompt }] }],
+					generationConfig: {
+						response_modalities: ["IMAGE"]
+					}
+				})
+			});
+
+			const data = await response.json();
+			if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status} - ${JSON.stringify(data)}`);
+
+			let base64Image = null;
+			let mimeType = "image/jpeg";
+
+			const parts = data.candidates?.[0]?.content?.parts || [];
+			const imagePart = parts.find(p => p.inlineData);
+
+			if (imagePart) {
+				base64Image = imagePart.inlineData.data;
+				mimeType = imagePart.inlineData.mimeType || mimeType;
+			} else {
+				const textPart = parts.find(p => p.text);
+				if (textPart) {
+					throw new Error(`Model returned text instead of image: ${textPart.text}`);
+				}
+				throw new Error("No image data found in response.");
+			}
+
+			const fileName = `sinta_gen_${Date.now()}`; // ID unik untuk DB
+			let imageUrl = `idb://${fileName}`; // Protokol khusus untuk IDB
+
+			try {
+				const byteCharacters = atob(base64Image);
+				const byteNumbers = new Array(byteCharacters.length);
+				for (let i = 0; i < byteCharacters.length; i++) {
+					byteNumbers[i] = byteCharacters.charCodeAt(i);
+				}
+				const byteArray = new Uint8Array(byteNumbers);
+				const blob = new Blob([byteArray], { type: mimeType });
+
+				await saveImageToIDB(fileName, blob);
+
+			} catch (writeError) {
+				console.error("Gagal simpan ke IndexedDB", writeError);
+				appendMessageToUI('error', `ERROR DATABASE LOKAL:\n${writeError.message}`);
+				imageUrl = `data:${mimeType};base64,${base64Image}`;
+			}
+
+			hideTyping();
+
+			const imageHTML = `<div class="w-full overflow-hidden rounded-xl border border-slate-200 shadow-sm mt-2 animate-in zoom-in-95 duration-500"><img src="${imageUrl}" alt="Generated Image" class="w-full h-auto block hover:scale-[1.01] transition-transform duration-300 cursor-pointer" onclick="if(this.src.startsWith('blob:')) window.open(this.src)"></div>`;
+
+			if (targetContainer) {
+				const loader = document.getElementById(loaderId);
+				if (loader) loader.outerHTML = imageHTML;
+				else targetContainer.insertAdjacentHTML('beforeend', imageHTML);
+				resolveIdbImages(targetContainer, true);
+				if (isGenerating) {
+					const lastMsgIndex = chatHistory.findLastIndex(m => m.role === 'model');
+					if (lastMsgIndex !== -1) {
+						chatHistory[lastMsgIndex].parts[0].text += `\n${imageHTML}`;
+						saveCurrentSession();
+					}
+				}
+			} else {
+				const container = appendMessageToUI('model', imageHTML, true, true);
+				if (isGenerating) {
+					chatHistory.push({ role: "model", parts: [{ text: imageHTML }] });
+					saveCurrentSession();
+				}
+			}
+
+			scrollBottom(true, 'auto');
+		}
+
+		async function uploadImageToSupabase(base64Data, fileName, mimeType) {
+			const byteCharacters = atob(base64Data);
+			const byteNumbers = new Array(byteCharacters.length);
+			for (let i = 0; i < byteCharacters.length; i++) {
+				byteNumbers[i] = byteCharacters.charCodeAt(i);
+			}
+			const byteArray = new Uint8Array(byteNumbers);
+			const blob = new Blob([byteArray], { type: mimeType });
+			const filePath = `ai_generated/${fileName}`;
+
+			const { data, error } = await _supabase.storage
+				.from('aura_media')
+				.upload(filePath, blob, {
+					contentType: mimeType,
+					upsert: false
+				});
+
+			if (error) throw error;
+
+			const { data: { publicUrl } } = _supabase.storage
+				.from('aura_media')
+				.getPublicUrl(filePath);
+
+			return publicUrl;
 		}
 
 		sendBtn.addEventListener('pointerdown', (e) => {
@@ -857,12 +1112,33 @@
 			loadSidebarHistory();
 		}
 
-		function deleteSession(id, event) {
+		async function deleteSession(id, event) {
 			if (event) event.stopPropagation();
 			if (confirm("Hapus percakapan ini?")) {
-				let sessions = getAllSessions();
-				sessions = sessions.filter(s => s.id !== id);
-				saveAllSessions(sessions);
+				const sessions = getAllSessions();
+				const sessionToDelete = sessions.find(s => s.id === id);
+				if (sessionToDelete && sessionToDelete.history) {
+					const idList = [];
+					const regex = /idb:\/\/([a-zA-Z0-9_]+)/g;
+					sessionToDelete.history.forEach(msg => {
+						if (msg.parts && msg.parts[0] && msg.parts[0].text) {
+							const text = msg.parts[0].text;
+							let match;
+							while ((match = regex.exec(text)) !== null) {
+								idList.push(match[1]);
+							}
+						}
+					});
+
+					if (idList.length > 0) {
+						for (const imgId of idList) {
+							await deleteImageFromIDB(imgId).catch(err => console.error("Del IDB err:", err));
+						}
+					}
+				}
+
+				const newSessions = sessions.filter(s => s.id !== id);
+				saveAllSessions(newSessions);
 
 				if (id === currentSessionId) {
 					startNewSession();
@@ -945,7 +1221,6 @@
 						item.className = "w-full relative group";
 
 						const itemId = session.id;
-
 						item.innerHTML = `
                                 <div class="flex items-center w-full relative px-3 transition-colors cursor-pointer" id="item-con-${itemId}" onclick="handleContainerClick('${itemId}', event)">
                                     <button onclick="handleNameClick('${itemId}', event)" class="flex-1 text-left py-1.5 text-[14px] font-medium truncate transition-colors ${isActive ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-900'}">
@@ -970,33 +1245,24 @@
 		}
 
 		function handleContainerClick(id, event) {
-			// Container click serves as backup to show delete, or if user clicks empty space
-			// But we prioritize handleNameClick logic if clicked on text
-			// If clicked on empty space, just show delete
 			showDelete(id);
 		}
 
 		function handleNameClick(id, event) {
-			event.stopPropagation(); // Prevent container click
+			event.stopPropagation();
 
 			const delBtn = document.getElementById(`delete-${id}`);
 			const isVisible = delBtn && !delBtn.classList.contains('hidden');
 
 			if (!isVisible) {
-				// First click: Show delete button logic
 				showDelete(id);
 			} else {
-				// Second click (already visible): Open chat
 				loadSession(id);
 			}
 		}
 
-		// Show delete button for specific item, hide others
 		function showDelete(id) {
-			// Hide all open delete buttons
 			hideAllDeleteButtons();
-
-			// Show new one
 			const delBtn = document.getElementById(`delete-${id}`);
 			if (delBtn) {
 				delBtn.classList.remove('hidden');
@@ -1007,10 +1273,9 @@
 			document.querySelectorAll('[id^="delete-"]').forEach(el => el.classList.add('hidden'));
 		}
 
-		// Override deleteSession to handle event correctly
 		const originalDeleteSession = deleteSession;
 		deleteSession = function (id, event) {
-			if (event) event.stopPropagation(); // Important!
+			if (event) event.stopPropagation();
 
 			if (confirm("Hapus percakapan?")) {
 				let sessions = getAllSessions();
@@ -1025,15 +1290,12 @@
 			}
 		};
 
-
-		// Wrap loadSession to hide delete buttons
 		const originalLoadSession = loadSession;
 		loadSession = function (id) {
 			hideAllDeleteButtons();
 			originalLoadSession(id);
 		}
 
-		// Fix Logout Button Logic - Explicitly Re-attach
 		const logoutBtn = document.getElementById('sidebarLogoutBtn');
 		if (logoutBtn) {
 			logoutBtn.onclick = async () => {
@@ -1041,7 +1303,7 @@
 					const { error } = await _supabase.auth.signOut();
 					if (!error) {
 						localStorage.removeItem(STORAGE_KEY);
-						localStorage.removeItem(ACTIVE_SESSION_KEY); // Clean up active session too
+						localStorage.removeItem(ACTIVE_SESSION_KEY);
 						location.reload();
 					}
 				}
@@ -1052,11 +1314,7 @@
 		window.deleteSession = deleteSession;
 		window.showDelete = showDelete;
 
-		// Global Click Listener to hide delete buttons when clicking outside
 		document.addEventListener('click', function (event) {
-			// Hide all delete buttons.
-			// Specific actions that should NOT hide them (like showing a delete button)
-			// must call event.stopPropagation() to prevent this listener from firing.
 			hideAllDeleteButtons();
 		});
 
@@ -1065,4 +1323,3 @@
 </body>
 
 </html>
-```
