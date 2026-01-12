@@ -85,7 +85,7 @@
 			outline: none;
 			resize: none;
 			padding: 12px 8px;
-			font-size: 15px;
+			font-size: 16px;
 			font-weight: 500;
 			color: #1f2937;
 			line-height: 20px;
@@ -628,10 +628,10 @@
 			div.innerHTML = `
                 <div class="w-full bg-slate-50 rounded-2xl p-4 ${!isUser && !isError ? 'pb-8' : ''} shadow-sm border-none group relative">
                     <div class="flex justify-between items-center border-b border-slate-100 pb-1 mb-0.5">
-                        <span class="text-[11px] font-black ${nameColorClass} uppercase tracking-widest">${nameLabel}</span>
-                        <span class="text-[11px] font-bold text-slate-300 uppercase">${timeStr}</span>
+                        <span class="text-xs font-black ${nameColorClass} uppercase tracking-widest">${nameLabel}</span>
+                        <span class="text-xs font-bold text-slate-300 uppercase">${timeStr}</span>
                     </div>
-                    <div class="w-full prose-container prose prose-sm max-w-none text-slate-600 text-sm leading-relaxed font-semibold">
+                    <div class="w-full prose-container prose max-w-none text-slate-600 text-base leading-relaxed font-medium">
                         ${isError ? `<div class="text-red-600 text-xs font-mono whitespace-pre-wrap">${text}</div>` : (isRawHtml ? text : marked.parse(text))}
                     </div>
                     ${!isUser && !isError ? `
