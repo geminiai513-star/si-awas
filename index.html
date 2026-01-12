@@ -399,6 +399,9 @@
 		const STREAM_SPEED = 8;
 		const STREAM_CHUNK_SIZE = 5;
 
+		const MAIN_SYSTEM_PROMPT = "Anda adalah SINTA, asisten AI yang cerdas dan kreatif.";
+		const IMAGE_GEN_PROMPT = "Jika user minta gambar, respon dengan tag: [image]english description[/image].";
+
 		const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 		const loginScreen = document.getElementById('loginScreen');
@@ -628,7 +631,7 @@
                         <span class="text-[11px] font-black ${nameColorClass} uppercase tracking-widest">${nameLabel}</span>
                         <span class="text-[11px] font-bold text-slate-300 uppercase">${timeStr}</span>
                     </div>
-                    <div class="w-full prose-container prose prose-sm max-w-none text-slate-600 text-base leading-relaxed font-medium">
+                    <div class="w-full prose-container prose prose-sm max-w-none text-slate-600 text-sm leading-relaxed font-semibold">
                         ${isError ? `<div class="text-red-600 text-xs font-mono whitespace-pre-wrap">${text}</div>` : (isRawHtml ? text : marked.parse(text))}
                     </div>
                     ${!isUser && !isError ? `
@@ -748,120 +751,120 @@
 
 
 		async function sendMessage(e) {
-    if (e) e.preventDefault();
-    if (isGenerating) {
-        if (abortController) abortController.abort();
-        setGeneratingState(false);
-        return;
-    }
-    const rawInput = userInput.value.trim();
-    if (!rawInput) return;
+			if (e) e.preventDefault();
+			if (isGenerating) {
+				if (abortController) abortController.abort();
+				setGeneratingState(false);
+				return;
+			}
+			const rawInput = userInput.value.trim();
+			if (!rawInput) return;
 
-    const { data: { session } } = await _supabase.auth.getSession();
-    if (!session) {
-        appendMessageToUI('error', 'Silakan login kembali.');
-        return;
-    }
+			const { data: { session } } = await _supabase.auth.getSession();
+			if (!session) {
+				appendMessageToUI('error', 'Silakan login kembali.');
+				return;
+			}
 
-    const userToken = session.access_token;
-    const imageMatch = rawInput.match(/\[image\]\s*([\s\S]*?)\s*\[\/image\]/i);
+			const userToken = session.access_token;
+			const imageMatch = rawInput.match(/\[image\]\s*([\s\S]*?)\s*\[\/image\]/i);
 
-    userInput.blur();
-    userInput.value = '';
-    userInput.style.height = 'auto';
-    userInput.disabled = true;
-    setGeneratingState(true);
-    abortController = new AbortController();
+			userInput.blur();
+			userInput.value = '';
+			userInput.style.height = 'auto';
+			userInput.disabled = true;
+			setGeneratingState(true);
+			abortController = new AbortController();
 
-    if (imageMatch) {
-        const imagePrompt = imageMatch[1].trim();
-        chatHistory.push({ role: "user", parts: [{ text: rawInput }] });
-        saveCurrentSession();
-        appendMessageToUI('user', rawInput);
-        showTyping();
-        try {
-            await generateImage(imagePrompt);
-        } catch (error) {
-            hideTyping();
-            appendMessageToUI('error', `IMAGE ERROR:\n${error.message}`);
-        } finally {
-            setGeneratingState(false);
-            userInput.disabled = false;
-            abortController = null;
-        }
-        return;
-    }
+			if (imageMatch) {
+				const imagePrompt = imageMatch[1].trim();
+				chatHistory.push({ role: "user", parts: [{ text: rawInput }] });
+				saveCurrentSession();
+				appendMessageToUI('user', rawInput);
+				showTyping();
+				try {
+					await generateImage(imagePrompt);
+				} catch (error) {
+					hideTyping();
+					appendMessageToUI('error', `IMAGE ERROR:\n${error.message}`);
+				} finally {
+					setGeneratingState(false);
+					userInput.disabled = false;
+					abortController = null;
+				}
+				return;
+			}
 
-    chatHistory.push({ role: "user", parts: [{ text: rawInput }] });
-    saveCurrentSession();
-    appendMessageToUI('user', rawInput);
-    showTyping();
-    try {
-        const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${userToken}`
-            },
-            signal: abortController.signal,
-            body: JSON.stringify({
-                system_instruction: {
-                    parts: [{ text: "Anda adalah SINTA, asisten AI yang cerdas dan kreatif. Anda memiliki kemampuan untuk MENGE-GENERATE GAMBAR. Jika pengguna meminta gambar, visualisasi, atau lukisan, JANGAN menolak. Sebaliknya, buatlah prompt gambar yang deskriptif dan bungkus dengan tag [image]...[/image]. Contoh: User: 'Buatkan gambar kucing', Anda Jawab: 'Tentu, ini gambar kucingnya:\n[image] kucing lucu realistis, bulu halus, pencahayaan sinematik [/image]'. JANGAN gunakan blok kode untuk tag ini." }]
-                },
-                contents: chatHistory,
-                tools: [{ google_search: {} }],
-                generationConfig: { temperature: 1, maxOutputTokens: 65536 }
-            })
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
-        const parts = data.candidates?.[0]?.content?.parts || [];
-        let finalResponse = "";
-        parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
+			chatHistory.push({ role: "user", parts: [{ text: rawInput }] });
+			saveCurrentSession();
+			appendMessageToUI('user', rawInput);
+			showTyping();
+			try {
+				const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'apikey': SUPABASE_KEY,
+						'Authorization': `Bearer ${userToken}`
+					},
+					signal: abortController.signal,
+					body: JSON.stringify({
+						system_instruction: {
+							parts: [{ text: `${MAIN_SYSTEM_PROMPT} ${IMAGE_GEN_PROMPT}` }]
+						},
+						contents: chatHistory,
+						tools: [{ google_search: {} }],
+						generationConfig: { temperature: 1, maxOutputTokens: 65536 }
+					})
+				});
+				const data = await response.json();
+				if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+				const parts = data.candidates?.[0]?.content?.parts || [];
+				let finalResponse = "";
+				parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
 
-        hideTyping();
+				hideTyping();
 
-        if (finalResponse) {
-            const imageMatch = finalResponse.match(/\[image\](.*?)\[\/image\]/s);
-            let textToDisplay = finalResponse;
-            let imagePrompt = null;
+				if (finalResponse) {
+					const imageMatch = finalResponse.match(/\[image\](.*?)\[\/image\]/s);
+					let textToDisplay = finalResponse;
+					let imagePrompt = null;
 
-            if (imageMatch) {
-                imagePrompt = imageMatch[1].trim();
-                textToDisplay = finalResponse.replace(/\[image\](.*?)\[\/image\]/s, "").trim();
-                if (!textToDisplay) textToDisplay = "Sedang membuat gambar...";
-            }
+					if (imageMatch) {
+						imagePrompt = imageMatch[1].trim();
+						textToDisplay = finalResponse.replace(/\[image\](.*?)\[\/image\]/s, "").trim();
+						if (!textToDisplay) textToDisplay = "Sedang membuat gambar...";
+					}
 
-            const aiContainer = appendMessageToUI('model', "");
-            await streamText(aiContainer, textToDisplay);
+					const aiContainer = appendMessageToUI('model', "");
+					await streamText(aiContainer, textToDisplay);
 
-            if (isGenerating) {
-                chatHistory.push({ role: "model", parts: [{ text: textToDisplay }] });
-                saveCurrentSession();
-                if (imagePrompt) {
-                    await generateImage(imagePrompt, aiContainer);
-                }
-            }
-        }
-    } catch (error) {
-        hideTyping();
-        if (error.name !== 'AbortError') appendMessageToUI('error', `ERROR:\n${error.message}`);
-    } finally {
-        setGeneratingState(false);
-        userInput.disabled = false;
-        abortController = null;
-    }
-}
+					if (isGenerating) {
+						chatHistory.push({ role: "model", parts: [{ text: textToDisplay }] });
+						saveCurrentSession();
+						if (imagePrompt) {
+							await generateImage(imagePrompt, aiContainer);
+						}
+					}
+				}
+			} catch (error) {
+				hideTyping();
+				if (error.name !== 'AbortError') appendMessageToUI('error', `ERROR:\n${error.message}`);
+			} finally {
+				setGeneratingState(false);
+				userInput.disabled = false;
+				abortController = null;
+			}
+		}
 
 		async function generateImage(prompt, targetContainer = null) {
-    const { data: { session } } = await _supabase.auth.getSession();
-    if (!session) return;
-    
-    const userToken = session.access_token;
-    let loaderId = `loader-${Date.now()}`;
-    if (targetContainer) {
-        const loaderHTML = `
+			const { data: { session } } = await _supabase.auth.getSession();
+			if (!session) return;
+
+			const userToken = session.access_token;
+			let loaderId = `loader-${Date.now()}`;
+			if (targetContainer) {
+				const loaderHTML = `
             <div id="${loaderId}" class="mt-2 flex items-center gap-1 text-slate-400 text-xs font-medium animate-in fade-in duration-300">
                 <span>Membuat Gambar</span>
                 <div class="flex gap-0.5 items-center pt-1">
@@ -871,84 +874,84 @@
                 </div>
             </div>
         `;
-        targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
-        lucide.createIcons();
-        scrollBottom(true, 'auto');
-    } else {
-        showTyping();
-    }
+				targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
+				lucide.createIcons();
+				scrollBottom(true, 'auto');
+			} else {
+				showTyping();
+			}
 
-    const response = await fetch(PROXY_URL + `?model=${IMAGE_MODEL_NAME}&action=generateContent`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${userToken}`
-        },
-        signal: abortController.signal,
-        body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: {
-                response_modalities: ["IMAGE"]
-            }
-        })
-    });
+			const response = await fetch(PROXY_URL + `?model=${IMAGE_MODEL_NAME}&action=generateContent`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'apikey': SUPABASE_KEY,
+					'Authorization': `Bearer ${userToken}`
+				},
+				signal: abortController.signal,
+				body: JSON.stringify({
+					contents: [{ role: "user", parts: [{ text: prompt }] }],
+					generationConfig: {
+						response_modalities: ["IMAGE"]
+					}
+				})
+			});
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+			const data = await response.json();
+			if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
 
-    let base64Image = null;
-    let mimeType = "image/jpeg";
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    const imagePart = parts.find(p => p.inlineData);
+			let base64Image = null;
+			let mimeType = "image/jpeg";
+			const parts = data.candidates?.[0]?.content?.parts || [];
+			const imagePart = parts.find(p => p.inlineData);
 
-    if (imagePart) {
-        base64Image = imagePart.inlineData.data;
-        mimeType = imagePart.inlineData.mimeType || mimeType;
-    } else {
-        throw new Error("No image data found in response.");
-    }
+			if (imagePart) {
+				base64Image = imagePart.inlineData.data;
+				mimeType = imagePart.inlineData.mimeType || mimeType;
+			} else {
+				throw new Error("No image data found in response.");
+			}
 
-    const fileName = `sinta_gen_${Date.now()}`;
-    let imageUrl = `idb://${fileName}`;
+			const fileName = `sinta_gen_${Date.now()}`;
+			let imageUrl = `idb://${fileName}`;
 
-    try {
-        const byteCharacters = atob(base64Image);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: mimeType });
-        await saveImageToIDB(fileName, blob);
-    } catch (writeError) {
-        imageUrl = `data:${mimeType};base64,${base64Image}`;
-    }
+			try {
+				const byteCharacters = atob(base64Image);
+				const byteNumbers = new Array(byteCharacters.length);
+				for (let i = 0; i < byteCharacters.length; i++) {
+					byteNumbers[i] = byteCharacters.charCodeAt(i);
+				}
+				const byteArray = new Uint8Array(byteNumbers);
+				const blob = new Blob([byteArray], { type: mimeType });
+				await saveImageToIDB(fileName, blob);
+			} catch (writeError) {
+				imageUrl = `data:${mimeType};base64,${base64Image}`;
+			}
 
-    hideTyping();
-    const imageHTML = `<div class="w-full overflow-hidden rounded-xl border border-slate-200 shadow-sm mt-2 animate-in zoom-in-95 duration-500"><img src="${imageUrl}" alt="Generated Image" class="w-full h-auto block hover:scale-[1.01] transition-transform duration-300 cursor-pointer" onclick="if(this.src.startsWith('blob:')) window.open(this.src)"></div>`;
+			hideTyping();
+			const imageHTML = `<div class="w-full overflow-hidden rounded-xl border border-slate-200 shadow-sm mt-2 animate-in zoom-in-95 duration-500"><img src="${imageUrl}" alt="Generated Image" class="w-full h-auto block hover:scale-[1.01] transition-transform duration-300 cursor-pointer" onclick="if(this.src.startsWith('blob:')) window.open(this.src)"></div>`;
 
-    if (targetContainer) {
-        const loader = document.getElementById(loaderId);
-        if (loader) loader.outerHTML = imageHTML;
-        else targetContainer.insertAdjacentHTML('beforeend', imageHTML);
-        resolveIdbImages(targetContainer, true);
-        if (isGenerating) {
-            const lastMsgIndex = chatHistory.findLastIndex(m => m.role === 'model');
-            if (lastMsgIndex !== -1) {
-                chatHistory[lastMsgIndex].parts[0].text += `\n${imageHTML}`;
-                saveCurrentSession();
-            }
-        }
-    } else {
-        const container = appendMessageToUI('model', imageHTML, true, true);
-        if (isGenerating) {
-            chatHistory.push({ role: "model", parts: [{ text: imageHTML }] });
-            saveCurrentSession();
-        }
-    }
-    scrollBottom(true, 'auto');
-}
+			if (targetContainer) {
+				const loader = document.getElementById(loaderId);
+				if (loader) loader.outerHTML = imageHTML;
+				else targetContainer.insertAdjacentHTML('beforeend', imageHTML);
+				resolveIdbImages(targetContainer, true);
+				if (isGenerating) {
+					const lastMsgIndex = chatHistory.findLastIndex(m => m.role === 'model');
+					if (lastMsgIndex !== -1) {
+						chatHistory[lastMsgIndex].parts[0].text += `\n${imageHTML}`;
+						saveCurrentSession();
+					}
+				}
+			} else {
+				const container = appendMessageToUI('model', imageHTML, true, true);
+				if (isGenerating) {
+					chatHistory.push({ role: "model", parts: [{ text: imageHTML }] });
+					saveCurrentSession();
+				}
+			}
+			scrollBottom(true, 'auto');
+		}
 
 		async function uploadImageToSupabase(base64Data, fileName, mimeType) {
 			const byteCharacters = atob(base64Data);
