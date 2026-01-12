@@ -843,6 +843,19 @@
 					if (isGenerating) {
 						chatHistory.push({ role: "model", parts: [{ text: textToDisplay }] });
 						saveCurrentSession();
+						const historyLen = chatHistory.length;
+
+						if (historyLen >= 4 && historyLen % 2 === 0) {
+							console.log("Triggering Auto Title Generation... Len:", historyLen);
+
+							generateAutoTitle(chatHistory).then(newTitle => {
+								console.log("New Title Candidate:", newTitle);
+								if (newTitle) {
+									updateSessionTitle(currentSessionId, newTitle);
+								}
+							});
+						}
+
 						if (imagePrompt) {
 							await generateImage(imagePrompt, aiContainer);
 						}
@@ -855,6 +868,77 @@
 				setGeneratingState(false);
 				userInput.disabled = false;
 				abortController = null;
+			}
+		}
+
+		async function generateAutoTitle(rawHistory) {
+			const { data: { session } } = await _supabase.auth.getSession();
+			if (!session) return null;
+			const textOnlyHistory = rawHistory.map(msg => ({
+				role: msg.role,
+				parts: [{ text: msg.parts.map(p => p.text || "").join(" ") }]
+			}));
+
+			const summaryPrompt = "BACA PERCAKAPAN DI ATAS. Buatlah 1 Judul Pendek (3-5 Kata) dalam Bahasa Indonesia. Langsung tulis judulnya. Jangan pakai tanda kutip.";
+			const model = "gemini-2.5-flash";
+
+			try {
+				console.log(`AutoTitle: Trying model ${model}...`);
+				const response = await fetch(PROXY_URL + `?model=${model}&action=generateContent`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'apikey': SUPABASE_KEY,
+						'Authorization': `Bearer ${session.access_token}`
+					},
+					body: JSON.stringify({
+						system_instruction: { parts: [{ text: "Kamu adalah pembuat judul otomatis. Output: Judul singkat saja." }] },
+						contents: [
+							...textOnlyHistory,
+							{ role: "user", parts: [{ text: summaryPrompt }] }
+						],
+						generationConfig: { maxOutputTokens: 1024, temperature: 1.0 }
+					})
+				});
+
+				const data = await response.json();
+
+				if (!response.ok) {
+					console.error(`AutoTitle: Model ${model} failed:`, data);
+					return null;
+				}
+
+				const title = data.candidates?.[0]?.content?.parts?.[0]?.text;
+				if (!title) {
+					console.warn(`AutoTitle: Model ${model} returned no title`);
+					return null;
+				}
+
+				console.log(`AutoTitle: Success with ${model}! Result:`, title);
+
+				let cleanTitle = title.trim()
+					.replace(/^["']|["']$/g, '')
+					.replace(/\*\*/g, '')
+					.replace(/^Judul:\s*/i, '')
+					.replace(/\n/g, ' ')
+					.trim();
+
+				if (cleanTitle.length > 50) cleanTitle = cleanTitle.substring(0, 50);
+				return cleanTitle;
+
+			} catch (e) {
+				console.error(`AutoTitle: Exception with ${model}:`, e);
+				return null;
+			}
+		}
+
+		function updateSessionTitle(id, newTitle) {
+			const sessions = getAllSessions();
+			const sessionIndex = sessions.findIndex(s => s.id === id);
+			if (sessionIndex !== -1) {
+				sessions[sessionIndex].title = newTitle;
+				saveAllSessions(sessions);
+				loadSidebarHistory();
 			}
 		}
 
@@ -1057,8 +1141,7 @@
 			chatHistory = [];
 			messagesArea.innerHTML = '';
 			localStorage.setItem(ACTIVE_SESSION_KEY, currentSessionId);
-			// Removed auto-save. Will save only on first message.
-			loadSidebarHistory(); // Reload to reflect changes (e.g. if previous one was deleted)
+			loadSidebarHistory();
 		}
 
 		function loadSession(id) {
@@ -1131,14 +1214,14 @@
 				const newSessions = sessions.filter(s => s.id !== id);
 				saveAllSessions(newSessions);
 
-				loadSidebarHistory(); // Refresh list immediately
+				loadSidebarHistory();
 
 				if (newSessions.length === 0) {
 					toggleSidebar(false);
 				}
 
 				if (id === currentSessionId) {
-					startNewSession(); // Start fresh (empty UI, not saved yet)
+					startNewSession();
 				}
 			}
 		}
@@ -1217,18 +1300,15 @@
 					groupSessions.forEach(session => {
 						const isActive = session.id === currentSessionId;
 						const item = document.createElement('div');
-						item.className = "w-full h-[34px] relative overflow-hidden select-none"; // Adjusted height
+						item.className = "w-full h-[34px] relative overflow-hidden select-none";
 
 						const itemId = session.id;
-						// Structure: Red Background (Delete) + White Foreground (Title)
 						item.innerHTML = `
-                            <!-- Delete Button (Background) -->
                             <div class="absolute inset-y-0 right-0 w-[60px] bg-red-500 flex items-center justify-center text-white cursor-pointer z-0" 
                                 onclick="deleteSession('${itemId}', event)">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </div>
 
-                            <!-- Content (Foreground) -->
                             <div class="w-full h-full bg-white absolute top-0 left-0 z-10 flex items-center px-3 transition-transform duration-200 ease-out"
                                 id="swipe-content-${itemId}"
                                 onclick="handleSwipeClick('${itemId}')"
@@ -1252,13 +1332,11 @@
 			lucide.createIcons();
 		}
 
-		// --- MOUSE & TOUCH LOGIC UTILS ---
 		function unify(e) { return e.changedTouches ? e.changedTouches[0] : e; }
 
 		let isDragging = false;
 		let dragThresholdMet = false;
 
-		// --- TOUCH HANDLERS ---
 		function swipeStart(e, id) {
 			swipeStartX = e.touches[0].clientX;
 			swipeCurrentEl = document.getElementById(`swipe-content-${id}`);
@@ -1275,15 +1353,13 @@
 			handleSwipeEndCommon();
 		}
 
-		// --- MOUSE HANDLERS ---
 		function mouseSwipeStart(e, id) {
-			e.preventDefault(); // Prevent text selection
+			e.preventDefault();
 			isDragging = true;
 			dragThresholdMet = false;
 			swipeStartX = e.clientX;
 			swipeCurrentEl = document.getElementById(`swipe-content-${id}`);
 
-			// Attach global listners for drag
 			document.addEventListener('mousemove', mouseSwipeMove);
 			document.addEventListener('mouseup', mouseSwipeEnd);
 
@@ -1302,15 +1378,12 @@
 			handleSwipeEndCommon();
 		}
 
-		// --- COMMON LOGIC ---
 		function handleSwipeStartCommon(id) {
-			// Jika item ini sedang terbuka, JANGAN izinkan drag lagi (supaya tidak bisa geser ke kanan)
 			if (swipeOpenId === id) {
 				swipeCurrentEl = null;
 				return;
 			}
 
-			// Close others (Jika item lain terbuka, tutup mereka)
 			if (swipeOpenId && swipeOpenId !== id) {
 				const openEl = document.getElementById(`swipe-content-${swipeOpenId}`);
 				if (openEl) openEl.style.transform = 'translateX(0)';
@@ -1324,12 +1397,10 @@
 
 		function handleSwipeMoveCommon(currentX) {
 			const diff = currentX - swipeStartX;
-			// Detect if user is actually dragging intendedly
 			if (Math.abs(diff) > 5) dragThresholdMet = true;
 
-			// Batasi geser: hanya ke kiri (negatif), max -60px (lebar tombol)
 			let newX = diff;
-			if (newX < -60) newX = -60; // Hard stop at -60px
+			if (newX < -60) newX = -60;
 			if (newX > 0) newX = 0;
 
 			swipeCurrentEl.style.transform = `translateX(${newX}px)`;
@@ -1342,7 +1413,6 @@
 			const currentTransform = swipeCurrentEl.style.transform;
 			const translateX = parseInt(currentTransform.replace('translateX(', '').replace('px)', '') || '0');
 
-			// Threshold -30px (setengah dari 60px)
 			if (translateX < -30) {
 				swipeCurrentEl.style.transform = 'translateX(-60px)';
 				swipeOpenId = swipeCurrentEl.id.replace('swipe-content-', '');
@@ -1356,13 +1426,10 @@
 		}
 
 		function handleSwipeClick(id) {
-			// If drag happened, don't trigger click (open chat)
 			if (dragThresholdMet) {
-				dragThresholdMet = false; // Reset
+				dragThresholdMet = false;
 				return;
 			}
-
-			// Logic to close if already open
 			const el = document.getElementById(`swipe-content-${id}`);
 			if (swipeOpenId === id) {
 				el.style.transform = 'translateX(0)';
@@ -1395,7 +1462,6 @@
 		window.mouseSwipeStart = mouseSwipeStart;
 
 		document.addEventListener('click', function (event) {
-			// Tutup swipe jika klik di luar area
 			if (swipeOpenId && !event.target.closest(`#swipe-content-${swipeOpenId}`) && !event.target.closest('.bg-red-500')) {
 				const openEl = document.getElementById(`swipe-content-${swipeOpenId}`);
 				if (openEl) openEl.style.transform = 'translateX(0)';
