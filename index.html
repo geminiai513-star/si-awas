@@ -1148,6 +1148,10 @@
 			localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
 		}
 
+		let swipeStartX = 0;
+		let swipeCurrentEl = null;
+		let swipeOpenId = null;
+
 		function loadSidebarHistory() {
 			const sessions = getAllSessions();
 			sessions.sort((a, b) => b.timestamp - a.timestamp);
@@ -1209,21 +1213,30 @@
 					groupSessions.forEach(session => {
 						const isActive = session.id === currentSessionId;
 						const item = document.createElement('div');
-						item.className = "w-full relative group";
+						item.className = "w-full h-[34px] relative overflow-hidden select-none"; // Adjusted height
 
 						const itemId = session.id;
+						// Structure: Red Background (Delete) + White Foreground (Title)
 						item.innerHTML = `
-                                <div class="flex items-center w-full relative px-3 transition-colors cursor-pointer" id="item-con-${itemId}" onclick="handleContainerClick('${itemId}', event)">
-                                    <button onclick="handleNameClick('${itemId}', event)" class="flex-1 text-left py-1.5 text-[15px] font-medium truncate transition-colors ${isActive ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-900'}">
-                                        ${session.title}
-                                    </button>
-                                    
-                                    <!-- Delete Button -->
-                                    <button onclick="deleteSession('${itemId}', event)" class="hidden p-1 text-slate-300 hover:text-red-500 transition-all z-20" id="delete-${itemId}" title="Hapus">
-                                        <i data-lucide="trash-2" class="w-3 h-3"></i>
-                                    </button>
-                                </div>
-                            `;
+                            <!-- Delete Button (Background) -->
+                            <div class="absolute inset-y-0 right-0 w-[60px] bg-red-500 flex items-center justify-center text-white cursor-pointer z-0" 
+                                onclick="deleteSession('${itemId}', event)">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </div>
+
+                            <!-- Content (Foreground) -->
+                            <div class="w-full h-full bg-white absolute top-0 left-0 z-10 flex items-center px-3 transition-transform duration-200 ease-out"
+                                id="swipe-content-${itemId}"
+                                onclick="handleSwipeClick('${itemId}')"
+                                ontouchstart="swipeStart(event, '${itemId}')"
+                                ontouchmove="swipeMove(event)"
+                                ontouchend="swipeEnd(event)"
+                                onmousedown="mouseSwipeStart(event, '${itemId}')">
+                                <span class="truncate text-[15px] font-medium w-full ${isActive ? 'text-indigo-600 font-bold' : 'text-slate-500'}">
+                                    ${session.title}
+                                </span>
+                            </div>
+                        `;
 						listDiv.appendChild(item);
 					});
 
@@ -1235,56 +1248,113 @@
 			lucide.createIcons();
 		}
 
-		function handleContainerClick(id, event) {
-			showDelete(id);
+		// --- MOUSE & TOUCH LOGIC UTILS ---
+		function unify(e) { return e.changedTouches ? e.changedTouches[0] : e; }
+
+		let isDragging = false;
+		let dragThresholdMet = false;
+
+		// --- TOUCH HANDLERS ---
+		function swipeStart(e, id) {
+			swipeStartX = e.touches[0].clientX;
+			swipeCurrentEl = document.getElementById(`swipe-content-${id}`);
+			handleSwipeStartCommon(id);
 		}
 
-		function handleNameClick(id, event) {
-			event.stopPropagation();
+		function swipeMove(e) {
+			if (!swipeCurrentEl) return;
+			const currentX = e.touches[0].clientX;
+			handleSwipeMoveCommon(currentX);
+		}
 
-			const delBtn = document.getElementById(`delete-${id}`);
-			const isVisible = delBtn && !delBtn.classList.contains('hidden');
+		function swipeEnd(e) {
+			handleSwipeEndCommon();
+		}
 
-			if (!isVisible) {
-				showDelete(id);
+		// --- MOUSE HANDLERS ---
+		function mouseSwipeStart(e, id) {
+			e.preventDefault(); // Prevent text selection
+			isDragging = true;
+			dragThresholdMet = false;
+			swipeStartX = e.clientX;
+			swipeCurrentEl = document.getElementById(`swipe-content-${id}`);
+
+			// Attach global listners for drag
+			document.addEventListener('mousemove', mouseSwipeMove);
+			document.addEventListener('mouseup', mouseSwipeEnd);
+
+			handleSwipeStartCommon(id);
+		}
+
+		function mouseSwipeMove(e) {
+			if (!isDragging || !swipeCurrentEl) return;
+			handleSwipeMoveCommon(e.clientX);
+		}
+
+		function mouseSwipeEnd(e) {
+			isDragging = false;
+			document.removeEventListener('mousemove', mouseSwipeMove);
+			document.removeEventListener('mouseup', mouseSwipeEnd);
+			handleSwipeEndCommon();
+		}
+
+		// --- COMMON LOGIC ---
+		function handleSwipeStartCommon(id) {
+			// Close others
+			if (swipeOpenId && swipeOpenId !== id) {
+				const openEl = document.getElementById(`swipe-content-${swipeOpenId}`);
+				if (openEl) openEl.style.transform = 'translateX(0)';
+				swipeOpenId = null;
+			}
+			if (swipeCurrentEl) {
+				swipeCurrentEl.style.transition = 'none';
+			}
+		}
+
+		function handleSwipeMoveCommon(currentX) {
+			const diff = currentX - swipeStartX;
+			// Detect if user is actually dragging intendedly
+			if (Math.abs(diff) > 5) dragThresholdMet = true;
+
+			if (diff < 0 && diff > -80) {
+				swipeCurrentEl.style.transform = `translateX(${diff}px)`;
+			}
+		}
+
+		function handleSwipeEndCommon() {
+			if (!swipeCurrentEl) return;
+			swipeCurrentEl.style.transition = 'transform 0.2s ease-out';
+
+			const currentTransform = swipeCurrentEl.style.transform;
+			const translateX = parseInt(currentTransform.replace('translateX(', '').replace('px)', '') || '0');
+
+			if (translateX < -35) {
+				swipeCurrentEl.style.transform = 'translateX(-70px)';
+				swipeOpenId = swipeCurrentEl.id.replace('swipe-content-', '');
+			} else {
+				swipeCurrentEl.style.transform = 'translateX(0)';
+				if (swipeOpenId === swipeCurrentEl.id.replace('swipe-content-', '')) {
+					swipeOpenId = null;
+				}
+			}
+			swipeCurrentEl = null;
+		}
+
+		function handleSwipeClick(id) {
+			// If drag happened, don't trigger click (open chat)
+			if (dragThresholdMet) {
+				dragThresholdMet = false; // Reset
+				return;
+			}
+
+			// Logic to close if already open
+			const el = document.getElementById(`swipe-content-${id}`);
+			if (swipeOpenId === id) {
+				el.style.transform = 'translateX(0)';
+				swipeOpenId = null;
 			} else {
 				loadSession(id);
 			}
-		}
-
-		function showDelete(id) {
-			hideAllDeleteButtons();
-			const delBtn = document.getElementById(`delete-${id}`);
-			if (delBtn) {
-				delBtn.classList.remove('hidden');
-			}
-		}
-
-		function hideAllDeleteButtons() {
-			document.querySelectorAll('[id^="delete-"]').forEach(el => el.classList.add('hidden'));
-		}
-
-		const originalDeleteSession = deleteSession;
-		deleteSession = function (id, event) {
-			if (event) event.stopPropagation();
-
-			if (confirm("Hapus percakapan?")) {
-				let sessions = getAllSessions();
-				sessions = sessions.filter(s => s.id !== id);
-				saveAllSessions(sessions);
-
-				if (id === currentSessionId) {
-					startNewSession();
-				} else {
-					loadSidebarHistory();
-				}
-			}
-		};
-
-		const originalLoadSession = loadSession;
-		loadSession = function (id) {
-			hideAllDeleteButtons();
-			originalLoadSession(id);
 		}
 
 		const logoutBtn = document.getElementById('sidebarLogoutBtn');
@@ -1303,10 +1373,19 @@
 
 		window.loadSession = loadSession;
 		window.deleteSession = deleteSession;
-		window.showDelete = showDelete;
+		window.swipeStart = swipeStart;
+		window.swipeMove = swipeMove;
+		window.swipeEnd = swipeEnd;
+		window.handleSwipeClick = handleSwipeClick;
+		window.mouseSwipeStart = mouseSwipeStart;
 
 		document.addEventListener('click', function (event) {
-			hideAllDeleteButtons();
+			// Tutup swipe jika klik di luar area
+			if (swipeOpenId && !event.target.closest(`#swipe-content-${swipeOpenId}`) && !event.target.closest('.bg-red-500')) {
+				const openEl = document.getElementById(`swipe-content-${swipeOpenId}`);
+				if (openEl) openEl.style.transform = 'translateX(0)';
+				swipeOpenId = null;
+			}
 		});
 
 		init();
