@@ -1300,12 +1300,19 @@
 
 		// --- COMMON LOGIC ---
 		function handleSwipeStartCommon(id) {
-			// Close others
+			// Jika item ini sedang terbuka, JANGAN izinkan drag lagi (supaya tidak bisa geser ke kanan)
+			if (swipeOpenId === id) {
+				swipeCurrentEl = null;
+				return;
+			}
+
+			// Close others (Jika item lain terbuka, tutup mereka)
 			if (swipeOpenId && swipeOpenId !== id) {
 				const openEl = document.getElementById(`swipe-content-${swipeOpenId}`);
 				if (openEl) openEl.style.transform = 'translateX(0)';
 				swipeOpenId = null;
 			}
+
 			if (swipeCurrentEl) {
 				swipeCurrentEl.style.transition = 'none';
 			}
