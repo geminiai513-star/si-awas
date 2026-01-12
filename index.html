@@ -801,12 +801,12 @@
 
     try {
         const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${session.access_token}`
-            },
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${session?.access_token}`
+    },
             signal: abortController.signal,
             body: JSON.stringify({
                 system_instruction: {
