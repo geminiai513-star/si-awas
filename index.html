@@ -140,7 +140,7 @@
 			color: #0f172a !important;
 			padding: 2px 5px !important;
 			border-radius: 4px !important;
-			font-weight: 500 !important;
+			font-weight: 600 !important;
 			font-size: 0.85em !important;
 			font-family: 'JetBrains Mono', monospace !important;
 			vertical-align: 1px;
@@ -149,7 +149,7 @@
 		.prose pre code {
 			background-color: transparent !important;
 			padding: 0 !important;
-			font-weight: 400 !important;
+			font-weight: 500 !important;
 		}
 
 		.prose ul,
@@ -170,6 +170,7 @@
 		.prose td {
 			border: 1px solid #e5e7eb;
 			padding: 0.5rem 0.75rem;
+			font-size: 14px !important;
 		}
 
 		.prose p {
@@ -1236,7 +1237,7 @@
                                 ontouchmove="swipeMove(event)"
                                 ontouchend="swipeEnd(event)"
                                 onmousedown="mouseSwipeStart(event, '${itemId}')">
-                                    <span class="truncate text-sm font-medium w-full ${isActive ? 'text-black font-bold' : 'text-slate-500'}">
+                                    <span class="truncate text-sm font-medium w-full ${isActive ? 'text-black font-extrabold' : 'text-slate-500'}">
                                         ${session.title}
                                     </span>
                             </div>
