@@ -51,6 +51,22 @@
 			user-select: text;
 		}
 
+		/* Prevent dragging ghosts for images and icons */
+		img,
+		svg {
+			-webkit-user-drag: none;
+			-khtml-user-drag: none;
+			-moz-user-drag: none;
+			-o-user-drag: none;
+			user-drag: none;
+			pointer-events: none;
+		}
+
+		/* Allow interaction with content images */
+		.prose img {
+			pointer-events: auto;
+		}
+
 		#appInterface {
 			width: 100%;
 			height: 100%;
@@ -252,8 +268,8 @@
 		}
 
 		.typing-dot {
-			width: 5px;
-			height: 5px;
+			width: 4px;
+			height: 4px;
 			background-color: #94a3b8;
 			border-radius: 50%;
 			animation: appearance 1.4s infinite ease-in-out;
@@ -269,6 +285,11 @@
 
 		.typing-dot:nth-child(3) {
 			animation-delay: 0.4s;
+		}
+
+		/* Fix spacing for media container items to be consistent */
+		.media-container>* {
+			margin-top: 0 !important;
 		}
 	</style>
 </head>
@@ -401,6 +422,7 @@
 		const SUPABASE_URL = "https://wluwdfbvkyafscotpils.supabase.co";
 		const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsdXdkZmJ2a3lhZnNjb3RwaWxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMjgwNjIsImV4cCI6MjA4MzcwNDA2Mn0.RpCI9gd2v8_K6aEp2rKLTv3OWf952kTWkdlxo8NfozU";
 		const PROXY_URL = `${SUPABASE_URL}/functions/v1/gemini-proxy`;
+		const YOUTUBE_PROXY_URL = `${SUPABASE_URL}/functions/v1/youtube-proxy`;
 		const MODEL_NAME = "gemini-3-flash-preview";
 		const IMAGE_MODEL_NAME = "gemini-2.5-flash-image";
 		const STORAGE_KEY = "sinta_chat_sessions";
@@ -409,8 +431,9 @@
 		const STREAM_SPEED = 8;
 		const STREAM_CHUNK_SIZE = 5;
 
-		const MAIN_SYSTEM_PROMPT = "Anda adalah ALISA, Asisten Layanan Integritas dan Sistem Akuntabilitas. Anda adalah AI yang cerdas dan kreatif.";
-		const IMAGE_GEN_PROMPT = "Jika user minta gambar, respon dengan tag: [image]english description[/image].";
+		const MAIN_SYSTEM_PROMPT = "Anda adalah ALISA, Asisten Layanan Integritas dan Sistem Akuntabilitas Inspektorat Provinsi Lampung. Tugas utama Anda memberikan penjelasan informatif dan profesional. PENTING: Fitur Gambar dan Video HANYA digunakan sebagai ALAT BANTU untuk memperjelas penjelasan yang rumit atau memvisualisasikan informasi agar lebih mudah dipahami. JANGAN membuat gambar/video hanya karena diminta user jika tidak relevan dengan konteks penjelasan materi.";
+		const IMAGE_GEN_PROMPT = "Gunakan tag [image]english description[/image] HANYA jika visualisasi gambar diperlukan untuk membantu user memahami penjelasan Anda.";
+		const VIDEO_GEN_PROMPT = "Gunakan tag [youtube]query pencarian spesifik[/youtube] HANYA jika video tutorial/referensi diperlukan untuk mendemonstrasikan langkah-langkah atau memperdalam pemahaman user.";
 
 		const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -537,9 +560,6 @@
 					chatContainer.scrollTop = top - 1;
 				}
 			};
-
-			// Only use touchstart to prevent the stickiness BEFORE the scroll gesture begins.
-			// Removing 'scroll' listener avoids the jittering conflict.
 			chatContainer.addEventListener('touchstart', preventStick, { passive: true });
 
 		}
@@ -649,10 +669,10 @@
                         <span class="text-xs font-black ${nameColorClass} uppercase tracking-widest">${nameLabel}</span>
                         <span class="text-xs font-bold text-slate-300 uppercase">${timeStr}</span>
                     </div>
-                    <div class="w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium">
-                        ${isError ? `<div class="text-red-600 text-xs font-mono whitespace-pre-wrap">${text}</div>` : (isRawHtml ? text : marked.parse(text))}
-                    </div>
-                    ${!isUser && !isError ? `
+					<div class="message-content w-full text-slate-600 text-[15px] leading-relaxed font-medium">
+						${isError ? `<div class="text-red-600 text-xs font-mono whitespace-pre-wrap">${text}</div>` : (isRawHtml ? text : parseMessageText(text))}
+					</div>
+					${!isUser && !isError ? `
                         <button class="copy-btn absolute bottom-2 right-2 p-1 text-slate-400 hover:text-slate-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity" title="Salin pesan">
                             <i data-lucide="copy" class="w-3 h-3"></i>
                         </button>
@@ -667,7 +687,7 @@
 				const copyBtn = div.querySelector('.copy-btn');
 				if (copyBtn) {
 					copyBtn.addEventListener('click', () => {
-						const contentToCopy = div.querySelector('.prose-container').innerText;
+						const contentToCopy = div.querySelector('.message-content').innerText;
 						navigator.clipboard.writeText(contentToCopy).then(() => {
 							copyBtn.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-green-500"></i>';
 							lucide.createIcons();
@@ -677,7 +697,6 @@
 							}, 2000);
 						}).catch(err => {
 							console.error('Failed to copy: ', err);
-							// Fallback for older browsers
 							const textArea = document.createElement("textarea");
 							textArea.value = contentToCopy;
 							document.body.appendChild(textArea);
@@ -706,7 +725,7 @@
 
 			resolveIdbImages(div, animate);
 
-			return div.querySelector('.prose-container');
+			return div.querySelector('.message-content');
 		}
 
 		function resolveIdbImages(container, animate = false) {
@@ -736,14 +755,47 @@
 			while (cursor < text.length) {
 				if (!isGenerating) break;
 				cursor += STREAM_CHUNK_SIZE;
-				element.innerHTML = marked.parse(text.substring(0, cursor));
+				element.innerHTML = parseMessageText(text.substring(0, cursor));
 				scrollBottom(true, 'auto');
 				await new Promise(resolve => setTimeout(resolve, STREAM_SPEED));
 			}
-			element.innerHTML = marked.parse(text);
+			if (!isGenerating) return;
+			element.innerHTML = parseMessageText(text);
 			if (window.hljs) element.querySelectorAll('pre code').forEach(hljs.highlightElement);
 			lucide.createIcons();
 			scrollBottom(true, 'auto');
+		}
+
+		function getYoutubeEmbedHTML(videoId) {
+			return `
+				<div class="relative w-full mt-3 rounded-xl overflow-hidden border border-slate-100 shadow-sm aspect-video bg-black">
+					<iframe
+						width="100%"
+						height="100%"
+						src="https://www.youtube.com/embed/${videoId}"
+						title="YouTube video player"
+						frameborder="0"
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+						referrerpolicy="strict-origin-when-cross-origin"
+						allowfullscreen>
+					</iframe>
+				</div>`;
+		}
+
+		function parseMessageText(text) {
+			text = text.replace(/<div class="relative.*?src=".*?\/embed\/([a-zA-Z0-9_-]+)".*?<\/div>/g, '\n\n[VIDEO_EMBED:$1]\n\n');
+			const videos = [];
+			text = text.replace(/\[VIDEO_EMBED:([a-zA-Z0-9_-]+)\]/g, (match, id) => {
+				videos.push(id);
+				return `!!!VIDEO_PLACEHOLDER_${videos.length - 1}!!!`;
+			});
+			let html = marked.parse(text);
+			videos.forEach((id, index) => {
+				html = html.replace(new RegExp(`!!!VIDEO_PLACEHOLDER_${index}!!!`, 'g'), getYoutubeEmbedHTML(id));
+				html = html.replace(new RegExp(`<p>!!!VIDEO_PLACEHOLDER_${index}!!!</p>`, 'g'), getYoutubeEmbedHTML(id));
+			});
+
+			return html;
 		}
 
 		function showTyping() {
@@ -838,7 +890,7 @@
 			appendMessageToUI('user', rawInput);
 			showTyping();
 			try {
-				const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
+				const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=streamGenerateContent`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
@@ -848,58 +900,29 @@
 					signal: abortController.signal,
 					body: JSON.stringify({
 						system_instruction: {
-							parts: [{ text: `${MAIN_SYSTEM_PROMPT} ${IMAGE_GEN_PROMPT}` }]
+							parts: [{ text: `${MAIN_SYSTEM_PROMPT} ${IMAGE_GEN_PROMPT} ${VIDEO_GEN_PROMPT}` }]
 						},
 						contents: chatHistory,
 						tools: [{ google_search: {} }],
 						generationConfig: { temperature: 1, maxOutputTokens: 65536 }
 					})
 				});
-				const data = await response.json();
-				if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
-				const parts = data.candidates?.[0]?.content?.parts || [];
-				let finalResponse = "";
-				parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
+
+				if (!response.ok) {
+					const data = await response.json();
+					throw new Error(data.error?.message || `HTTP ${response.status}`);
+				}
 
 				hideTyping();
+				const aiContainerTop = appendMessageToUI('model', "");
 
-				if (finalResponse) {
-					if (finalResponse) {
-						// Regex Global untuk menangkap semua tag [image]...[/image]
-						const imgRegex = /\[image\]([\s\S]*?)\[\/image\]/gi;
-						let match;
-						let imagePrompt = null;
-						let cleanText = finalResponse;
-
-						// Ambil prompt dari match pertama yang valid
-						while ((match = imgRegex.exec(finalResponse)) !== null) {
-							if (!imagePrompt) {
-								imagePrompt = match[1].trim(); // Ambil prompt pertama
-							}
-							// Hapus tag dari text untuk ditampilkan
-							cleanText = cleanText.replace(match[0], "").trim();
-						}
-
-						let textToDisplay = cleanText;
-						if (!textToDisplay && imagePrompt) {
-							textToDisplay = "Sedang membuat gambar...";
-						}
-
-						const aiContainer = appendMessageToUI('model', "");
-						await streamText(aiContainer, textToDisplay);
-
-						if (isGenerating) {
-							// Only save text if it's NOT the temporary loading message
-							const initialText = textToDisplay === "Sedang membuat gambar..." ? "" : textToDisplay;
-							chatHistory.push({ role: "model", parts: [{ text: initialText }] });
-							saveCurrentSession();
-
-							if (imagePrompt) {
-								await generateImage(imagePrompt, aiContainer);
-							}
-						}
-					}
+				if (isGenerating) {
+					chatHistory.push({ role: "model", parts: [{ text: "" }] });
+					saveCurrentSession();
 				}
+
+				await handleStreamResponse(response, aiContainerTop);
+
 			} catch (error) {
 				hideTyping();
 				if (error.name !== 'AbortError') appendMessageToUI('error', `ERROR:\n${error.message}`);
@@ -910,6 +933,158 @@
 			}
 		}
 
+		async function handleStreamResponse(response, mainContainer) {
+			const reader = response.body.getReader();
+			const decoder = new TextDecoder("utf-8");
+			let buffer = "";
+			let fullTextAccumulator = "";
+
+			let currentBlockText = "";
+			let currentTextDiv = document.createElement('div');
+			currentTextDiv.className = "prose prose-container max-w-none";
+			mainContainer.appendChild(currentTextDiv);
+
+			let processedMediaTags = new Set();
+
+			try {
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+					if (!isGenerating) {
+						await reader.cancel();
+						break;
+					}
+
+					buffer += decoder.decode(value, { stream: true });
+
+					let cursor = 0;
+					let balance = 0;
+					let start = -1;
+
+					for (let i = 0; i < buffer.length; i++) {
+						const char = buffer[i];
+						if (char === '{') {
+							if (balance === 0) start = i;
+							balance++;
+						} else if (char === '}') {
+							balance--;
+							if (balance === 0 && start !== -1) {
+								const jsonStr = buffer.substring(start, i + 1);
+								try {
+									const json = JSON.parse(jsonStr);
+									const newText = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
+									if (newText) {
+										fullTextAccumulator += newText;
+										currentBlockText += newText;
+
+										const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
+										const parts = currentBlockText.split(mediaSplitRegex);
+
+										if (parts.length > 1) {
+											currentTextDiv.innerHTML = parseMessageText(parts[0]);
+											if (window.hljs) currentTextDiv.querySelectorAll('pre code').forEach(hljs.highlightElement);
+
+											const tag = parts[1];
+											if (!processedMediaTags.has(tag)) {
+												processedMediaTags.add(tag);
+
+												const mediaDiv = document.createElement('div');
+												mediaDiv.className = "w-full my-2";
+												mainContainer.appendChild(mediaDiv);
+
+												const imgMatch = tag.match(/\[image\]([\s\S]*?)\[\/image\]/i);
+												const vidMatch = tag.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
+
+												if (imgMatch) await generateImage(imgMatch[1].trim(), mediaDiv);
+												if (vidMatch) await generateYoutubeVideo(vidMatch[1].trim(), mediaDiv);
+											}
+
+											currentBlockText = parts.slice(2).join("");
+
+											currentTextDiv = document.createElement('div');
+											currentTextDiv.className = "prose prose-container max-w-none";
+											mainContainer.appendChild(currentTextDiv);
+
+											currentTextDiv.innerHTML = parseMessageText(currentBlockText);
+											if (window.hljs) currentTextDiv.querySelectorAll('pre code').forEach(hljs.highlightElement);
+										} else {
+											let textToRender = currentBlockText;
+											const possibleTag = currentBlockText.match(/\[(?:i|im|ima|imag|image|y|yo|you|yout|youtu|youtub|youtube)?(?:\][\s\S]*)?$/i);
+											if (possibleTag && possibleTag[0].length < 200) {
+												const lastSegment = possibleTag[0];
+												if (lastSegment.startsWith('[') && !/\[\/(image|youtube)\]/i.test(lastSegment)) {
+													textToRender = currentBlockText.substring(0, currentBlockText.length - lastSegment.length);
+												}
+											}
+
+											currentTextDiv.innerHTML = parseMessageText(textToRender);
+											if (window.hljs) currentTextDiv.querySelectorAll('pre code').forEach(hljs.highlightElement);
+										}
+
+										lucide.createIcons();
+										scrollBottom(true, 'auto');
+
+										const lastMsg = chatHistory[chatHistory.length - 1];
+										if (lastMsg && lastMsg.role === 'model') {
+											lastMsg.parts[0].text = fullTextAccumulator;
+										}
+									}
+								} catch (e) {
+								}
+								buffer = buffer.substring(i + 1);
+								i = -1;
+								start = -1;
+							}
+						}
+					}
+				}
+				saveCurrentSession();
+			} catch (e) {
+				if (e.name !== 'AbortError') console.error("Stream Error", e);
+			}
+		}
+
+		function updateStreamingUI(container, text, processedTags) {
+			const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
+			let foundNewMedia = [];
+			let match;
+			while ((match = mediaSplitRegex.exec(text)) !== null) {
+				const tag = match[0];
+				if (!processedTags.has(tag)) {
+					processedTags.add(tag);
+					const imgMatch = tag.match(/\[image\]([\s\S]*?)\[\/image\]/i);
+					const vidMatch = tag.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
+
+					if (imgMatch) foundNewMedia.push({ type: 'image', payload: imgMatch[1].trim() });
+					if (vidMatch) foundNewMedia.push({ type: 'video', payload: vidMatch[1].trim() });
+				}
+			}
+
+			// Render text (replacing tags with placeholders or hiding them if we want)
+			// For now, let's just parse the text. 
+			// To keep it clean, we can try to "hide" the raw tags from the text view if they are fully formed.
+
+			let displayText = text;
+			// Optional: Hide tags that are already processed or in progress? 
+			// For simplicity in this iteration, let's just display the parsed text.
+			// parseMessageText handles the [VIDEO_EMBED] but not [image] stripping by default unless we adjust it.
+			// Currently parseMessageText logic:
+			// text.replace(/<div... VIDEO ... -> [VIDEO_EMBED]
+			// marked.parse
+			// It does NOT strip [image]...[/image]. 
+			// We should probably strip it from visual if we want it "clean".
+
+			// Simple Strip for Clean UI
+			displayText = displayText.replace(mediaSplitRegex, '');
+
+			container.innerHTML = parseMessageText(displayText);
+			if (window.hljs) container.querySelectorAll('pre code').forEach(hljs.highlightElement);
+			lucide.createIcons();
+			scrollBottom(true, 'auto');
+
+			return foundNewMedia;
+		}
+
 		async function generateImage(prompt, targetContainer = null) {
 			const { data: { session } } = await _supabase.auth.getSession();
 			if (!session) return;
@@ -918,7 +1093,8 @@
 			let loaderId = `loader-${Date.now()}`;
 			if (targetContainer) {
 				const loaderHTML = `
-            <div id="${loaderId}" class="mt-2 flex items-center gap-1 text-slate-400 text-xs font-medium animate-in fade-in duration-300">
+            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 text-slate-400 text-xs font-medium animate-in fade-in duration-300">
+                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
                 <span>Membuat Gambar</span>
                 <div class="flex gap-0.5 items-center pt-1">
                     <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce"></span>
@@ -1006,6 +1182,91 @@
 			scrollBottom(true, 'auto');
 		}
 
+		async function generateYoutubeVideo(query, targetContainer = null) {
+			const { data: { session } } = await _supabase.auth.getSession();
+			if (!session) return;
+
+			const userToken = session.access_token;
+			let loaderId = `vid-loader-${Date.now()}`;
+
+			if (targetContainer) {
+				const loaderHTML = `
+            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 text-slate-400 text-xs font-medium animate-in fade-in duration-300">
+                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+                <span>Mencari Youtube Video</span>
+                <div class="flex gap-0.5 items-center pt-1">
+                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce"></span>
+                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                </div>
+            </div>
+        `;
+				targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
+				lucide.createIcons();
+				scrollBottom(true, 'auto');
+			}
+
+			try {
+				const response = await fetch(YOUTUBE_PROXY_URL, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'apikey': SUPABASE_KEY,
+						'Authorization': `Bearer ${userToken}`
+					},
+					body: JSON.stringify({ query: query })
+				});
+
+				const data = await response.json();
+				if (!response.ok) {
+					const errorMsg = (typeof data.error === 'object' && data.error !== null)
+						? (data.error.message || JSON.stringify(data.error))
+						: (data.error || 'Failed to fetch video');
+					throw new Error(errorMsg);
+				}
+
+				const items = data.items || [];
+				let videoHTML = '';
+				var videoToken = '';
+
+				if (items.length > 0) {
+					const videoId = items[0].id.videoId;
+					videoHTML = getYoutubeEmbedHTML(videoId);
+					videoToken = `\n\n[VIDEO_EMBED:${videoId}]\n\n`;
+				} else {
+					videoHTML = `<div class="mt-2 text-xs text-red-500 font-bold bg-red-50 p-2 rounded-lg border border-red-100">Video tidak ditemukan.</div>`;
+					videoToken = videoHTML;
+				}
+
+				if (targetContainer) {
+					const loader = document.getElementById(loaderId);
+					if (loader) loader.outerHTML = videoHTML;
+					else targetContainer.insertAdjacentHTML('beforeend', videoHTML);
+
+					if (isGenerating) {
+						const lastMsgIndex = chatHistory.findLastIndex(m => m.role === 'model');
+						if (lastMsgIndex !== -1) {
+							chatHistory[lastMsgIndex].parts[0].text += videoToken;
+							saveCurrentSession();
+						}
+					}
+				} else {
+					if (isGenerating) {
+						chatHistory.push({ role: "model", parts: [{ text: videoToken }] });
+						saveCurrentSession();
+					}
+				}
+				scrollBottom(true, 'auto');
+
+			} catch (error) {
+				console.error("Youtube Error:", error);
+				if (targetContainer) {
+					const loader = document.getElementById(loaderId);
+					if (loader) loader.innerHTML = `<span class="text-red-500">Gagal memuat video: ${error.message}</span>`;
+				}
+			}
+		}
+
 		async function uploadImageToSupabase(base64Data, fileName, mimeType) {
 			const byteCharacters = atob(base64Data);
 			const byteNumbers = new Array(byteCharacters.length);
@@ -1032,16 +1293,14 @@
 			return publicUrl;
 		}
 
-		sendBtn.addEventListener('pointerdown', (e) => {
-			if (userInput.value.trim() && !isGenerating) {
-				e.preventDefault();
-				sendMessage(e);
-			}
+		sendBtn.addEventListener('click', (e) => {
+			e.preventDefault();
+			sendMessage(e);
 		});
 
 		chatForm.addEventListener('submit', (e) => {
 			e.preventDefault();
-			if (!isGenerating) sendMessage(e);
+			sendMessage(e);
 		});
 
 
@@ -1418,7 +1677,6 @@
 			const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 			if (isIOS) {
-				// Try Web Share API first for consistent "Save to Files" experience
 				if (navigator.share && url.startsWith('blob:')) {
 					try {
 						const blob = await fetch(url).then(r => r.blob());
