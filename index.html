@@ -669,9 +669,11 @@
                         <span class="text-xs font-black ${nameColorClass} uppercase tracking-widest">${nameLabel}</span>
                         <span class="text-xs font-bold text-slate-300 uppercase">${timeStr}</span>
                     </div>
-					<div class="message-content w-full text-slate-600 text-[15px] leading-relaxed font-medium">
-						${isError ? `<div class="text-red-600 text-xs font-mono whitespace-pre-wrap">${text}</div>` : (isRawHtml ? text : parseMessageText(text))}
+                    <div class="w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium">
+                        						${isError ? `<div class="text-red-600 text-xs font-mono whitespace-pre-wrap">${text}</div>` : (isRawHtml ? text : parseMessageText(text))}
 					</div>
+					<div class="media-container w-full mt-2 empty:hidden gap-3 flex flex-col"></div>
+					<div class="prose-container-bottom w-full prose prose-container max-w-none text-slate-600 text-[15px] leading-relaxed font-medium mt-4 empty:hidden"></div>
 					${!isUser && !isError ? `
                         <button class="copy-btn absolute bottom-2 right-2 p-1 text-slate-400 hover:text-slate-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity" title="Salin pesan">
                             <i data-lucide="copy" class="w-3 h-3"></i>
@@ -687,7 +689,7 @@
 				const copyBtn = div.querySelector('.copy-btn');
 				if (copyBtn) {
 					copyBtn.addEventListener('click', () => {
-						const contentToCopy = div.querySelector('.message-content').innerText;
+						const contentToCopy = div.querySelector('.prose-container').innerText;
 						navigator.clipboard.writeText(contentToCopy).then(() => {
 							copyBtn.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-green-500"></i>';
 							lucide.createIcons();
@@ -725,7 +727,7 @@
 
 			resolveIdbImages(div, animate);
 
-			return div.querySelector('.message-content');
+			return div.querySelector('.prose-container');
 		}
 
 		function resolveIdbImages(container, animate = false) {
@@ -759,7 +761,6 @@
 				scrollBottom(true, 'auto');
 				await new Promise(resolve => setTimeout(resolve, STREAM_SPEED));
 			}
-			if (!isGenerating) return;
 			element.innerHTML = parseMessageText(text);
 			if (window.hljs) element.querySelectorAll('pre code').forEach(hljs.highlightElement);
 			lucide.createIcons();
@@ -890,7 +891,7 @@
 			appendMessageToUI('user', rawInput);
 			showTyping();
 			try {
-				const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=streamGenerateContent`, {
+				const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
@@ -907,22 +908,80 @@
 						generationConfig: { temperature: 1, maxOutputTokens: 65536 }
 					})
 				});
-
-				if (!response.ok) {
-					const data = await response.json();
-					throw new Error(data.error?.message || `HTTP ${response.status}`);
-				}
+				const data = await response.json();
+				if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+				const parts = data.candidates?.[0]?.content?.parts || [];
+				let finalResponse = "";
+				parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
 
 				hideTyping();
-				const aiContainerTop = appendMessageToUI('model', "");
 
-				if (isGenerating) {
-					chatHistory.push({ role: "model", parts: [{ text: "" }] });
-					saveCurrentSession();
+				if (finalResponse) {
+					const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
+					const chunks = finalResponse.split(mediaSplitRegex);
+
+					let preText = "";
+					let postText = "";
+					const mediaActions = [];
+					const allTags = finalResponse.match(mediaSplitRegex) || [];
+
+					if (allTags.length > 0) {
+						const textParts = finalResponse.split(mediaSplitRegex);
+						preText = textParts[0].trim();
+						if (textParts.length > 2) {
+							postText = textParts.slice(2).filter(t => !t.match(mediaSplitRegex)).join("\n").trim();
+						}
+
+						allTags.forEach(tag => {
+							const imgMatch = tag.match(/\[image\]([\s\S]*?)\[\/image\]/i);
+							const vidMatch = tag.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
+							if (imgMatch) mediaActions.push({ type: 'image', payload: imgMatch[1].trim() });
+							if (vidMatch) mediaActions.push({ type: 'video', payload: vidMatch[1].trim() });
+						});
+					} else {
+						preText = finalResponse;
+					}
+
+					if (!preText && !postText && mediaActions.length > 0) {
+						preText = "Sedang memproses permintaan media...";
+					}
+
+					const aiContainerTop = appendMessageToUI('model', "");
+					const mediaContainer = aiContainerTop.parentElement.querySelector('.media-container');
+					const aiContainerBottom = aiContainerTop.parentElement.querySelector('.prose-container-bottom');
+
+					if (preText) {
+						if (isGenerating) {
+							chatHistory.push({ role: "model", parts: [{ text: preText }] });
+							saveCurrentSession();
+						}
+						await streamText(aiContainerTop, preText);
+					} else if (isGenerating && mediaActions.length > 0) {
+						chatHistory.push({ role: "model", parts: [{ text: "" }] });
+					}
+
+					if (isGenerating && mediaActions.length > 0) {
+						for (const action of mediaActions) {
+							if (action.type === 'image') {
+								await generateImage(action.payload, mediaContainer);
+							} else if (action.type === 'video') {
+								await generateYoutubeVideo(action.payload, mediaContainer);
+							}
+						}
+					}
+
+					if (postText) {
+						await streamText(aiContainerBottom, postText);
+
+						if (isGenerating) {
+							const lastMsg = chatHistory[chatHistory.length - 1];
+							if (lastMsg && lastMsg.role === 'model') {
+								lastMsg.parts[0].text += `\n\n${postText}`;
+								saveCurrentSession();
+							}
+						}
+					}
 				}
-
-				await handleStreamResponse(response, aiContainerTop);
-
 			} catch (error) {
 				hideTyping();
 				if (error.name !== 'AbortError') appendMessageToUI('error', `ERROR:\n${error.message}`);
@@ -931,158 +990,6 @@
 				userInput.disabled = false;
 				abortController = null;
 			}
-		}
-
-		async function handleStreamResponse(response, mainContainer) {
-			const reader = response.body.getReader();
-			const decoder = new TextDecoder("utf-8");
-			let buffer = "";
-			let fullTextAccumulator = "";
-
-			let currentBlockText = "";
-			let currentTextDiv = document.createElement('div');
-			currentTextDiv.className = "prose prose-container max-w-none";
-			mainContainer.appendChild(currentTextDiv);
-
-			let processedMediaTags = new Set();
-
-			try {
-				while (true) {
-					const { done, value } = await reader.read();
-					if (done) break;
-					if (!isGenerating) {
-						await reader.cancel();
-						break;
-					}
-
-					buffer += decoder.decode(value, { stream: true });
-
-					let cursor = 0;
-					let balance = 0;
-					let start = -1;
-
-					for (let i = 0; i < buffer.length; i++) {
-						const char = buffer[i];
-						if (char === '{') {
-							if (balance === 0) start = i;
-							balance++;
-						} else if (char === '}') {
-							balance--;
-							if (balance === 0 && start !== -1) {
-								const jsonStr = buffer.substring(start, i + 1);
-								try {
-									const json = JSON.parse(jsonStr);
-									const newText = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
-									if (newText) {
-										fullTextAccumulator += newText;
-										currentBlockText += newText;
-
-										const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
-										const parts = currentBlockText.split(mediaSplitRegex);
-
-										if (parts.length > 1) {
-											currentTextDiv.innerHTML = parseMessageText(parts[0]);
-											if (window.hljs) currentTextDiv.querySelectorAll('pre code').forEach(hljs.highlightElement);
-
-											const tag = parts[1];
-											if (!processedMediaTags.has(tag)) {
-												processedMediaTags.add(tag);
-
-												const mediaDiv = document.createElement('div');
-												mediaDiv.className = "w-full my-2";
-												mainContainer.appendChild(mediaDiv);
-
-												const imgMatch = tag.match(/\[image\]([\s\S]*?)\[\/image\]/i);
-												const vidMatch = tag.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
-
-												if (imgMatch) await generateImage(imgMatch[1].trim(), mediaDiv);
-												if (vidMatch) await generateYoutubeVideo(vidMatch[1].trim(), mediaDiv);
-											}
-
-											currentBlockText = parts.slice(2).join("");
-
-											currentTextDiv = document.createElement('div');
-											currentTextDiv.className = "prose prose-container max-w-none";
-											mainContainer.appendChild(currentTextDiv);
-
-											currentTextDiv.innerHTML = parseMessageText(currentBlockText);
-											if (window.hljs) currentTextDiv.querySelectorAll('pre code').forEach(hljs.highlightElement);
-										} else {
-											let textToRender = currentBlockText;
-											const possibleTag = currentBlockText.match(/\[(?:i|im|ima|imag|image|y|yo|you|yout|youtu|youtub|youtube)?(?:\][\s\S]*)?$/i);
-											if (possibleTag && possibleTag[0].length < 200) {
-												const lastSegment = possibleTag[0];
-												if (lastSegment.startsWith('[') && !/\[\/(image|youtube)\]/i.test(lastSegment)) {
-													textToRender = currentBlockText.substring(0, currentBlockText.length - lastSegment.length);
-												}
-											}
-
-											currentTextDiv.innerHTML = parseMessageText(textToRender);
-											if (window.hljs) currentTextDiv.querySelectorAll('pre code').forEach(hljs.highlightElement);
-										}
-
-										lucide.createIcons();
-										scrollBottom(true, 'auto');
-
-										const lastMsg = chatHistory[chatHistory.length - 1];
-										if (lastMsg && lastMsg.role === 'model') {
-											lastMsg.parts[0].text = fullTextAccumulator;
-										}
-									}
-								} catch (e) {
-								}
-								buffer = buffer.substring(i + 1);
-								i = -1;
-								start = -1;
-							}
-						}
-					}
-				}
-				saveCurrentSession();
-			} catch (e) {
-				if (e.name !== 'AbortError') console.error("Stream Error", e);
-			}
-		}
-
-		function updateStreamingUI(container, text, processedTags) {
-			const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
-			let foundNewMedia = [];
-			let match;
-			while ((match = mediaSplitRegex.exec(text)) !== null) {
-				const tag = match[0];
-				if (!processedTags.has(tag)) {
-					processedTags.add(tag);
-					const imgMatch = tag.match(/\[image\]([\s\S]*?)\[\/image\]/i);
-					const vidMatch = tag.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
-
-					if (imgMatch) foundNewMedia.push({ type: 'image', payload: imgMatch[1].trim() });
-					if (vidMatch) foundNewMedia.push({ type: 'video', payload: vidMatch[1].trim() });
-				}
-			}
-
-			// Render text (replacing tags with placeholders or hiding them if we want)
-			// For now, let's just parse the text. 
-			// To keep it clean, we can try to "hide" the raw tags from the text view if they are fully formed.
-
-			let displayText = text;
-			// Optional: Hide tags that are already processed or in progress? 
-			// For simplicity in this iteration, let's just display the parsed text.
-			// parseMessageText handles the [VIDEO_EMBED] but not [image] stripping by default unless we adjust it.
-			// Currently parseMessageText logic:
-			// text.replace(/<div... VIDEO ... -> [VIDEO_EMBED]
-			// marked.parse
-			// It does NOT strip [image]...[/image]. 
-			// We should probably strip it from visual if we want it "clean".
-
-			// Simple Strip for Clean UI
-			displayText = displayText.replace(mediaSplitRegex, '');
-
-			container.innerHTML = parseMessageText(displayText);
-			if (window.hljs) container.querySelectorAll('pre code').forEach(hljs.highlightElement);
-			lucide.createIcons();
-			scrollBottom(true, 'auto');
-
-			return foundNewMedia;
 		}
 
 		async function generateImage(prompt, targetContainer = null) {
@@ -1293,14 +1200,16 @@
 			return publicUrl;
 		}
 
-		sendBtn.addEventListener('click', (e) => {
-			e.preventDefault();
-			sendMessage(e);
+		sendBtn.addEventListener('pointerdown', (e) => {
+			if (userInput.value.trim() && !isGenerating) {
+				e.preventDefault();
+				sendMessage(e);
+			}
 		});
 
 		chatForm.addEventListener('submit', (e) => {
 			e.preventDefault();
-			sendMessage(e);
+			if (!isGenerating) sendMessage(e);
 		});
 
 
