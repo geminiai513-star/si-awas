@@ -1470,56 +1470,61 @@
 			event.preventDefault();
 		});
 
-		// Fix for header shifting after fullscreen
-		function handleFullscreenChange() {
-			// Check if we are currently in fullscreen
-			const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+		// Aggressive Scroll Lock & Layout Fixer
+		// This handles cases where native players (iOS) or fullscreen API interactions
+		// leave the document scrolled or the viewport miscalculated.
 
-			if (!isFullscreen) {
-				// We are exiting fullscreen
-				// Use a loop to force reset state as browser UI transitions can take time (300-500ms)
-				const resetState = () => {
-					window.scrollTo(0, 0);
-					document.body.scrollTop = 0;
-					document.documentElement.scrollTop = 0;
+		function enforceLayout() {
+			// 1. Force Scroll to Top
+			if (window.scrollY !== 0 || document.documentElement.scrollTop !== 0 || document.body.scrollTop !== 0) {
+				window.scrollTo(0, 0);
+				document.body.scrollTop = 0;
+				document.documentElement.scrollTop = 0;
+			}
 
-					// Visual Viewport correction for mobile browsers
-					if (window.visualViewport) {
-						window.visualViewport.scrollTop = 0;
-					}
+			// 2. Reset App Height
+			if (appInterface) {
+				// Use helper to get correct height
+				const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+				// Only update if significantly different to prevent oscillation
+				if (Math.abs(parseInt(appInterface.style.height || 0) - height) > 5) {
+					appInterface.style.height = height + 'px';
+				}
 
-					// Force app interface to realign
-					if (appInterface) {
-						appInterface.style.height = window.innerHeight + 'px';
-						appInterface.style.top = '0px';
-						// CSS Hack: Toggle display to force repaint
-						appInterface.style.display = 'none';
-						appInterface.offsetHeight;
-						appInterface.style.display = 'flex';
-					}
-				};
-
-				// Execute immediately and repeatedly
-				resetState();
-				setTimeout(resetState, 100);
-				setTimeout(resetState, 300);
-				setTimeout(resetState, 500);
+				// 3. Force Repaint if weird artifacts persist
+				appInterface.style.top = '0px';
+				appInterface.style.left = '0px';
 			}
 		}
 
-		document.addEventListener('fullscreenchange', handleFullscreenChange);
-		document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-		document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-		document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+		// Watch for scroll events and immediately revert (Aggressive Lock)
+		window.addEventListener('scroll', enforceLayout, { passive: false });
 
-		// Also handle resize events which might trigger after fullscreen exit
+		// Watch for resize (keyboard, orientation, fullscreen enter/exit)
 		window.addEventListener('resize', () => {
-			const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-			if (!isFullscreen && appInterface) {
-				appInterface.style.height = window.innerHeight + 'px';
-				window.scrollTo(0, 0);
-			}
+			setTimeout(enforceLayout, 50);
+			setTimeout(enforceLayout, 300); // IOS Delay
 		});
+
+		// Watch for window focus (Returning from native video player or switching apps)
+		window.addEventListener('focus', () => {
+			setTimeout(enforceLayout, 100);
+			setTimeout(enforceLayout, 500);
+		});
+
+		// Standard Fullscreen API listeners
+		['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
+			document.addEventListener(evt, () => {
+				const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+				if (!isFullscreen) {
+					setTimeout(enforceLayout, 100);
+					setTimeout(enforceLayout, 300);
+				}
+			});
+		});
+
+		// Initial enforcement
+		enforceLayout();
 
 		function toggleSidebar(show) {
 			if (show) {
