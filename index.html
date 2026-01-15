@@ -5,11 +5,11 @@
 	<meta charset="UTF-8">
 	<meta name="viewport"
 		content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-	<title>ALISA - Thinking AI</title>
+	<title>ALISA AI</title>
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 	<meta name="theme-color" content="#ffffff">
-	<meta name="apple-mobile-web-app-title" content="AURA">
+	<meta name="apple-mobile-web-app-title" content="ALISA AI">
 	<link rel="apple-touch-icon" href="icon/icon-512.png">
 	<link rel="icon" type="image/png" href="icon/icon-512.png">
 	<script src="https://cdn.tailwindcss.com"></script>
@@ -39,6 +39,18 @@
 			-ms-user-select: none;
 			user-select: none;
 			-webkit-tap-highlight-color: transparent;
+			-webkit-touch-callout: none;
+		}
+
+		/* Global disable drag */
+		*,
+		*::before,
+		*::after {
+			-webkit-user-drag: none;
+			-khtml-user-drag: none;
+			-moz-user-drag: none;
+			-o-user-drag: none;
+			user-drag: none;
 		}
 
 		/* Allow selection only in specific areas */
@@ -51,14 +63,9 @@
 			user-select: text;
 		}
 
-		/* Prevent dragging ghosts for images and icons */
+		/* Prevent interaction with images and icons */
 		img,
 		svg {
-			-webkit-user-drag: none;
-			-khtml-user-drag: none;
-			-moz-user-drag: none;
-			-o-user-drag: none;
-			user-drag: none;
 			pointer-events: none;
 		}
 
@@ -761,10 +768,15 @@
 				scrollBottom(true, 'auto');
 				await new Promise(resolve => setTimeout(resolve, STREAM_SPEED));
 			}
-			element.innerHTML = parseMessageText(text);
+			let finalText = text.substring(0, cursor);
+			if (isGenerating) {
+				finalText = text;
+				element.innerHTML = parseMessageText(text);
+			}
 			if (window.hljs) element.querySelectorAll('pre code').forEach(hljs.highlightElement);
 			lucide.createIcons();
 			scrollBottom(true, 'auto');
+			return finalText;
 		}
 
 		function getYoutubeEmbedHTML(videoId) {
@@ -950,35 +962,70 @@
 					const mediaContainer = aiContainerTop.parentElement.querySelector('.media-container');
 					const aiContainerBottom = aiContainerTop.parentElement.querySelector('.prose-container-bottom');
 
+					const stopMarker = `\n\n<div class="mt-2 text-xs text-red-500 font-bold select-none">Respon Dihentikan.</div>`;
+
 					if (preText) {
-						if (isGenerating) {
-							chatHistory.push({ role: "model", parts: [{ text: preText }] });
+						const streamedPre = await streamText(aiContainerTop, preText);
+						chatHistory.push({ role: "model", parts: [{ text: streamedPre }] });
+						saveCurrentSession();
+
+						if (!isGenerating) {
+							chatHistory[chatHistory.length - 1].parts[0].text += stopMarker;
 							saveCurrentSession();
+							aiContainerTop.insertAdjacentHTML('beforeend', stopMarker);
+							lucide.createIcons();
+							return;
 						}
-						await streamText(aiContainerTop, preText);
 					} else if (isGenerating && mediaActions.length > 0) {
 						chatHistory.push({ role: "model", parts: [{ text: "" }] });
 					}
 
 					if (isGenerating && mediaActions.length > 0) {
 						for (const action of mediaActions) {
+							if (!isGenerating) break;
 							if (action.type === 'image') {
 								await generateImage(action.payload, mediaContainer);
 							} else if (action.type === 'video') {
 								await generateYoutubeVideo(action.payload, mediaContainer);
 							}
 						}
+						if (!isGenerating) {
+							// If stopped during media generation
+							const lastMsg = chatHistory[chatHistory.length - 1];
+							if (lastMsg && lastMsg.role === 'model') {
+								lastMsg.parts[0].text += stopMarker;
+								saveCurrentSession();
+							}
+							if (aiContainerBottom.previousElementSibling) {
+								aiContainerBottom.previousElementSibling.insertAdjacentHTML('afterend', stopMarker);
+							} else {
+								aiContainerBottom.insertAdjacentHTML('beforeend', stopMarker);
+							}
+							lucide.createIcons();
+							return;
+						}
 					}
 
 					if (postText) {
-						await streamText(aiContainerBottom, postText);
+						const streamedPost = await streamText(aiContainerBottom, postText);
 
-						if (isGenerating) {
+						if (streamedPost) {
 							const lastMsg = chatHistory[chatHistory.length - 1];
 							if (lastMsg && lastMsg.role === 'model') {
-								lastMsg.parts[0].text += `\n\n${postText}`;
+								lastMsg.parts[0].text += `\n\n${streamedPost}`;
 								saveCurrentSession();
 							}
+						}
+
+						if (!isGenerating) {
+							const lastMsg = chatHistory[chatHistory.length - 1];
+							if (lastMsg && lastMsg.role === 'model') {
+								lastMsg.parts[0].text += stopMarker;
+								saveCurrentSession();
+							}
+							aiContainerBottom.insertAdjacentHTML('beforeend', stopMarker);
+							lucide.createIcons();
+							return;
 						}
 					}
 				}
@@ -1201,7 +1248,7 @@
 		}
 
 		sendBtn.addEventListener('pointerdown', (e) => {
-			if (userInput.value.trim() && !isGenerating) {
+			if (isGenerating || userInput.value.trim()) {
 				e.preventDefault();
 				sendMessage(e);
 			}
@@ -1209,7 +1256,7 @@
 
 		chatForm.addEventListener('submit', (e) => {
 			e.preventDefault();
-			if (!isGenerating) sendMessage(e);
+			sendMessage(e);
 		});
 
 
