@@ -1472,20 +1472,38 @@
 
 		// Fix for header shifting after fullscreen
 		function handleFullscreenChange() {
-			if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-				// We are exiting fullscreen
-				window.scrollTo(0, 0);
-				document.body.scrollTop = 0;
-				document.documentElement.scrollTop = 0;
+			// Check if we are currently in fullscreen
+			const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
 
-				// Force layout recalcs if needed
-				setTimeout(() => {
+			if (!isFullscreen) {
+				// We are exiting fullscreen
+				// Use a loop to force reset state as browser UI transitions can take time (300-500ms)
+				const resetState = () => {
 					window.scrollTo(0, 0);
-					// Ensure app interface fits perfectly again
+					document.body.scrollTop = 0;
+					document.documentElement.scrollTop = 0;
+
+					// Visual Viewport correction for mobile browsers
+					if (window.visualViewport) {
+						window.visualViewport.scrollTop = 0;
+					}
+
+					// Force app interface to realign
 					if (appInterface) {
 						appInterface.style.height = window.innerHeight + 'px';
+						appInterface.style.top = '0px';
+						// CSS Hack: Toggle display to force repaint
+						appInterface.style.display = 'none';
+						appInterface.offsetHeight;
+						appInterface.style.display = 'flex';
 					}
-				}, 100);
+				};
+
+				// Execute immediately and repeatedly
+				resetState();
+				setTimeout(resetState, 100);
+				setTimeout(resetState, 300);
+				setTimeout(resetState, 500);
 			}
 		}
 
@@ -1496,8 +1514,10 @@
 
 		// Also handle resize events which might trigger after fullscreen exit
 		window.addEventListener('resize', () => {
-			if (!document.fullscreenElement && appInterface) {
+			const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+			if (!isFullscreen && appInterface) {
 				appInterface.style.height = window.innerHeight + 'px';
+				window.scrollTo(0, 0);
 			}
 		});
 
