@@ -80,14 +80,14 @@
 		}
 
 		#appInterface {
-			width: 100%;
-			height: 100%;
-			position: absolute;
-			top: 0;
-			left: 0;
-			display: none;
-			flex-direction: column;
-			background-color: #ffffff;
+		    width: 100%;
+		    height: 100%;
+		    position: fixed;
+		    top: 0;
+		    left: 0;
+		    display: none;
+		    flex-direction: column;
+		    background-color: #ffffff;
 		}
 
 		header {
@@ -429,14 +429,7 @@
 			</div>
 		</footer>
 	</div>
-	<div id="videoModal" class="fixed inset-0 bg-black/90 z-[200] hidden flex-direction:column items-center justify-center p-4 backdrop-blur-md">
-    <button id="closeVideoBtn" class="absolute top-6 right-6 p-2 text-white/70 hover:text-white transition-colors">
-        <i data-lucide="x" class="w-8 h-8"></i>
-    </button>
-    <div class="w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl">
-        <iframe id="modalIframe" width="100%" height="100%" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    </div>
-</div>
+
 	<script>
 		const SUPABASE_URL = "https://wluwdfbvkyafscotpils.supabase.co";
 		const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsdXdkZmJ2a3lhZnNjb3RwaWxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMjgwNjIsImV4cCI6MjA4MzcwNDA2Mn0.RpCI9gd2v8_K6aEp2rKLTv3OWf952kTWkdlxo8NfozU";
@@ -792,17 +785,20 @@
 		}
 
 		function getYoutubeEmbedHTML(videoId) {
-    return `
-        <div class="relative w-full my-4 rounded-xl overflow-hidden border border-slate-100 shadow-sm aspect-video bg-slate-200 group cursor-pointer" 
-             onclick="openVideoModal('${videoId}')">
-            <img src="https://img.youtube.com/vi/${videoId}/maxresdefault.jpg" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-all flex items-center justify-center">
-                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                    <i data-lucide="play" class="w-6 h-6 text-indigo-600 fill-current"></i>
-                </div>
-            </div>
-        </div>`;
-}
+			return `
+				<div class="relative w-full my-4 rounded-xl overflow-hidden border border-slate-100 shadow-sm aspect-video bg-black">
+					<iframe
+						width="100%"
+						height="100%"
+						src="https://www.youtube.com/embed/${videoId}"
+						title="YouTube video player"
+						frameborder="0"
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+						referrerpolicy="strict-origin-when-cross-origin"
+						allowfullscreen>
+					</iframe>
+				</div>`;
+		}
 
 		function parseMessageText(text) {
 			text = text.replace(/<div class="relative.*?src=".*?\/embed\/([a-zA-Z0-9_-]+)".*?<\/div>/g, '\n\n[VIDEO_EMBED:$1]\n\n');
@@ -1642,26 +1638,6 @@
 				document.body.removeChild(a);
 			}
 		}
-		
-		const videoModal = document.getElementById('videoModal');
-const modalIframe = document.getElementById('modalIframe');
-const closeVideoBtn = document.getElementById('closeVideoBtn');
-
-function openVideoModal(videoId) {
-    modalIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    videoModal.style.display = 'flex';
-    lucide.createIcons();
-}
-
-function closeVideo() {
-    videoModal.style.display = 'none';
-    modalIframe.src = '';
-}
-
-closeVideoBtn.addEventListener('click', closeVideo);
-videoModal.addEventListener('click', (e) => {
-    if (e.target === videoModal) closeVideo();
-});
 
 		window.loadSession = loadSession;
 		window.deleteSession = deleteSession;
@@ -1679,6 +1655,16 @@ videoModal.addEventListener('click', (e) => {
 				swipeOpenId = null;
 			}
 		});
+		
+		const handleFullscreenExit = () => {
+		    if (!document.webkitIsFullScreen && !document.fullscreenElement) {
+		        window.scrollTo(0, 0);
+		        document.body.scrollTop = 0;
+		    }
+		};
+		
+		document.addEventListener('webkitfullscreenchange', handleFullscreenExit, false);
+		document.addEventListener('fullscreenchange', handleFullscreenExit, false);
 
 		init();
 	</script>
