@@ -82,20 +82,12 @@
 		#appInterface {
 			width: 100%;
 			height: 100%;
-			/* Fallback */
-			height: 100vh;
-			/* Standard */
-			position: fixed;
-			/* Changed from absolute to fixed for better stability */
+			position: absolute;
 			top: 0;
 			left: 0;
-			right: 0;
-			bottom: 0;
 			display: none;
 			flex-direction: column;
 			background-color: #ffffff;
-			overflow: hidden;
-			/* Ensure no scroll on the container itself */
 		}
 
 		header {
@@ -1469,62 +1461,6 @@
 		document.addEventListener('gesturestart', function (event) {
 			event.preventDefault();
 		});
-
-		// Aggressive Scroll Lock & Layout Fixer
-		// This handles cases where native players (iOS) or fullscreen API interactions
-		// leave the document scrolled or the viewport miscalculated.
-
-		function enforceLayout() {
-			// 1. Force Scroll to Top
-			if (window.scrollY !== 0 || document.documentElement.scrollTop !== 0 || document.body.scrollTop !== 0) {
-				window.scrollTo(0, 0);
-				document.body.scrollTop = 0;
-				document.documentElement.scrollTop = 0;
-			}
-
-			// 2. Reset App Height
-			if (appInterface) {
-				// Use helper to get correct height
-				const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-				// Only update if significantly different to prevent oscillation
-				if (Math.abs(parseInt(appInterface.style.height || 0) - height) > 5) {
-					appInterface.style.height = height + 'px';
-				}
-
-				// 3. Force Repaint if weird artifacts persist
-				appInterface.style.top = '0px';
-				appInterface.style.left = '0px';
-			}
-		}
-
-		// Watch for scroll events and immediately revert (Aggressive Lock)
-		window.addEventListener('scroll', enforceLayout, { passive: false });
-
-		// Watch for resize (keyboard, orientation, fullscreen enter/exit)
-		window.addEventListener('resize', () => {
-			setTimeout(enforceLayout, 50);
-			setTimeout(enforceLayout, 300); // IOS Delay
-		});
-
-		// Watch for window focus (Returning from native video player or switching apps)
-		window.addEventListener('focus', () => {
-			setTimeout(enforceLayout, 100);
-			setTimeout(enforceLayout, 500);
-		});
-
-		// Standard Fullscreen API listeners
-		['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
-			document.addEventListener(evt, () => {
-				const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-				if (!isFullscreen) {
-					setTimeout(enforceLayout, 100);
-					setTimeout(enforceLayout, 300);
-				}
-			});
-		});
-
-		// Initial enforcement
-		enforceLayout();
 
 		function toggleSidebar(show) {
 			if (show) {
