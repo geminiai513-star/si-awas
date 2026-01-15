@@ -786,7 +786,7 @@
 
 		function getYoutubeEmbedHTML(videoId) {
 			return `
-				<div class="relative w-full mt-3 rounded-xl overflow-hidden border border-slate-100 shadow-sm aspect-video bg-black">
+				<div class="relative w-full my-4 rounded-xl overflow-hidden border border-slate-100 shadow-sm aspect-video bg-black">
 					<iframe
 						width="100%"
 						height="100%"
@@ -938,31 +938,29 @@
 					const parts = finalResponse.split(mediaSplitRegex);
 
 					const aiContainerTop = appendMessageToUI('model', "");
-					let currentProseEl = aiContainerTop; // Use the default top container for the first text
+					let currentProseEl = aiContainerTop;
 					const messageBody = aiContainerTop.parentElement;
 
-					// Wait for any initial animation/rendering
 					await new Promise(resolve => setTimeout(resolve, 50));
 
 					const createProse = () => {
 						const div = document.createElement('div');
-						div.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium mt-4";
+						div.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium";
 						messageBody.appendChild(div);
 						return div;
 					};
 
 					const createMediaDiv = () => {
 						const div = document.createElement('div');
-						div.className = "media-container w-full mt-2 gap-3 flex flex-col";
+						div.className = "media-container w-full flex flex-col";
 						messageBody.appendChild(div);
 						return div;
 					};
 
 					const appendStopMarker = () => {
-						const stopMarker = `\n\n<div class="mt-2 text-xs text-red-500 font-bold select-none">Respon Dihentikan.</div>`;
+						const stopMarker = `\n\n<div class="mt-4 text-xs text-red-500 font-bold select-none">Respon Dihentikan.</div>`;
 						const lastMsg = chatHistory[chatHistory.length - 1];
 						if (lastMsg && lastMsg.role === 'model') {
-							// Check duplicates
 							if (!lastMsg.parts[0].text.endsWith(stopMarker)) {
 								lastMsg.parts[0].text += stopMarker;
 								saveCurrentSession();
@@ -1011,11 +1009,7 @@
 					}
 
 					if (!isGenerating && parts.length > 0) {
-						// Ensure marker is added if stopped exactly at end or between loops
-						// appendStopMarker checks duplicates so it is safe to call.
-						// But if isGenerating is false, we broke loop and called it.
-						// If isGenerating became false AFTER loop?
-						// Rare case.
+						appendStopMarker();
 					}
 				}
 			} catch (error) {
@@ -1165,7 +1159,6 @@
 							}
 						}
 						if (!isGenerating) {
-							// If stopped during media generation
 							const lastMsg = chatHistory[chatHistory.length - 1];
 							if (lastMsg && lastMsg.role === 'model') {
 								lastMsg.parts[0].text += stopMarker;
@@ -1287,7 +1280,7 @@
 			}
 
 			hideTyping();
-			const imageHTML = `<div class="relative w-full mt-3 rounded-xl overflow-hidden border border-slate-100 shadow-sm group"><img src="${imageUrl}" alt="Generated Image" class="w-full h-auto block"><button onclick="downloadImageFromBtn(this, event)" class="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full text-white backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down-to-line"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg></button></div>`;
+			const imageHTML = `<div class="relative w-full my-4 rounded-xl overflow-hidden border border-slate-100 shadow-sm group"><img src="${imageUrl}" alt="Generated Image" class="w-full h-auto block"><button onclick="downloadImageFromBtn(this, event)" class="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full text-white backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down-to-line"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg></button></div>`;
 
 			if (targetContainer) {
 				const loader = document.getElementById(loaderId);
