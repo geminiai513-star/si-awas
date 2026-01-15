@@ -935,6 +935,176 @@
 
 				if (finalResponse) {
 					const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
+					const parts = finalResponse.split(mediaSplitRegex);
+
+					const aiContainerTop = appendMessageToUI('model', "");
+					let currentProseEl = aiContainerTop; // Use the default top container for the first text
+					const messageBody = aiContainerTop.parentElement;
+
+					// Wait for any initial animation/rendering
+					await new Promise(resolve => setTimeout(resolve, 50));
+
+					const createProse = () => {
+						const div = document.createElement('div');
+						div.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium mt-4";
+						messageBody.appendChild(div);
+						return div;
+					};
+
+					const createMediaDiv = () => {
+						const div = document.createElement('div');
+						div.className = "media-container w-full mt-2 gap-3 flex flex-col";
+						messageBody.appendChild(div);
+						return div;
+					};
+
+					const appendStopMarker = () => {
+						const stopMarker = `\n\n<div class="mt-2 text-xs text-red-500 font-bold select-none">Respon Dihentikan.</div>`;
+						const lastMsg = chatHistory[chatHistory.length - 1];
+						if (lastMsg && lastMsg.role === 'model') {
+							// Check duplicates
+							if (!lastMsg.parts[0].text.endsWith(stopMarker)) {
+								lastMsg.parts[0].text += stopMarker;
+								saveCurrentSession();
+							}
+						}
+						if (!messageBody.innerHTML.includes("Respon Dihentikan.")) {
+							messageBody.insertAdjacentHTML('beforeend', stopMarker);
+							lucide.createIcons();
+						}
+					};
+
+					if (chatHistory.length === 0 || chatHistory[chatHistory.length - 1].role !== 'model') {
+						chatHistory.push({ role: "model", parts: [{ text: "" }] });
+					}
+
+					for (let i = 0; i < parts.length; i++) {
+						if (!isGenerating) {
+							appendStopMarker();
+							break;
+						}
+
+						const part = parts[i];
+						if (!part.trim()) continue;
+
+						const imgMatch = part.match(/\[image\]([\s\S]*?)\[\/image\]/i);
+						const vidMatch = part.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
+
+						if (imgMatch) {
+							const mediaDiv = createMediaDiv();
+							await generateImage(imgMatch[1].trim(), mediaDiv);
+						} else if (vidMatch) {
+							const mediaDiv = createMediaDiv();
+							await generateYoutubeVideo(vidMatch[1].trim(), mediaDiv);
+						} else {
+							if (i > 0) currentProseEl = createProse();
+
+							const streamedText = await streamText(currentProseEl, part);
+
+							if (streamedText) {
+								const lastMsg = chatHistory[chatHistory.length - 1];
+								const spacer = (lastMsg.parts[0].text && i > 0) ? "\n\n" : "";
+								lastMsg.parts[0].text += spacer + streamedText;
+								saveCurrentSession();
+							}
+						}
+					}
+
+					if (!isGenerating && parts.length > 0) {
+						// Ensure marker is added if stopped exactly at end or between loops
+						// appendStopMarker checks duplicates so it is safe to call.
+						// But if isGenerating is false, we broke loop and called it.
+						// If isGenerating became false AFTER loop?
+						// Rare case.
+					}
+				}
+			} catch (error) {
+				hideTyping();
+				if (error.name !== 'AbortError') appendMessageToUI('error', `ERROR:\n${error.message}`);
+			} finally {
+				setGeneratingState(false);
+				userInput.disabled = false;
+				abortController = null;
+			}
+		}
+
+		async function sendMessageOld(e) {
+			if (e) e.preventDefault();
+			if (isGenerating) {
+				if (abortController) abortController.abort();
+				setGeneratingState(false);
+				return;
+			}
+			const rawInput = userInput.value.trim();
+			if (!rawInput) return;
+
+			const { data: { session } } = await _supabase.auth.getSession();
+			if (!session) {
+				appendMessageToUI('error', 'Silakan login kembali.');
+				return;
+			}
+
+			const userToken = session.access_token;
+			const imageMatch = rawInput.match(/\[image\]\s*([\s\S]*?)\s*\[\/image\]/i);
+
+			userInput.blur();
+			userInput.value = '';
+			userInput.style.height = 'auto';
+			userInput.disabled = true;
+			setGeneratingState(true);
+			abortController = new AbortController();
+
+			if (imageMatch) {
+				const imagePrompt = imageMatch[1].trim();
+				chatHistory.push({ role: "user", parts: [{ text: rawInput }] });
+				saveCurrentSession();
+				appendMessageToUI('user', rawInput);
+				showTyping();
+				try {
+					await generateImage(imagePrompt);
+				} catch (error) {
+					hideTyping();
+					appendMessageToUI('error', `IMAGE ERROR:\n${error.message}`);
+				} finally {
+					setGeneratingState(false);
+					userInput.disabled = false;
+					abortController = null;
+				}
+				return;
+			}
+
+			chatHistory.push({ role: "user", parts: [{ text: rawInput }] });
+			saveCurrentSession();
+			appendMessageToUI('user', rawInput);
+			showTyping();
+			try {
+				const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'apikey': SUPABASE_KEY,
+						'Authorization': `Bearer ${userToken}`
+					},
+					signal: abortController.signal,
+					body: JSON.stringify({
+						system_instruction: {
+							parts: [{ text: `${MAIN_SYSTEM_PROMPT} ${IMAGE_GEN_PROMPT} ${VIDEO_GEN_PROMPT}` }]
+						},
+						contents: chatHistory,
+						tools: [{ google_search: {} }],
+						generationConfig: { temperature: 1, maxOutputTokens: 65536 }
+					})
+				});
+				const data = await response.json();
+				if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+				const parts = data.candidates?.[0]?.content?.parts || [];
+				let finalResponse = "";
+				parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
+
+				hideTyping();
+
+				if (finalResponse) {
+					const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
 					const chunks = finalResponse.split(mediaSplitRegex);
 
 					let preText = "";
