@@ -1659,19 +1659,27 @@
 			}
 		});
 		
-		const fixLayout = () => {
+		let isFixing = false;
+const fixLayout = () => {
+    if (isFixing) return;
+    isFixing = true;
+
+    document.documentElement.style.height = '101vh';
+    window.dispatchEvent(new Event('resize'));
     window.scrollTo(0, 0);
-    document.body.scrollTop = 0;
-    document.documentElement.style.height = '99.9%';
+    
     setTimeout(() => {
         document.documentElement.style.height = '100%';
+        window.dispatchEvent(new Event('resize'));
         window.scrollTo(0, 0);
-    }, 150);
+        document.body.scrollTop = 0;
+        isFixing = false;
+    }, 400);
 };
 
 document.addEventListener('webkitfullscreenchange', () => {
     if (!document.webkitIsFullScreen) {
-        setTimeout(fixLayout, 250);
+        setTimeout(fixLayout, 500);
     }
 }, false);
 
