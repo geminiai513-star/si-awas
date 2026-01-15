@@ -82,12 +82,20 @@
 		#appInterface {
 			width: 100%;
 			height: 100%;
-			position: absolute;
+			/* Fallback */
+			height: 100vh;
+			/* Standard */
+			position: fixed;
+			/* Changed from absolute to fixed for better stability */
 			top: 0;
 			left: 0;
+			right: 0;
+			bottom: 0;
 			display: none;
 			flex-direction: column;
 			background-color: #ffffff;
+			overflow: hidden;
+			/* Ensure no scroll on the container itself */
 		}
 
 		header {
@@ -1460,6 +1468,37 @@
 
 		document.addEventListener('gesturestart', function (event) {
 			event.preventDefault();
+		});
+
+		// Fix for header shifting after fullscreen
+		function handleFullscreenChange() {
+			if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+				// We are exiting fullscreen
+				window.scrollTo(0, 0);
+				document.body.scrollTop = 0;
+				document.documentElement.scrollTop = 0;
+
+				// Force layout recalcs if needed
+				setTimeout(() => {
+					window.scrollTo(0, 0);
+					// Ensure app interface fits perfectly again
+					if (appInterface) {
+						appInterface.style.height = window.innerHeight + 'px';
+					}
+				}, 100);
+			}
+		}
+
+		document.addEventListener('fullscreenchange', handleFullscreenChange);
+		document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+		document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+		document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+		// Also handle resize events which might trigger after fullscreen exit
+		window.addEventListener('resize', () => {
+			if (!document.fullscreenElement && appInterface) {
+				appInterface.style.height = window.innerHeight + 'px';
+			}
 		});
 
 		function toggleSidebar(show) {
