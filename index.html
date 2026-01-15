@@ -303,6 +303,16 @@
 		.media-container>* {
 			margin-top: 0 !important;
 		}
+
+		/* Fullscreen Mode Handling */
+		body.fullscreen-mode header,
+		body.fullscreen-mode #mainSidebar,
+		body.fullscreen-mode #sidebarOverlay {
+			display: none !important;
+			visibility: hidden !important;
+			opacity: 0 !important;
+			z-index: -1 !important;
+		}
 	</style>
 </head>
 
@@ -799,7 +809,7 @@
 						src="https://www.youtube.com/embed/${videoId}"
 						title="YouTube video player"
 						frameborder="0"
-						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
 						referrerpolicy="strict-origin-when-cross-origin"
 						allowfullscreen>
 					</iframe>
@@ -1848,9 +1858,6 @@
 		});
 
 		function handleFullscreenChange() {
-			const header = document.getElementById('mainHeader');
-			if (!header) return;
-
 			// Cek apakah ada element yang fullscreen
 			const fullscreenElement = document.fullscreenElement ||
 				document.webkitFullscreenElement ||
@@ -1858,9 +1865,9 @@
 				document.msFullscreenElement;
 
 			if (fullscreenElement) {
-				header.style.visibility = 'hidden';
+				document.body.classList.add('fullscreen-mode');
 			} else {
-				header.style.visibility = 'visible';
+				document.body.classList.remove('fullscreen-mode');
 			}
 		}
 
