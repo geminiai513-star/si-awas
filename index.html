@@ -42,7 +42,7 @@
 			-webkit-touch-callout: none;
 		}
 
-		/* Global disable drag */
+		/* Global disable drag and selection */
 		*,
 		*::before,
 		*::after {
@@ -51,10 +51,15 @@
 			-moz-user-drag: none;
 			-o-user-drag: none;
 			user-drag: none;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
 		}
 
 		/* Allow selection only in specific areas */
 		.prose,
+		.prose *,
 		input,
 		textarea {
 			-webkit-user-select: text;
