@@ -1659,31 +1659,28 @@
 			}
 		});
 		
-		let isFixing = false;
-const fixLayout = () => {
-    if (isFixing) return;
-    isFixing = true;
-
-    document.documentElement.style.height = '101vh';
-    window.dispatchEvent(new Event('resize'));
+		const forceResetLayout = () => {
     window.scrollTo(0, 0);
+    document.body.scrollTop = 0;
+    
+    appInterface.style.height = '100.1%';
     
     setTimeout(() => {
-        document.documentElement.style.height = '100%';
+        appInterface.style.height = '100%';
         window.dispatchEvent(new Event('resize'));
         window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-        isFixing = false;
-    }, 400);
+    }, 150);
 };
 
 document.addEventListener('webkitfullscreenchange', () => {
     if (!document.webkitIsFullScreen) {
-        setTimeout(fixLayout, 500);
+        setTimeout(forceResetLayout, 300);
     }
 }, false);
 
-window.addEventListener('resize', fixLayout);
+window.addEventListener('orientationchange', () => {
+    setTimeout(forceResetLayout, 200);
+});
 
 		init();
 	</script>
