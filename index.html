@@ -158,12 +158,6 @@
 			justify-content: center;
 			padding: 2rem;
 		}
-		
-		.main-lock {
-		    overflow: hidden !important;
-		    touch-action: none !important;
-		    pointer-events: none !important;
-		}
 
 		code {
 			font-family: 'JetBrains Mono', monospace;
@@ -1406,17 +1400,15 @@
 		});
 
 		function toggleSidebar(show) {
-		    if (show) {
-		        sidebar.classList.remove('-translate-x-full');
-		        overlay.classList.remove('hidden');
-		        if (chatContainer) chatContainer.classList.add('main-lock');
-		        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-		    } else {
-		        sidebar.classList.add('-translate-x-full');
-		        overlay.classList.add('opacity-0');
-		        if (chatContainer) chatContainer.classList.remove('main-lock');
-		        setTimeout(() => overlay.classList.add('hidden'), 300);
-		    }
+			if (show) {
+				sidebar.classList.remove('-translate-x-full');
+				overlay.classList.remove('hidden');
+				setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+			} else {
+				sidebar.classList.add('-translate-x-full');
+				overlay.classList.add('opacity-0');
+				setTimeout(() => overlay.classList.add('hidden'), 300);
+			}
 		}
 
 		if (menuBtn) {
