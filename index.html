@@ -25,48 +25,48 @@
 		rel="stylesheet">
 	<style>
 		html,
-body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    background-color: #ffffff;
-    font-family: 'Inter', sans-serif;
-    -webkit-text-size-adjust: none;
-    touch-action: none;
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    position: fixed;
-}
-
-#appInterface {
-    width: 100%;
-    height: 100%;
-    display: none;
-    flex-direction: column;
-    background-color: #ffffff;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-}
-
-main {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    background-color: #ffffff;
-    position: relative;
-    overscroll-behavior: contain;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    will-change: transform;
-}
+		body {
+		    margin: 0;
+		    padding: 0;
+		    height: 100%;
+		    width: 100%;
+		    overflow: hidden;
+		    background-color: #ffffff;
+		    font-family: 'Inter', sans-serif;
+		    -webkit-text-size-adjust: none;
+		    touch-action: none;
+		    -webkit-user-select: none;
+		    user-select: none;
+		    -webkit-tap-highlight-color: transparent;
+		    position: fixed;
+		}
+		
+		#appInterface {
+		    width: 100%;
+		    height: 100%;
+		    display: none;
+		    flex-direction: column;
+		    background-color: #ffffff;
+		    position: absolute;
+		    top: 0;
+		    left: 0;
+		    right: 0;
+		    bottom: 0;
+		}
+		
+		main {
+		    flex: 1 1 auto;
+		    overflow-y: auto;
+		    -webkit-overflow-scrolling: touch;
+		    background-color: #ffffff;
+		    position: relative;
+		    overscroll-behavior: contain;
+		    transform: translateZ(0);
+		    -webkit-transform: translateZ(0);
+		    backface-visibility: hidden;
+		    -webkit-backface-visibility: hidden;
+		    will-change: transform;
+		}
 
 		/* Global disable drag and selection */
 		*,
@@ -157,6 +157,12 @@ main {
 			align-items: center;
 			justify-content: center;
 			padding: 2rem;
+		}
+		
+		.main-lock {
+		    overflow: hidden !important;
+		    touch-action: none !important;
+		    pointer-events: none !important;
 		}
 
 		code {
@@ -660,30 +666,30 @@ main {
 		});
 
 		userInput.addEventListener('focus', () => {
-    setTimeout(() => {
-        scrollBottom(true, 'smooth');
-    }, 300);
-});
-
-userInput.addEventListener('blur', () => {
-    window.scrollTo(0, 0);
-    setTimeout(() => {
-        scrollBottom(true, 'smooth');
-    }, 100);
-});
-
-if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', () => {
-        if (document.activeElement.tagName === 'TEXTAREA') {
-            requestAnimationFrame(() => {
-                scrollBottom(true, 'auto');
-                chatContainer.style.display = 'none';
-                chatContainer.offsetHeight; 
-                chatContainer.style.display = 'block';
-            });
-        }
-    });
-}
+		    setTimeout(() => {
+		        scrollBottom(true, 'smooth');
+		    }, 300);
+		});
+		
+		userInput.addEventListener('blur', () => {
+		    window.scrollTo(0, 0);
+		    setTimeout(() => {
+		        scrollBottom(true, 'smooth');
+		    }, 100);
+		});
+		
+		if (window.visualViewport) {
+		    window.visualViewport.addEventListener('resize', () => {
+		        if (document.activeElement.tagName === 'TEXTAREA') {
+		            requestAnimationFrame(() => {
+		                scrollBottom(true, 'auto');
+		                chatContainer.style.display = 'none';
+		                chatContainer.offsetHeight; 
+		                chatContainer.style.display = 'block';
+		            });
+		        }
+		    });
+		}
 
 		userInput.addEventListener('keydown', function (e) {
 			if (e.key === 'Enter' && !e.shiftKey) {
@@ -1032,117 +1038,117 @@ if (window.visualViewport) {
 
 
 		async function sendMessage(e) {
-    if (e) e.preventDefault();
-    if (isGenerating) {
-        if (abortController) abortController.abort();
-        setGeneratingState(false);
-        return;
-    }
-    const rawInput = userInput.value.trim();
-    if (!rawInput && pendingFiles.length === 0) return;
-    const { data: { session } } = await _supabase.auth.getSession();
-    if (!session) return;
-    const userToken = session.access_token;
-    userInput.blur();
-    userInput.value = '';
-    userInput.style.height = 'auto';
-    userInput.disabled = true;
-    setGeneratingState(true);
-    abortController = new AbortController();
-    let apiParts = [];
-    let textContext = "";
-    const codeExts = ['js', 'css', 'java', 'html', 'xml', 'py', 'sql', 'ts', 'cpp', 'h', 'hpp', 'lua', 'swift'];
-    const filesToProcess = [...pendingFiles];
-    pendingFiles = [];
-    renderPreviews();
-    for (const f of filesToProcess) {
-        const ext = f.name.split('.').pop().toLowerCase();
-        if (f.mime.startsWith('image/') || f.mime === 'application/pdf') {
-            apiParts.push({ inline_data: { mime_type: f.mime, data: f.base64 } });
-        } else if (codeExts.includes(ext)) {
-            textContext += await readCodeFile(f);
-        } else {
-            textContext += await extractTextFromOffice(f);
-        }
-    }
-    const finalPrompt = rawInput + (textContext ? "\n\nKONTEKS DOKUMEN:\n" + textContext : "");
-    const userMessageParts = apiParts.length > 0 ? [...apiParts, { text: finalPrompt }] : [{ text: finalPrompt }];
-    chatHistory.push({ role: "user", parts: userMessageParts });
-    appendMessageToUI('user', rawInput || "Menganalisis lampiran...");
-    saveCurrentSession();
-    showTyping();
-    try {
-        const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${userToken}`
-            },
-            signal: abortController.signal,
-            body: JSON.stringify({
-                system_instruction: {
-                    parts: [{ text: `${MAIN_SYSTEM_PROMPT} ${IMAGE_GEN_PROMPT} ${VIDEO_GEN_PROMPT}` }]
-                },
-                contents: chatHistory,
-                tools: [{ google_search: {} }],
-                generationConfig: { temperature: 1, maxOutputTokens: 65536 }
-            })
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
-        const parts = data.candidates?.[0]?.content?.parts || [];
-        let finalResponse = "";
-        parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
-        hideTyping();
-        if (finalResponse) {
-            const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
-            const resParts = finalResponse.split(mediaSplitRegex);
-            const aiContainerTop = appendMessageToUI('model', "");
-            let currentProseEl = aiContainerTop;
-            const messageBody = aiContainerTop.parentElement;
-            chatHistory.push({ role: "model", parts: [{ text: "" }] });
-            for (let i = 0; i < resParts.length; i++) {
-                if (!isGenerating) break;
-                const part = resParts[i];
-                if (!part.trim()) continue;
-                const imgMatch = part.match(/\[image\]([\s\S]*?)\[\/image\]/i);
-                const vidMatch = part.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
-                if (imgMatch) {
-                    const mediaDiv = document.createElement('div');
-                    mediaDiv.className = "media-container w-full flex flex-col";
-                    messageBody.appendChild(mediaDiv);
-                    await generateImage(imgMatch[1].trim(), mediaDiv);
-                } else if (vidMatch) {
-                    const mediaDiv = document.createElement('div');
-                    mediaDiv.className = "media-container w-full flex flex-col";
-                    messageBody.appendChild(mediaDiv);
-                    await generateYoutubeVideo(vidMatch[1].trim(), mediaDiv);
-                } else {
-                    if (i > 0) {
-                        const div = document.createElement('div');
-                        div.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium";
-                        messageBody.appendChild(div);
-                        currentProseEl = div;
-                    }
-                    const streamedText = await streamText(currentProseEl, part);
-                    if (streamedText) {
-                        const lastMsg = chatHistory[chatHistory.length - 1];
-                        lastMsg.parts[0].text += (lastMsg.parts[0].text ? "\n\n" : "") + streamedText;
-                        saveCurrentSession();
-                    }
-                }
-            }
-        }
-    } catch (error) {
-        hideTyping();
-        if (error.name !== 'AbortError') appendMessageToUI('error', `ERROR: ${error.message}`);
-    } finally {
-        setGeneratingState(false);
-        userInput.disabled = false;
-        abortController = null;
-    }
-}
+		    if (e) e.preventDefault();
+		    if (isGenerating) {
+		        if (abortController) abortController.abort();
+		        setGeneratingState(false);
+		        return;
+		    }
+		    const rawInput = userInput.value.trim();
+		    if (!rawInput && pendingFiles.length === 0) return;
+		    const { data: { session } } = await _supabase.auth.getSession();
+		    if (!session) return;
+		    const userToken = session.access_token;
+		    userInput.blur();
+		    userInput.value = '';
+		    userInput.style.height = 'auto';
+		    userInput.disabled = true;
+		    setGeneratingState(true);
+		    abortController = new AbortController();
+		    let apiParts = [];
+		    let textContext = "";
+		    const codeExts = ['js', 'css', 'java', 'html', 'xml', 'py', 'sql', 'ts', 'cpp', 'h', 'hpp', 'lua', 'swift'];
+		    const filesToProcess = [...pendingFiles];
+		    pendingFiles = [];
+		    renderPreviews();
+		    for (const f of filesToProcess) {
+		        const ext = f.name.split('.').pop().toLowerCase();
+		        if (f.mime.startsWith('image/') || f.mime === 'application/pdf') {
+		            apiParts.push({ inline_data: { mime_type: f.mime, data: f.base64 } });
+		        } else if (codeExts.includes(ext)) {
+		            textContext += await readCodeFile(f);
+		        } else {
+		            textContext += await extractTextFromOffice(f);
+		        }
+		    }
+		    const finalPrompt = rawInput + (textContext ? "\n\nKONTEKS DOKUMEN:\n" + textContext : "");
+		    const userMessageParts = apiParts.length > 0 ? [...apiParts, { text: finalPrompt }] : [{ text: finalPrompt }];
+		    chatHistory.push({ role: "user", parts: userMessageParts });
+		    appendMessageToUI('user', rawInput || "Menganalisis lampiran...");
+		    saveCurrentSession();
+		    showTyping();
+		    try {
+		        const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
+		            method: 'POST',
+		            headers: {
+		                'Content-Type': 'application/json',
+		                'apikey': SUPABASE_KEY,
+		                'Authorization': `Bearer ${userToken}`
+		            },
+		            signal: abortController.signal,
+		            body: JSON.stringify({
+		                system_instruction: {
+		                    parts: [{ text: `${MAIN_SYSTEM_PROMPT} ${IMAGE_GEN_PROMPT} ${VIDEO_GEN_PROMPT}` }]
+		                },
+		                contents: chatHistory,
+		                tools: [{ google_search: {} }],
+		                generationConfig: { temperature: 1, maxOutputTokens: 65536 }
+		            })
+		        });
+		        const data = await response.json();
+		        if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+		        const parts = data.candidates?.[0]?.content?.parts || [];
+		        let finalResponse = "";
+		        parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
+		        hideTyping();
+		        if (finalResponse) {
+		            const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
+		            const resParts = finalResponse.split(mediaSplitRegex);
+		            const aiContainerTop = appendMessageToUI('model', "");
+		            let currentProseEl = aiContainerTop;
+		            const messageBody = aiContainerTop.parentElement;
+		            chatHistory.push({ role: "model", parts: [{ text: "" }] });
+		            for (let i = 0; i < resParts.length; i++) {
+		                if (!isGenerating) break;
+		                const part = resParts[i];
+		                if (!part.trim()) continue;
+		                const imgMatch = part.match(/\[image\]([\s\S]*?)\[\/image\]/i);
+		                const vidMatch = part.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
+		                if (imgMatch) {
+		                    const mediaDiv = document.createElement('div');
+		                    mediaDiv.className = "media-container w-full flex flex-col";
+		                    messageBody.appendChild(mediaDiv);
+		                    await generateImage(imgMatch[1].trim(), mediaDiv);
+		                } else if (vidMatch) {
+		                    const mediaDiv = document.createElement('div');
+		                    mediaDiv.className = "media-container w-full flex flex-col";
+		                    messageBody.appendChild(mediaDiv);
+		                    await generateYoutubeVideo(vidMatch[1].trim(), mediaDiv);
+		                } else {
+		                    if (i > 0) {
+		                        const div = document.createElement('div');
+		                        div.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium";
+		                        messageBody.appendChild(div);
+		                        currentProseEl = div;
+		                    }
+		                    const streamedText = await streamText(currentProseEl, part);
+		                    if (streamedText) {
+		                        const lastMsg = chatHistory[chatHistory.length - 1];
+		                        lastMsg.parts[0].text += (lastMsg.parts[0].text ? "\n\n" : "") + streamedText;
+		                        saveCurrentSession();
+		                    }
+		                }
+		            }
+		        }
+		    } catch (error) {
+		        hideTyping();
+		        if (error.name !== 'AbortError') appendMessageToUI('error', `ERROR: ${error.message}`);
+		    } finally {
+		        setGeneratingState(false);
+		        userInput.disabled = false;
+		        abortController = null;
+		    }
+		}
 
 		async function generateImage(prompt, targetContainer = null) {
 			const { data: { session } } = await _supabase.auth.getSession();
@@ -1400,15 +1406,17 @@ if (window.visualViewport) {
 		});
 
 		function toggleSidebar(show) {
-			if (show) {
-				sidebar.classList.remove('-translate-x-full');
-				overlay.classList.remove('hidden');
-				setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-			} else {
-				sidebar.classList.add('-translate-x-full');
-				overlay.classList.add('opacity-0');
-				setTimeout(() => overlay.classList.add('hidden'), 300);
-			}
+		    if (show) {
+		        sidebar.classList.remove('-translate-x-full');
+		        overlay.classList.remove('hidden');
+		        if (chatContainer) chatContainer.classList.add('main-lock');
+		        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+		    } else {
+		        sidebar.classList.add('-translate-x-full');
+		        overlay.classList.add('opacity-0');
+		        if (chatContainer) chatContainer.classList.remove('main-lock');
+		        setTimeout(() => overlay.classList.add('hidden'), 300);
+		    }
 		}
 
 		if (menuBtn) {
@@ -1449,47 +1457,47 @@ if (window.visualViewport) {
 		}
 
 		function saveCurrentSession() {
-    try {
-        const sessions = getAllSessions();
-        const existingIndex = sessions.findIndex(s => s.id === currentSessionId);
-        const cleanedHistory = chatHistory.map(msg => ({
-            role: msg.role,
-            parts: msg.parts.map(part => {
-                if (part.inline_data || part.data) {
-                    return { text: "[Lampiran Media Dihapus]" };
-                }
-                return part;
-            })
-        }));
-        let title = "Percakapan Baru";
-        const firstUserMsg = chatHistory.find(m => m.role === 'user');
-        if (firstUserMsg && firstUserMsg.parts) {
-            const textPart = firstUserMsg.parts.find(p => p.text);
-            if (textPart) {
-                title = textPart.text.substring(0, 30) + (textPart.text.length > 30 ? "..." : "");
-            }
-        }
-        const sessionData = {
-            id: currentSessionId,
-            title: title,
-            timestamp: Date.now(),
-            history: cleanedHistory
-        };
-        if (existingIndex >= 0) {
-            sessions[existingIndex] = sessionData;
-        } else {
-            sessions.unshift(sessionData);
-        }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
-        loadSidebarHistory();
-    } catch (e) {
-        const sessions = getAllSessions();
-        if (sessions.length > 5) {
-            sessions.pop();
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
-        }
-    }
-}
+		    try {
+		        const sessions = getAllSessions();
+		        const existingIndex = sessions.findIndex(s => s.id === currentSessionId);
+		        const cleanedHistory = chatHistory.map(msg => ({
+		            role: msg.role,
+		            parts: msg.parts.map(part => {
+		                if (part.inline_data || part.data) {
+		                    return { text: "[Lampiran Media Dihapus]" };
+		                }
+		                return part;
+		            })
+		        }));
+		        let title = "Percakapan Baru";
+		        const firstUserMsg = chatHistory.find(m => m.role === 'user');
+		        if (firstUserMsg && firstUserMsg.parts) {
+		            const textPart = firstUserMsg.parts.find(p => p.text);
+		            if (textPart) {
+		                title = textPart.text.substring(0, 30) + (textPart.text.length > 30 ? "..." : "");
+		            }
+		        }
+		        const sessionData = {
+		            id: currentSessionId,
+		            title: title,
+		            timestamp: Date.now(),
+		            history: cleanedHistory
+		        };
+		        if (existingIndex >= 0) {
+		            sessions[existingIndex] = sessionData;
+		        } else {
+		            sessions.unshift(sessionData);
+		        }
+		        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+		        loadSidebarHistory();
+		    } catch (e) {
+		        const sessions = getAllSessions();
+		        if (sessions.length > 5) {
+		            sessions.pop();
+		            localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+		        }
+		    }
+		}
 
 		async function deleteSession(id, event) {
 			if (event) event.stopPropagation();
