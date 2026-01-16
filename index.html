@@ -15,6 +15,9 @@
 	<script src="https://unpkg.com/lucide@latest"></script>
 	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+	<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 	<link
@@ -405,29 +408,25 @@
 		</main>
 
 		<footer>
-			<div class="footer-content">
-				<form id="chatForm" class="w-full">
-					<div id="inputWrapper"
-						class="relative flex items-center bg-slate-50 rounded-full px-1 py-1.5 transition-colors duration-200">
-						<button type="button" id="uploadBtn"
-							class="p-2 text-slate-400 hover:text-slate-600 transition-colors shrink-0">
-							<i data-lucide="plus" class="w-6 h-6"></i>
-						</button>
-						<textarea id="userInput" placeholder="Tulis pesan..." rows="1"
-							class="flex-1 w-full bg-transparent border-none outline-none resize-none px-2 text-sm font-medium text-slate-900 leading-[24px] max-h-[150px] block placeholder:text-slate-400"
-							onblur="window.scrollTo(0,0)"></textarea>
-						<button type="submit" id="sendBtn"
-							class="p-2 text-slate-800 hover:text-indigo-600 transition-colors shrink-0">
-							<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6"
-								fill="currentColor">
-								<path
-									d="M21.66,12a2,2,0,0,1-1.14,1.81L5.87,20.75A2.08,2.08,0,0,1,5,21a2,2,0,0,1-1.82-2.82L5.46,13H11a1,1,0,0,0,0-2H5.46L3.18,5.87A2,2,0,0,1,5.86,3.25h0l14.65,6.94A2,2,0,0,1,21.66,12Z">
-								</path>
-							</svg>
-						</button>
-					</div>
-				</form>
-			</div>
+		    <div class="footer-content">
+		        <div id="file-preview-container" class="grid grid-cols-2 md:grid-cols-4 gap-2 empty:hidden mb-4"></div>
+		        
+		        <form id="chatForm" class="w-full">
+		            <div id="inputWrapper" class="relative flex items-center bg-slate-50 rounded-full px-1 py-1.5 transition-colors duration-200">
+		                <input type="file" id="file-input" multiple accept="image/*,application/pdf,.docx,.xlsx,.xls,.pptx,.js,.css,.java,.html,.xml,.py,.sql,.ts,.cpp,.h,.hpp,.lua,.swift" class="hidden" onchange="handleFileSelect(event)">
+		                
+		                <button type="button" id="uploadBtn" onclick="document.getElementById('file-input').click()" class="p-2 text-slate-400 hover:text-slate-600 transition-colors shrink-0">
+		                    <i data-lucide="plus" class="w-6 h-6"></i>
+		                </button>
+		                <textarea id="userInput" placeholder="Tulis pesan..." rows="1" class="flex-1 w-full bg-transparent border-none outline-none resize-none px-2 text-sm font-medium text-slate-900 leading-[24px] max-h-[150px] block placeholder:text-slate-400"></textarea>
+		                <button type="submit" id="sendBtn" class="p-2 text-slate-800 hover:text-indigo-600 transition-colors shrink-0">
+		                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor">
+		                        <path d="M21.66,12a2,2,0,0,1-1.14,1.81L5.87,20.75A2.08,2.08,0,0,1,5,21a2,2,0,0,1-1.82-2.82L5.46,13H11a1,1,0,0,0,0-2H5.46L3.18,5.87A2,2,0,0,1,5.86,3.25h0l14.65,6.94A2,2,0,0,1,21.66,12Z"></path>
+		                    </svg>
+		                </button>
+		            </div>
+		        </form>
+		    </div>
 		</footer>
 	</div>
 
@@ -473,6 +472,8 @@
 		let typingBubble = null;
 		let isGenerating = false;
 		let abortController = null;
+		
+		let pendingFiles = [];
 
 		const DB_NAME = "Sinta_Images_DB";
 		const DB_VERSION = 1;
@@ -857,171 +858,264 @@
 			}
 			lucide.createIcons();
 		}
+		
+		function formatBytes(bytes, decimals = 2) {
+		    if (bytes === 0) return '0 Bytes';
+		    const k = 1024;
+		    const dm = decimals < 0 ? 0 : decimals;
+		    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+		    const i = Math.floor(Math.log(bytes) / Math.log(k));
+		    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+		}
+		
+		function getFileIcon(extension) {
+		    const icons = {
+		        'pdf': 'pdf-file-icon.svg',
+		        'docx': 'docx-file-icon.svg',
+		        'xlsx': 'excel-file-icon.svg',
+		        'xls': 'excel-file-icon.svg',
+		        'pptx': 'ppt-file-icon.svg',
+		        'js': 'javascript-file-icon.svg',
+		        'css': 'css-file-icon.svg',
+		        'java': 'java-file-icon.svg',
+		        'html': 'html-file-icon.svg',
+		        'xml': 'xml-file-icon.svg',
+		        'py': 'python-file-icon.svg',
+		        'sql': 'sql-file-icon.svg',
+		        'ts': 'typescript-file-icon.svg',
+		        'lua': 'lua-file-icon.svg',
+		        'cpp': 'cpp-file-icon.svg',
+		        'h': 'cpp-file-icon.svg',
+		        'hpp': 'cpp-file-icon.svg',
+		        'swift': 'swift-file-icon.svg'
+		    };
+		    const iconFile = icons[extension] || 'default-file-icon.svg';
+		    return `<img src="icon/${iconFile}" class="w-7 h-7 object-contain">`;
+		}
+		
+		function convertToBase64(file) {
+		    return new Promise((resolve, reject) => {
+		        const reader = new FileReader();
+		        reader.readAsDataURL(file);
+		        reader.onload = () => resolve(reader.result);
+		        reader.onerror = error => reject(error);
+		    });
+		}
+		
+		async function extractTextFromOffice(file) {
+		    const ext = file.name.split('.').pop().toLowerCase();
+		    try {
+		        if (ext === 'docx') {
+		            const ab = await file.rawFile.arrayBuffer();
+		            const res = await mammoth.extractRawText({ arrayBuffer: ab });
+		            return `\n[FILE WORD: ${file.name}]\n${res.value}\n`;
+		        }
+		        if (['xlsx', 'xls'].includes(ext)) {
+		            const ab = await file.rawFile.arrayBuffer();
+		            const wb = XLSX.read(ab, { type: 'array' });
+		            const text = wb.SheetNames.map(n => `\n-- Sheet: ${n} --\n${XLSX.utils.sheet_to_csv(wb.Sheets[n])}`).join('');
+		            return `\n[FILE EXCEL: ${file.name}]\n${text}\n`;
+		        }
+		        if (ext === 'pptx') {
+		            const zip = new JSZip();
+		            const content = await zip.loadAsync(file.rawFile);
+		            let text = `\n[FILE POWERPOINT: ${file.name}]\n`;
+		            const slides = Object.keys(content.files).filter(n => n.startsWith("ppt/slides/slide") && n.endsWith(".xml")).sort();
+		            for (const f of slides) {
+		                const xml = await content.files[f].async("text");
+		                const nodes = new DOMParser().parseFromString(xml, "text/xml").getElementsByTagName("a:t");
+		                text += `\n[SLIDE]\n${Array.from(nodes).map(n => n.textContent).join(" ")}\n`;
+		            }
+		            return text;
+		        }
+		    } catch (e) { return `\n[Gagal membaca ${file.name}]\n`; }
+		    return '';
+		}
+		
+		async function readCodeFile(file) {
+		    try {
+		        const text = await file.rawFile.text();
+		        return `\n[ISI FILE ${file.name.toUpperCase()}]:\n${text}\n`;
+		    } catch (e) { return `\n[Gagal membaca isi file ${file.name}]\n`; }
+		}
+		
+		async function handleFileSelect(event) {
+		    const files = Array.from(event.target.files);
+		    if (!files.length) return;
+		    if (pendingFiles.length + files.length > 4) {
+		        alert("Maksimal 4 file dalam satu pengiriman.");
+		        event.target.value = '';
+		        return;
+		    }
+		    try {
+		        for (const file of files) {
+		            const base64 = await convertToBase64(file);
+		            let mimeType = file.type || '';
+		            const ext = file.name ? file.name.split('.').pop().toLowerCase() : '';
+		            if (!mimeType && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(ext)) {
+		                mimeType = 'image/jpeg';
+		            }
+		            pendingFiles.push({
+		                name: file.name || "File",
+		                size: formatBytes(file.size),
+		                type: mimeType,
+		                base64: base64.split(',')[1],
+		                mime: mimeType,
+		                rawFile: file
+		            });
+		        }
+		    } catch (e) {
+		        console.error(e);
+		    } finally {
+		        renderPreviews();
+		        event.target.value = '';
+		    }
+		}
+		
+		function renderPreviews() {
+		    const container = document.getElementById('file-preview-container');
+		    if (!container) return;
+		    container.innerHTML = '';
+		    pendingFiles.forEach((file, index) => {
+		        const ext = file.name ? file.name.split('.').pop().toLowerCase() : '';
+		        const isImage = (file.type && typeof file.type === 'string' && file.type.startsWith('image/')) || 
+		                        ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(ext);
+		        const visual = isImage 
+		            ? `<img src="data:${file.mime || 'image/jpeg'};base64,${file.base64}" class="w-full h-full object-cover rounded-lg">` 
+		            : getFileIcon(ext);
+		        const card = document.createElement('div');
+		        card.className = "bg-gray-100 rounded-2xl p-3 flex items-center gap-2 relative w-full min-h-[64px] border-none";
+		        card.innerHTML = `
+		            <div class="w-10 h-10 flex-none flex items-center justify-center overflow-hidden shrink-0">${visual}</div>
+		            <div class="flex-1 flex flex-col justify-center min-w-0 h-10">
+		                <p class="text-[12px] font-bold text-gray-700 truncate leading-none mb-1 m-0 p-0">${file.name}</p>
+		                <p class="text-[10px] text-gray-400 font-medium leading-none m-0 p-0">${file.size}</p>
+		            </div>
+		            <button onclick="removeFile(${index})" class="absolute -top-3 -right-3 w-7 h-7 flex items-center justify-center border-none p-0 cursor-pointer outline-none bg-transparent">
+		                <svg fill="#d1d5db" viewBox="0 0 24 24" class="w-full h-full"><path d="M12 4c-4.419 0-8 3.582-8 8s3.581 8 8 8 8-3.582 8-8-3.581-8-8-8zm3.707 10.293c.391.391.391 1.023 0 1.414-.195.195-.451.293-.707.293s-.512-.098-.707-.293l-2.293-2.293-2.293 2.293c-.195.195-.451.293-.707.293s-.512-.098-.707-.293c-.391-.391-.391-1.023 0-1.414l2.293-2.293-2.293-2.293c-.391-.391-.391-1.023 0-1.414s1.023-.391 1.414 0l2.293 2.293 2.293-2.293c.391-.391 1.023-.391 1.414 0s.391 1.023 0 1.414l-2.293 2.293 2.293 2.293z"></path></svg>
+		            </button>`;
+		        container.appendChild(card);
+		    });
+		}
+		
+		function removeFile(index) {
+		    pendingFiles.splice(index, 1);
+		    renderPreviews();
+		}
 
 
 		async function sendMessage(e) {
-			if (e) e.preventDefault();
-			if (isGenerating) {
-				if (abortController) abortController.abort();
-				setGeneratingState(false);
-				return;
-			}
-			const rawInput = userInput.value.trim();
-			if (!rawInput) return;
-
-			const { data: { session } } = await _supabase.auth.getSession();
-			if (!session) {
-				appendMessageToUI('error', 'Silakan login kembali.');
-				return;
-			}
-
-			const userToken = session.access_token;
-			const imageMatch = rawInput.match(/\[image\]\s*([\s\S]*?)\s*\[\/image\]/i);
-
-			userInput.blur();
-			userInput.value = '';
-			userInput.style.height = 'auto';
-			userInput.disabled = true;
-			setGeneratingState(true);
-			abortController = new AbortController();
-
-			if (imageMatch) {
-				const imagePrompt = imageMatch[1].trim();
-				chatHistory.push({ role: "user", parts: [{ text: rawInput }] });
-				saveCurrentSession();
-				appendMessageToUI('user', rawInput);
-				showTyping();
-				try {
-					await generateImage(imagePrompt);
-				} catch (error) {
-					hideTyping();
-					appendMessageToUI('error', `IMAGE ERROR:\n${error.message}`);
-				} finally {
-					setGeneratingState(false);
-					userInput.disabled = false;
-					abortController = null;
-				}
-				return;
-			}
-
-			chatHistory.push({ role: "user", parts: [{ text: rawInput }] });
-			saveCurrentSession();
-			appendMessageToUI('user', rawInput);
-			showTyping();
-			try {
-				const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'apikey': SUPABASE_KEY,
-						'Authorization': `Bearer ${userToken}`
-					},
-					signal: abortController.signal,
-					body: JSON.stringify({
-						system_instruction: {
-							parts: [{ text: `${MAIN_SYSTEM_PROMPT} ${IMAGE_GEN_PROMPT} ${VIDEO_GEN_PROMPT}` }]
-						},
-						contents: chatHistory,
-						tools: [{ google_search: {} }],
-						generationConfig: { temperature: 1, maxOutputTokens: 65536 }
-					})
-				});
-				const data = await response.json();
-				if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
-				const parts = data.candidates?.[0]?.content?.parts || [];
-				let finalResponse = "";
-				parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
-
-				hideTyping();
-
-				if (finalResponse) {
-					const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
-					const parts = finalResponse.split(mediaSplitRegex);
-
-					const aiContainerTop = appendMessageToUI('model', "");
-					let currentProseEl = aiContainerTop;
-					const messageBody = aiContainerTop.parentElement;
-
-					await new Promise(resolve => setTimeout(resolve, 50));
-
-					const createProse = () => {
-						const div = document.createElement('div');
-						div.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium";
-						messageBody.appendChild(div);
-						return div;
-					};
-
-					const createMediaDiv = () => {
-						const div = document.createElement('div');
-						div.className = "media-container w-full flex flex-col";
-						messageBody.appendChild(div);
-						return div;
-					};
-
-					const appendStopMarker = () => {
-						const stopMarker = `\n\n<div class="mt-4 text-xs text-red-500 font-bold select-none">Respon Dihentikan.</div>`;
-						const lastMsg = chatHistory[chatHistory.length - 1];
-						if (lastMsg && lastMsg.role === 'model') {
-							if (!lastMsg.parts[0].text.endsWith(stopMarker)) {
-								lastMsg.parts[0].text += stopMarker;
-								saveCurrentSession();
-							}
-						}
-						if (!messageBody.innerHTML.includes("Respon Dihentikan.")) {
-							messageBody.insertAdjacentHTML('beforeend', stopMarker);
-							lucide.createIcons();
-						}
-					};
-
-					if (chatHistory.length === 0 || chatHistory[chatHistory.length - 1].role !== 'model') {
-						chatHistory.push({ role: "model", parts: [{ text: "" }] });
-					}
-
-					for (let i = 0; i < parts.length; i++) {
-						if (!isGenerating) {
-							appendStopMarker();
-							break;
-						}
-
-						const part = parts[i];
-						if (!part.trim()) continue;
-
-						const imgMatch = part.match(/\[image\]([\s\S]*?)\[\/image\]/i);
-						const vidMatch = part.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
-
-						if (imgMatch) {
-							const mediaDiv = createMediaDiv();
-							await generateImage(imgMatch[1].trim(), mediaDiv);
-						} else if (vidMatch) {
-							const mediaDiv = createMediaDiv();
-							await generateYoutubeVideo(vidMatch[1].trim(), mediaDiv);
-						} else {
-							if (i > 0) currentProseEl = createProse();
-
-							const streamedText = await streamText(currentProseEl, part);
-
-							if (streamedText) {
-								const lastMsg = chatHistory[chatHistory.length - 1];
-								const spacer = (lastMsg.parts[0].text && i > 0) ? "\n\n" : "";
-								lastMsg.parts[0].text += spacer + streamedText;
-								saveCurrentSession();
-							}
-						}
-					}
-
-					if (!isGenerating && parts.length > 0) {
-						appendStopMarker();
-					}
-				}
-			} catch (error) {
-				hideTyping();
-				if (error.name !== 'AbortError') appendMessageToUI('error', `ERROR:\n${error.message}`);
-			} finally {
-				setGeneratingState(false);
-				userInput.disabled = false;
-				abortController = null;
-			}
-		}
+    if (e) e.preventDefault();
+    if (isGenerating) {
+        if (abortController) abortController.abort();
+        setGeneratingState(false);
+        return;
+    }
+    const rawInput = userInput.value.trim();
+    if (!rawInput && pendingFiles.length === 0) return;
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (!session) return;
+    const userToken = session.access_token;
+    userInput.blur();
+    userInput.value = '';
+    userInput.style.height = 'auto';
+    userInput.disabled = true;
+    setGeneratingState(true);
+    abortController = new AbortController();
+    let apiParts = [];
+    let textContext = "";
+    const codeExts = ['js', 'css', 'java', 'html', 'xml', 'py', 'sql', 'ts', 'cpp', 'h', 'hpp', 'lua', 'swift'];
+    const filesToProcess = [...pendingFiles];
+    pendingFiles = [];
+    renderPreviews();
+    for (const f of filesToProcess) {
+        const ext = f.name.split('.').pop().toLowerCase();
+        if (f.mime.startsWith('image/') || f.mime === 'application/pdf') {
+            apiParts.push({ inline_data: { mime_type: f.mime, data: f.base64 } });
+        } else if (codeExts.includes(ext)) {
+            textContext += await readCodeFile(f);
+        } else {
+            textContext += await extractTextFromOffice(f);
+        }
+    }
+    const finalPrompt = rawInput + (textContext ? "\n\nKONTEKS DOKUMEN:\n" + textContext : "");
+    const userMessageParts = apiParts.length > 0 ? [...apiParts, { text: finalPrompt }] : [{ text: finalPrompt }];
+    chatHistory.push({ role: "user", parts: userMessageParts });
+    appendMessageToUI('user', rawInput || "Menganalisis lampiran...");
+    saveCurrentSession();
+    showTyping();
+    try {
+        const response = await fetch(PROXY_URL + `?model=${MODEL_NAME}&action=generateContent`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${userToken}`
+            },
+            signal: abortController.signal,
+            body: JSON.stringify({
+                system_instruction: {
+                    parts: [{ text: `${MAIN_SYSTEM_PROMPT} ${IMAGE_GEN_PROMPT} ${VIDEO_GEN_PROMPT}` }]
+                },
+                contents: chatHistory,
+                tools: [{ google_search: {} }],
+                generationConfig: { temperature: 1, maxOutputTokens: 65536 }
+            })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+        const parts = data.candidates?.[0]?.content?.parts || [];
+        let finalResponse = "";
+        parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
+        hideTyping();
+        if (finalResponse) {
+            const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
+            const resParts = finalResponse.split(mediaSplitRegex);
+            const aiContainerTop = appendMessageToUI('model', "");
+            let currentProseEl = aiContainerTop;
+            const messageBody = aiContainerTop.parentElement;
+            chatHistory.push({ role: "model", parts: [{ text: "" }] });
+            for (let i = 0; i < resParts.length; i++) {
+                if (!isGenerating) break;
+                const part = resParts[i];
+                if (!part.trim()) continue;
+                const imgMatch = part.match(/\[image\]([\s\S]*?)\[\/image\]/i);
+                const vidMatch = part.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
+                if (imgMatch) {
+                    const mediaDiv = document.createElement('div');
+                    mediaDiv.className = "media-container w-full flex flex-col";
+                    messageBody.appendChild(mediaDiv);
+                    await generateImage(imgMatch[1].trim(), mediaDiv);
+                } else if (vidMatch) {
+                    const mediaDiv = document.createElement('div');
+                    mediaDiv.className = "media-container w-full flex flex-col";
+                    messageBody.appendChild(mediaDiv);
+                    await generateYoutubeVideo(vidMatch[1].trim(), mediaDiv);
+                } else {
+                    if (i > 0) {
+                        const div = document.createElement('div');
+                        div.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium";
+                        messageBody.appendChild(div);
+                        currentProseEl = div;
+                    }
+                    const streamedText = await streamText(currentProseEl, part);
+                    if (streamedText) {
+                        const lastMsg = chatHistory[chatHistory.length - 1];
+                        lastMsg.parts[0].text += (lastMsg.parts[0].text ? "\n\n" : "") + streamedText;
+                        saveCurrentSession();
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        hideTyping();
+        if (error.name !== 'AbortError') appendMessageToUI('error', `ERROR: ${error.message}`);
+    } finally {
+        setGeneratingState(false);
+        userInput.disabled = false;
+        abortController = null;
+    }
+}
 
 		async function generateImage(prompt, targetContainer = null) {
 			const { data: { session } } = await _supabase.auth.getSession();
@@ -1031,16 +1125,16 @@
 			let loaderId = `loader-${Date.now()}`;
 			if (targetContainer) {
 				const loaderHTML = `
-            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 text-slate-400 text-xs font-medium animate-in fade-in duration-300">
-                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
-                <span>Membuat Gambar</span>
-                <div class="flex gap-0.5 items-center pt-1">
-                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce"></span>
-                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
-                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-                </div>
-            </div>
-        `;
+		            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 text-slate-400 text-xs font-medium animate-in fade-in duration-300">
+		                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+		                <span>Membuat Gambar</span>
+		                <div class="flex gap-0.5 items-center pt-1">
+		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce"></span>
+		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+		                </div>
+		            </div>
+		        `;
 				targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
 				lucide.createIcons();
 				scrollBottom(true, 'auto');
@@ -1328,31 +1422,47 @@
 		}
 
 		function saveCurrentSession() {
-			const sessions = getAllSessions();
-			const existingIndex = sessions.findIndex(s => s.id === currentSessionId);
-
-			let title = "Percakapan Baru";
-			const firstUserMsg = chatHistory.find(m => m.role === 'user');
-			if (firstUserMsg && firstUserMsg.parts && firstUserMsg.parts[0] && firstUserMsg.parts[0].text) {
-				title = firstUserMsg.parts[0].text.substring(0, 30) + (firstUserMsg.parts[0].text.length > 30 ? "..." : "");
-			}
-
-			const sessionData = {
-				id: currentSessionId,
-				title: title,
-				timestamp: Date.now(),
-				history: chatHistory
-			};
-
-			if (existingIndex >= 0) {
-				sessions[existingIndex] = sessionData;
-			} else {
-				sessions.unshift(sessionData);
-			}
-
-			saveAllSessions(sessions);
-			loadSidebarHistory();
-		}
+    try {
+        const sessions = getAllSessions();
+        const existingIndex = sessions.findIndex(s => s.id === currentSessionId);
+        const cleanedHistory = chatHistory.map(msg => ({
+            role: msg.role,
+            parts: msg.parts.map(part => {
+                if (part.inline_data || part.data) {
+                    return { text: "[Lampiran Media Dihapus]" };
+                }
+                return part;
+            })
+        }));
+        let title = "Percakapan Baru";
+        const firstUserMsg = chatHistory.find(m => m.role === 'user');
+        if (firstUserMsg && firstUserMsg.parts) {
+            const textPart = firstUserMsg.parts.find(p => p.text);
+            if (textPart) {
+                title = textPart.text.substring(0, 30) + (textPart.text.length > 30 ? "..." : "");
+            }
+        }
+        const sessionData = {
+            id: currentSessionId,
+            title: title,
+            timestamp: Date.now(),
+            history: cleanedHistory
+        };
+        if (existingIndex >= 0) {
+            sessions[existingIndex] = sessionData;
+        } else {
+            sessions.unshift(sessionData);
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+        loadSidebarHistory();
+    } catch (e) {
+        const sessions = getAllSessions();
+        if (sessions.length > 5) {
+            sessions.pop();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+        }
+    }
+}
 
 		async function deleteSession(id, event) {
 			if (event) event.stopPropagation();
