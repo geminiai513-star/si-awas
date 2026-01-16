@@ -659,22 +659,13 @@
 			this.style.overflowY = this.scrollHeight > 150 ? 'auto' : 'hidden';
 		});
 
-		userInput.addEventListener('focus', () => {
-		    setTimeout(() => {
-		        scrollBottom(true, 'smooth');
-		    }, 300);
-		});
-		
 		userInput.addEventListener('blur', () => {
 		    window.scrollTo(0, 0);
-		    setTimeout(() => {
-		        scrollBottom(true, 'smooth');
-		    }, 100);
 		});
 		
 		if (window.visualViewport) {
 		    window.visualViewport.addEventListener('resize', () => {
-		        if (document.activeElement.tagName === 'TEXTAREA') {
+		        if (document.activeElement.tagName === 'TEXTAREA' && !sidebar.classList.contains('-translate-x-full') === false) {
 		            requestAnimationFrame(() => {
 		                scrollBottom(true, 'auto');
 		                chatContainer.style.display = 'none';
@@ -1400,15 +1391,19 @@
 		});
 
 		function toggleSidebar(show) {
-			if (show) {
-				sidebar.classList.remove('-translate-x-full');
-				overlay.classList.remove('hidden');
-				setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-			} else {
-				sidebar.classList.add('-translate-x-full');
-				overlay.classList.add('opacity-0');
-				setTimeout(() => overlay.classList.add('hidden'), 300);
-			}
+		    if (show) {
+		        if (document.activeElement && (document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'INPUT')) {
+		            document.activeElement.blur();
+		        }
+		        
+		        sidebar.classList.remove('-translate-x-full');
+		        overlay.classList.remove('hidden');
+		        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+		    } else {
+		        sidebar.classList.add('-translate-x-full');
+		        overlay.classList.add('opacity-0');
+		        setTimeout(() => overlay.classList.add('hidden'), 300);
+		    }
 		}
 
 		if (menuBtn) {
