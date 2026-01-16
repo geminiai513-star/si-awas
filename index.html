@@ -172,15 +172,10 @@
 
 		}
 
-		.prose-container {
-			overflow-x: auto;
-		}
-
 		.prose table {
 			display: block;
 			width: 100%;
 			overflow-x: auto;
-			white-space: nowrap;
 			border-collapse: collapse;
 			margin: 0.75rem 0;
 		}
@@ -202,11 +197,19 @@
 			font-weight: 500 !important;
 		}
 
-		.prose ul,
-		.prose ol {
-			padding-left: 1.5rem;
-			margin-bottom: 0.75rem;
-		}
+		.prose-container {
+    overflow-x: visible;
+}
+
+.prose ul, .prose ol {
+    padding-left: 2.2rem;
+    margin-bottom: 0.75rem;
+    list-style-position: outside;
+}
+
+.prose li {
+    margin-bottom: 0.4rem;
+}
 
 		.prose ul {
 			list-style-type: disc;
@@ -527,9 +530,9 @@
 		const STREAM_SPEED = 8;
 		const STREAM_CHUNK_SIZE = 5;
 
-		const MAIN_SYSTEM_PROMPT = "Anda adalah ALISA, Asisten Layanan Integritas dan Sistem Akuntabilitas Inspektorat Provinsi Lampung. Tugas utama Anda memberikan penjelasan informatif dan profesional. PENTING: Fitur Gambar dan Video HANYA digunakan sebagai ALAT BANTU untuk memperjelas penjelasan yang rumit atau memvisualisasikan informasi agar lebih mudah dipahami. JANGAN membuat gambar/video hanya karena diminta user jika tidak relevan dengan konteks penjelasan materi.";
-		const IMAGE_GEN_PROMPT = "Gunakan tag [image]english description[/image] HANYA jika visualisasi gambar diperlukan untuk membantu user memahami penjelasan Anda.";
-		const VIDEO_GEN_PROMPT = "Gunakan tag [youtube]query pencarian spesifik[/youtube] HANYA jika video tutorial/referensi diperlukan untuk mendemonstrasikan langkah-langkah atau memperdalam pemahaman user.";
+		const MAIN_SYSTEM_PROMPT = "Anda adalah ALISA, Asisten Inspektorat Provinsi Lampung yang ramah, Profesional dan sangat membantu, selalu berikan informasi yang akurat dan terbaru. PENTING!!! jangan pernah membuat gambar dan mencari video youtube untuk permintaan user gunkan sebijak mungkin jika kamu benar benar membutuhkannya saja.";
+		const IMAGE_GEN_PROMPT = "Untuk Membuat Gunakan tag [image]english description[/image].";
+		const VIDEO_GEN_PROMPT = "Untuk Mencari video youtube Gunakan tag [youtube]query pencarian spesifik[/youtube].";
 
 		const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -682,9 +685,11 @@
 		    const userMessageParts = apiParts.length > 0 ? [...apiParts, { text: finalPrompt }] : [{ text: finalPrompt }];
 		    
 		    chatHistory.push({ role: "user", parts: userMessageParts });
-		    appendMessageToUI('user', rawInput || "Menganalisis lampiran...");
-		    saveCurrentSession();
-		    showTyping();
+			if (rawInput) {
+			    appendMessageToUI('user', rawInput);
+			}
+			saveCurrentSession();
+			showTyping();
 		
 		    const combinedSystemInstruction = `${dynamicMainPrompt}\n\n${IMAGE_GEN_PROMPT}\n\n${VIDEO_GEN_PROMPT}`;
 		
@@ -771,7 +776,10 @@
 		        }
 		    } catch (error) {
 		        hideTyping();
-		        if (error.name !== 'AbortError') appendMessageToUI('error', `ERROR: ${error.message}`);
+		        if (!finalResponse) {
+				    appendMessageToUI('error', "AI tidak memberikan respons atau permintaan diblokir. Silakan coba lagi.");
+				    return;
+				}
 		    } finally {
 		        setGeneratingState(false);
 		        userInput.disabled = false;
@@ -1432,16 +1440,16 @@
 
 			if (targetContainer) {
 				const loaderHTML = `
-            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 text-slate-400 text-xs font-medium animate-in fade-in duration-300">
-                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
-                <span>Mencari Youtube Video</span>
-                <div class="flex gap-0.5 items-center pt-1">
-                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce"></span>
-                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
-                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-                </div>
-            </div>
-        `;
+		            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 text-slate-400 text-xs font-medium animate-in fade-in duration-300">
+		                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+		                <span>Mencari Youtube Video</span>
+		                <div class="flex gap-0.5 items-center pt-1">
+		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce"></span>
+		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+		                </div>
+		            </div>
+		        `;
 				targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
 				lucide.createIcons();
 				scrollBottom(true, 'auto');
@@ -1639,14 +1647,14 @@
 		        const sessions = getAllSessions();
 		        const existingIndex = sessions.findIndex(s => s.id === currentSessionId);
 		        const cleanedHistory = chatHistory.map(msg => ({
-		            role: msg.role,
-		            parts: msg.parts.map(part => {
-		                if (part.inline_data || part.data) {
-		                    return { text: "[Lampiran Media Dihapus]" };
-		                }
-		                return part;
-		            })
-		        }));
+				    role: msg.role,
+				    parts: msg.parts.map(part => {
+				        if (part.inline_data || part.data) {
+				            return { text: "" };
+				        }
+				        return part;
+				    })
+				}));
 		        let title = "Percakapan Baru";
 		        const firstUserMsg = chatHistory.find(m => m.role === 'user');
 		        if (firstUserMsg && firstUserMsg.parts) {
