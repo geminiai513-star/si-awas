@@ -198,18 +198,18 @@
 		}
 
 		.prose-container {
-    overflow-x: visible;
-}
-
-.prose ul, .prose ol {
-    padding-left: 2.2rem;
-    margin-bottom: 0.75rem;
-    list-style-position: outside;
-}
-
-.prose li {
-    margin-bottom: 0.4rem;
-}
+		    overflow-x: visible;
+		}
+		
+		.prose ul, .prose ol {
+		    padding-left: 2.2rem;
+		    margin-bottom: 0.75rem;
+		    list-style-position: outside;
+		}
+		
+		.prose li {
+		    margin-bottom: 0.2rem;
+		}
 
 		.prose ul {
 			list-style-type: disc;
@@ -1342,16 +1342,16 @@
 			let loaderId = `loader-${Date.now()}`;
 			if (targetContainer) {
 				const loaderHTML = `
-		            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 text-slate-400 text-xs font-medium animate-in fade-in duration-300">
-		                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
-		                <span>Membuat Gambar</span>
-		                <div class="flex gap-0.5 items-center pt-1">
-		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce"></span>
-		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
-		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-		                </div>
-		            </div>
-		        `;
+				    <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 animate-in fade-in duration-300">
+				        <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-blue-600"></i>
+				        <span class="text-[13px] font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Membuat Gambar</span>
+				        <div class="flex gap-0.5 items-center pt-1">
+				            <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></span>
+				            <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+				            <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+				        </div>
+				    </div>
+				`;
 				targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
 				lucide.createIcons();
 				scrollBottom(true, 'auto');
@@ -1440,16 +1440,16 @@
 
 			if (targetContainer) {
 				const loaderHTML = `
-		            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 text-slate-400 text-xs font-medium animate-in fade-in duration-300">
-		                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
-		                <span>Mencari Youtube Video</span>
-		                <div class="flex gap-0.5 items-center pt-1">
-		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce"></span>
-		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
-		                    <span class="w-1 h-1 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-		                </div>
-		            </div>
-		        `;
+				    <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 animate-in fade-in duration-300">
+				        <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-blue-600"></i>
+				        <span class="text-[13px] font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Mencari Youtube Video</span>
+				        <div class="flex gap-0.5 items-center pt-1">
+				            <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></span>
+				            <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+				            <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+				        </div>
+				    </div>
+				`;
 				targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
 				lucide.createIcons();
 				scrollBottom(true, 'auto');
