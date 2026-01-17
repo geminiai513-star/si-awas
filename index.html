@@ -481,7 +481,7 @@
 	    </header>
 	
 	    <main id="adminScroller" class="flex-1 overflow-y-auto bg-white custom-scroll">
-	        <div class="content-width pt-6 pb-32 space-y-4">
+	        <div class="content-width pt-6 pb-10 space-y-4">
 	            <div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm border-none" id="model-dropdown">
 	                <div class="mb-4">
 	                    <span class="text-xs font-black text-slate-500 uppercase tracking-widest">Model AI</span>
@@ -559,10 +559,10 @@
 	                </div>
 	                <textarea id="systemPromptInput" rows="4" onblur="window.scrollTo(0,0)" class="w-full bg-slate-100 rounded-xl px-4 py-3 text-[15px] leading-relaxed font-medium text-slate-600 outline-none focus:ring-1 focus:ring-slate-200 transition-all resize-none"></textarea>
 	            </div>
-	            
-	            <div class="h-10"></div>
 	        </div>
 	    </main>
+	
+	    <footer class="bg-white shrink-0 border-none h-3 mb-[env(safe-area-inset-bottom,12px)]"></footer>
 	</div>
 	
 	<div id="voiceScreen" class="fixed inset-0 bg-white z-[250] hidden flex-col">
@@ -708,11 +708,20 @@
 		});
 		
 		window.addEventListener('click', (e) => {
-		    const menu = document.getElementById('dropdown-menu');
-		    const icon = document.getElementById('dropdown-icon');
+		    const modelMenu = document.getElementById('dropdown-menu');
+		    const modelIcon = document.getElementById('dropdown-icon');
 		    if (!e.target.closest('#model-dropdown')) {
-		        menu.classList.add('hidden');
-		        icon.style.transform = 'rotate(0deg)';
+		        modelMenu.classList.add('hidden');
+		        if (modelIcon) modelIcon.style.transform = 'rotate(0deg)';
+		    }
+		
+		    const voiceMenu = document.getElementById('voice-menu');
+		    const voiceIcon = document.getElementById('voice-icon');
+		    if (!e.target.closest('#voice-trigger')) {
+		        if (voiceMenu && !voiceMenu.classList.contains('hidden')) {
+		            voiceMenu.classList.add('hidden');
+		            if (voiceIcon) voiceIcon.style.transform = 'rotate(0deg)';
+		        }
 		    }
 		});
 		
@@ -2474,9 +2483,14 @@
 		    }
 		
 		    document.getElementById('voice-trigger').onclick = (e) => {
-		        e.stopPropagation();
-		        document.getElementById('voice-menu').classList.toggle('hidden');
-		    };
+			    e.stopPropagation();
+			    const menu = document.getElementById('voice-menu');
+			    const icon = document.getElementById('voice-icon');
+			    const isHidden = menu.classList.toggle('hidden');
+			    if (icon) {
+			        icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
+			    }
+			};
 		    
 		    document.querySelectorAll('.voice-option').forEach(opt => {
 		        opt.onclick = function(e) {
