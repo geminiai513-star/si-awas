@@ -2088,90 +2088,100 @@
 			}
 		});
 		
-		// FUNGSI VOICE //
-		
 		async function openVoiceMode() {
-		    const screen = document.getElementById('voiceScreen');
-		    if (!screen) return;
-		    screen.classList.remove('hidden');
-		    screen.classList.add('flex');
-		    
-		    voiceNextTime = 0;
-		    voiceSessionId++;
-		    voiceInterrupted = false;
-		    isAISpeaking = false;
-		    activeVoiceSources = [];
-		    energyCounter = 0;
-		
-		    await initVoiceAudio();
-		    initVoiceSession();
-		    resizeVoiceCanvas();
-		    startVoiceVisualizer();
-		}
+    const screen = document.getElementById('voiceScreen');
+    if (!screen) return;
+    screen.classList.remove('hidden');
+    screen.classList.add('flex');
+    
+    voiceNextTime = 0;
+    voiceSessionId++;
+    voiceInterrupted = false;
+    isAISpeaking = false;
+    activeVoiceSources = [];
+    energyCounter = 0;
+
+    startVoiceTimer();
+    resizeVoiceCanvas();
+    startVoiceVisualizer();
+
+    try {
+        await initVoiceAudio();
+        initVoiceSession();
+    } catch (err) {
+        console.error("Voice Mode Error:", err);
+    }
+}
 		
 		async function initVoiceAudio() {
-		    voiceInCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-		    voiceOutCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
-		    
-		    if (voiceInCtx.state === 'suspended') await voiceInCtx.resume();
-		    if (voiceOutCtx.state === 'suspended') await voiceOutCtx.resume();
-		
-		    aiAnalyser = voiceOutCtx.createAnalyser();
-		    aiAnalyser.fftSize = 1024;
-		    aiAnalyser.connect(voiceOutCtx.destination);
-		
-		    try {
-		        voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-		        const source = voiceInCtx.createMediaStreamSource(voiceStream);
-		        voiceAnalyser = voiceInCtx.createAnalyser();
-		        voiceAnalyser.fftSize = 1024;
-		        voiceDataArray = new Uint8Array(voiceAnalyser.frequencyBinCount);
-		        source.connect(voiceAnalyser);
-		
-		        const workletCode = `class P extends AudioWorkletProcessor { process(inputs) { if (inputs[0][0]) this.port.postMessage(inputs[0][0]); return true; } }; registerProcessor('p', P);`;
-		        const url = URL.createObjectURL(new Blob([workletCode], { type: 'application/javascript' }));
-		        await voiceInCtx.audioWorklet.addModule(url);
-		
-		        const node = new AudioWorkletNode(voiceInCtx, 'p');
-		        node.port.onmessage = (e) => {
-		            if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
-		                let sum = 0;
-		                for (let i = 0; i < e.data.length; i++) sum += Math.abs(e.data[i]);
-		                let energy = sum / e.data.length;
-		
-		                if (isAISpeaking && energy > 0.04) {
-		                    energyCounter++;
-		                    if (energyCounter > 8) {
-		                        interruptVoice();
-		                        energyCounter = 0;
-		                    }
-		                } else {
-		                    energyCounter = 0;
-		                }
-		
-		                if (energy > 0.01 && voiceInterrupted) {
-		                    voiceInterrupted = false;
-		                    voiceSessionId++;
-		                }
-		
-		                if (!voiceInterrupted && !isAISpeaking) {
-		                    const int16 = new Int16Array(e.data.length);
-		                    for (let i = 0; i < e.data.length; i++) int16[i] = e.data[i] * 0x7FFF;
-		                    voiceWs.send(JSON.stringify({
-		                        type: 'audio',
-		                        data: {
-		                            data: btoa(String.fromCharCode(...new Uint8Array(int16.buffer))),
-		                            mimeType: 'audio/pcm;rate=16000'
-		                        }
-		                    }));
-		                }
-		            }
-		        };
-		        source.connect(node);
-		    } catch (err) {
-		        console.error("Mic Error:", err);
-		    }
-		}
+    if (!voiceInCtx) {
+        voiceInCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    }
+    if (!voiceOutCtx) {
+        voiceOutCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+    }
+    
+    if (voiceInCtx.state === 'suspended') await voiceInCtx.resume();
+    if (voiceOutCtx.state === 'suspended') await voiceOutCtx.resume();
+
+    try {
+        voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        const source = voiceInCtx.createMediaStreamSource(voiceStream);
+        voiceAnalyser = voiceInCtx.createAnalyser();
+        voiceAnalyser.fftSize = 1024;
+        voiceDataArray = new Uint8Array(voiceAnalyser.frequencyBinCount);
+        source.connect(voiceAnalyser);
+
+        const workletCode = `class P extends AudioWorkletProcessor { process(inputs) { if (inputs[0][0]) this.port.postMessage(inputs[0][0]); return true; } }; registerProcessor('p', P);`;
+        const url = URL.createObjectURL(new Blob([workletCode], { type: 'application/javascript' }));
+        await voiceInCtx.audioWorklet.addModule(url);
+
+        const node = new AudioWorkletNode(voiceInCtx, 'p');
+        node.port.onmessage = (e) => {
+            if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+                let sum = 0;
+                for (let i = 0; i < e.data.length; i++) sum += Math.abs(e.data[i]);
+                let energy = sum / e.data.length;
+
+                if (isAISpeaking && energy > 0.04) {
+                    energyCounter++;
+                    if (energyCounter > 8) {
+                        interruptVoice();
+                        energyCounter = 0;
+                    }
+                } else {
+                    energyCounter = 0;
+                }
+
+                if (energy > 0.01 && voiceInterrupted) {
+                    voiceInterrupted = false;
+                    voiceSessionId++;
+                }
+
+                if (!voiceInterrupted && !isAISpeaking) {
+                    const int16 = new Int16Array(e.data.length);
+                    for (let i = 0; i < e.data.length; i++) int16[i] = e.data[i] * 0x7FFF;
+                    voiceWs.send(JSON.stringify({
+                        type: 'audio',
+                        data: {
+                            data: btoa(String.fromCharCode(...new Uint8Array(int16.buffer))),
+                            mimeType: 'audio/pcm;rate=16000'
+                        }
+                    }));
+                }
+            }
+        };
+        source.connect(node);
+        
+        aiAnalyser = voiceOutCtx.createAnalyser();
+        aiAnalyser.fftSize = 1024;
+        aiAnalyser.connect(voiceOutCtx.destination);
+    } catch (err) {
+        alert("Izin Mikrofon Ditolak atau Error: " + err.message);
+        throw err;
+    }
+}
 		
 		async function initVoiceSession() {
 		    const sysPrompt = document.getElementById('systemPromptInput').value || MAIN_SYSTEM_PROMPT;
