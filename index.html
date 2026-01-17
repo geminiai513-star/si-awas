@@ -325,9 +325,9 @@
 		.sidebar-bottom-controls {
 		    flex: 0 0 auto;
 		    background-color: #ffffff;
-		    border-top: 0.5px solid #f1f5f9; 
-		    padding: 12px;
-		    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+		    border-top: 1px solid #f8fafc; 
+		    padding: 12px 1rem;
+		    padding-bottom: 26px; 
 		}
 		
 		#loadingOverlay {
@@ -960,32 +960,14 @@
 		                contents: [{
 		                    role: "user",
 		                    parts: [{ 
-		                        text: `Kamu adalah spesialis penulisan judul administratif untuk ALISA (Asisten Inspektorat Lampung).
-		                        Tugas: Buat judul singkat yang formal dan otoritatif berdasarkan konteks percakapan.
-		                        
-		                        Aturan Ketat:
-		                        1. Panjang judul 2 sampai 4 kata saja.
-		                        2. Gunakan diksi profesional (Contoh: "Analisis Audit", "Konsultasi Regulasi", "Validasi Dokumen").
-		                        3. JANGAN gunakan kata: "Percakapan", "Tanya", "Diskusi", "Chat", atau "Tentang".
-		                        4. JANGAN gunakan tanda petik atau tanda baca di akhir.
-		                        5. Fokus pada subjek utama bahasan.
-		
-		                        Konteks:
-		                        User: ${userMsg}
-		                        AI: ${aiMsg}
-		
-		                        Hasil Judul Profesional:` 
+		                        text: `Buat judul singkat (2-4 kata) sesuai dengan konteks pembicaraan. Tanpa tanda petik atau kata 'Percakapan'.\n\nUser: ${userMsg}\nAI: ${aiMsg}` 
 		                    }]
 		                }],
-		                generation_config: { 
-		                    temperature: 0.6, 
-		                    max_output_tokens: 40 
-		                }
+		                generation_config: { temperature: 0.6, max_output_tokens: 20 }
 		            })
 		        });
 		        const data = await response.json();
 		        const generatedTitle = data.candidates?.[0]?.content?.parts?.[0]?.text;
-		        
 		        return generatedTitle ? generatedTitle.replace(/["'*./]/g, '').trim() : userMsg.substring(0, 30);
 		    } catch (e) {
 		        return userMsg.substring(0, 30);
