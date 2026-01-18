@@ -1041,7 +1041,6 @@ Jangan pernah membuat gambar atau mencari video youtube KECUALI jika user MEMINT
 
 			const combinedSystemInstruction = `${dynamicMainPrompt}\n\n${IMAGE_GEN_PROMPT}\n\n${VIDEO_GEN_PROMPT}`;
 
-			// Check Search & KB Settings
 			const useGoogleSearch = document.getElementById('google-search-toggle').checked;
 			const useKB = document.getElementById('kb-toggle').checked;
 
@@ -1051,18 +1050,21 @@ Jangan pernah membuat gambar atau mencari video youtube KECUALI jika user MEMINT
 				const kbResults = await searchKB(rawInput, userToken);
 				if (kbResults) {
 					contextPrompt = "GUNAKAN REFERENSI BERIKUT UNTUK MENJAWAB:\n" + kbResults + "\n\nPERTANYAAN: " + finalPrompt;
-					// Update last history item to include context for the AI (but keep UI as is)
-					chatHistory[chatHistory.length - 1].parts.forEach(p => {
-						if (p.text && p.text.includes(rawInput)) p.text = contextPrompt;
-					});
 				}
 			}
+
+			const apiContents = [
+				...chatHistory.slice(0, -1).map(h => ({ role: h.role, parts: h.parts })),
+				{
+					role: "user",
+					parts: apiParts.length > 0 ? [...apiParts, { text: contextPrompt }] : [{ text: contextPrompt }]
+				}
+			];
 
 			try {
 				const payload = {
 					system_instruction: { parts: [{ text: combinedSystemInstruction }] },
-					contents: chatHistory.map(h => ({ role: h.role, parts: h.parts })),
-					// tools: [{ google_search: {} }], // Replaced below
+					contents: apiContents,
 					generation_config: {
 						temperature: currentTemp,
 						max_output_tokens: currentMaxTokens
@@ -1389,7 +1391,22 @@ Jangan pernah membuat gambar atau mencari video youtube KECUALI jika user MEMINT
 					fileMetadata: msg.fileMetadata || null,
 					parts: msg.parts.map(part => {
 						if (part.inline_data || part.data) return { text: "" };
-						return part;
+
+						// PASTIKAN TIDAK MENYIMPAN KONTEKS KB DI LOCALSTORAGE
+						// Bersihkan jika masih ada sisa-sisa konteks (untuk jaga-jaga)
+						let text = part.text || "";
+						if (text.includes("GUNAKAN REFERENSI BERIKUT UNTUK MENJAWAB:")) {
+							if (text.includes("\n\nPERTANYAAN: ")) {
+								text = text.split("\n\nPERTANYAAN: ").pop();
+							} else {
+								text = text.split("GUNAKAN REFERENSI BERIKUT UNTUK MENJAWAB:")[0];
+							}
+						}
+						if (text.includes("\n\nKONTEKS DOKUMEN:")) {
+							text = text.split("\n\nKONTEKS DOKUMEN:")[0];
+						}
+
+						return { text: text.trim() };
 					})
 				}));
 
@@ -2980,14 +2997,43 @@ Jangan pernah membuat gambar atau mencari video youtube KECUALI jika user MEMINT
 			return file.name;
 		}
 
+		// --- FUNGSI PENCARIAN KB YANG DIPERBARUI ---
 		async function searchKB(query, token) {
 			try {
+				// 1. Cek Cepat: Jika query terlalu pendek (sapaan), abaikan pencarian.
+				if (query.trim().length < 5) return "";
+
+				// 2. Lakukan Semantic Search
 				const embedding = await getEmbedding(query, token);
+
+				// Panggil RPC baru dengan parameter strict
+				// match_count: 2 (Cukup 2 dokumen terbaik)
 				const { data, error } = await _supabase.rpc('hybrid_search_kb', {
-					query_text: query, query_embedding: embedding, match_count: 2
+					query_text: query,
+					query_embedding: embedding,
+					match_count: 2,
+					similarity_threshold: 0.55 // Batas minimal kemiripan
 				});
-				return (data && data.length > 0) ? data.map(d => "[DOKUMEN KB: " + d.metadata.filename + "]\n" + d.content_full).join("\n\n") : "";
-			} catch (e) { return ""; }
+
+				if (error) {
+					console.error("Supabase KB Error:", error);
+					return "";
+				}
+
+				// 3. Validasi Hasil: Hanya kembalikan jika ada data
+				if (data && data.length > 0) {
+					// Opsional: Cek skor similarity di sisi klien jika perlu screening tambahan
+					// const bestMatch = data[0];
+					// if (bestMatch.similarity < 0.5) return ""; 
+
+					return data.map(d => `[DOKUMEN KB: ${d.metadata.filename}]\n${d.content_full}`).join("\n\n");
+				}
+
+				return "";
+			} catch (e) {
+				console.error("Search Logic Error:", e);
+				return "";
+			}
 		}
 
 		async function handleKbUpload(e) {
