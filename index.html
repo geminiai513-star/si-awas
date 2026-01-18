@@ -132,7 +132,7 @@
 		.sidebar-bottom-controls {
 		    flex: 0 0 auto;
 		    background-color: #ffffff;
-		    border-top: 1px solid #f1f5f9; 
+		    border-top: 1px solid #f8fafc; 
 		    padding: 12px 1rem;
 		    padding-bottom: 24px; 
 		}
@@ -148,7 +148,7 @@
 		header {
 		    flex: 0 0 auto;
 		    background: white;
-		    border-bottom: 1px solid #f1f5f9;
+		    border-bottom: 1px solid #f8fafc;
 		    padding-top: env(safe-area-inset-top, 0px);
 		    z-index: 100;
 		}
@@ -976,16 +976,15 @@
 		                contents: [{
 		                    role: "user",
 		                    parts: [{ 
-		                        text: `Buat satu judul yang menarik, cerdas, dan profesional (2-4 kata) yang merangkum inti dari jawaban AI berikut: "${aiMsg}". JANGAN gunakan kata 'Jawaban', 'Percakapan', atau 'Hasil'. Tanpa tanda petik.` 
+		                        text: `Buat judul singkat (2-4 kata) tanpa tanda baca seperti ':' atau label kategori. Jika isinya sapaan (seperti halo, hai, selamat pagi/siang/malam), buat judul sapaan natural seperti 'Hai ALISA' atau 'Selamat Pagi'. Jika isinya informasi, rangkum intinya secara langsung. Jawaban AI: "${aiMsg}"` 
 		                    }]
 		                }],
 		                generation_config: { temperature: 0.7, max_output_tokens: 20 }
 		            })
 		        });
 		        const data = await response.json();
-		        const generatedTitle = data.candidates?.[0]?.content?.parts?.[0]?.text;
-		        
-		        return generatedTitle ? generatedTitle.replace(/["'*./]/g, '').trim() : "Percakapan Baru";
+		        const resText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+		        return resText ? resText.replace(/[:"'*./]/g, '').trim() : "Percakapan Baru";
 		    } catch (e) {
 		        return "Percakapan Baru";
 		    }
