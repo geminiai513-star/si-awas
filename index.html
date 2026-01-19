@@ -92,9 +92,9 @@
 
 		.loading-container {
 			width: 100%;
-			height: 28px;
+			height: 30px;
 			background-color: #f1f5f9;
-			border-radius: 4px;
+			border-radius: 24px;
 			overflow: hidden;
 			position: relative;
 			border: 1px solid #f1f5f9;
@@ -111,18 +111,19 @@
 		}
 
 		#loadingText {
-			position: absolute;
-			inset: 0;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 12px;
-			font-weight: 800;
-			font-family: 'Inter', sans-serif;
-			letter-spacing: 1px;
-			mix-blend-mode: difference;
-			color: #ffffff;
-			z-index: 10;
+		    position: absolute;
+		    inset: 0;
+		    display: flex;
+		    align-items: center;
+		    justify-content: center;
+		    font-size: 11px;
+		    font-weight: 900;
+		    font-family: 'Inter', sans-serif;
+		    letter-spacing: 2px;
+		    mix-blend-mode: difference;
+		    color: #ffffff;
+		    z-index: 10;
+		    text-transform: uppercase;
 		}
 
 		#mainSidebar {
@@ -392,7 +393,7 @@
 	<div id="loadingOverlay">
 		<div class="loading-wrapper">
 			<div class="loading-container">
-				<div id="loadingText">0%</div>
+				<div id="loadingText">LOADING...</div>
 				<div class="loading-bar" id="loadBar"></div>
 			</div>
 		</div>
@@ -1096,351 +1097,350 @@ Jangan pernah membuat gambar atau mencari video youtube KECUALI jika user MEMINT
 		}
 
 		async function sendMessage(e) {
-    if (e) e.preventDefault();
-    if (isGenerating) {
-        if (abortController) abortController.abort();
-        setGeneratingState(false);
-        return;
-    }
+		    if (e) e.preventDefault();
+		    if (isGenerating) {
+		        if (abortController) abortController.abort();
+		        setGeneratingState(false);
+		        return;
+		    }
+		
+		    const rawInput = userInput.value.trim();
+		    if (!rawInput && pendingFiles.length === 0) return;
+		
+		    const filesToProcess = [...pendingFiles];
+		    let fileMetadata = filesToProcess.map(f => ({ name: f.name, size: f.size }));
+		    let fileCardsHTML = "";
+		    filesToProcess.forEach(f => {
+		        fileCardsHTML += getFileCardHTML(f.name, f.size);
+		    });
+		
+		    const dynamicMainPrompt = document.getElementById('systemPromptInput').value || MAIN_SYSTEM_PROMPT;
+		    const sliderVal = document.getElementById('settings-thinking').value;
+		    const currentBudget = thinkingMap[sliderVal] || 16000;
+		    const currentTemp = parseFloat(document.getElementById('settings-temp').value) || 1.0;
+		    const currentMaxTokens = parseInt(document.getElementById('settings-tokens').value) || 65536;
+		
+		    const { data: { session } } = await _supabase.auth.getSession();
+		    if (!session) return;
+		    const userToken = session.access_token;
+		
+		    userInput.blur();
+		    userInput.value = '';
+		    userInput.style.height = 'auto';
+		    userInput.disabled = true;
+		    setGeneratingState(true);
+		    abortController = new AbortController();
+		
+		    let apiParts = [];
+		    let textContext = "";
+		    pendingFiles = [];
+		    renderPreviews();
+		
+		    for (const f of filesToProcess) {
+		        const ext = f.name.split('.').pop().toLowerCase();
+		        if (f.mime.startsWith('image/') || f.mime === 'application/pdf') {
+		            const cleanBase64 = f.base64.includes(',') ? f.base64.split(',')[1] : f.base64;
+		            apiParts.push({ inline_data: { mime_type: f.mime, data: cleanBase64 } });
+		        } else {
+		            textContext += await (['docx', 'xlsx', 'xls', 'pptx'].includes(ext) ? extractTextFromOffice(f) : readCodeFile(f));
+		        }
+		    }
+		
+		    const finalPrompt = rawInput + (textContext ? "\n\nKONTEKS DOKUMEN:\n" + textContext : "");
+		    const userMessageParts = apiParts.length > 0 ? [...apiParts, { text: finalPrompt }] : [{ text: finalPrompt }];
+		
+		    chatHistory.push({ role: "user", parts: userMessageParts, fileMetadata: fileMetadata });
+		    appendMessageToUI('user', rawInput, true, false, fileCardsHTML);
+		
+		    await saveMessageToSupabase('user', rawInput, fileMetadata);
+		
+		    showTyping();
+		
+		    const useImageGen = document.getElementById('image-feature-toggle').checked;
+		    const useYoutube = document.getElementById('youtube-feature-toggle').checked;
+		
+		    let combinedSystemInstruction = dynamicMainPrompt;
+		    if (useImageGen) combinedSystemInstruction += `\n\n${IMAGE_GEN_PROMPT}`;
+		    if (useYoutube) combinedSystemInstruction += `\n\n${VIDEO_GEN_PROMPT}`;
+		
+		    const useGoogleSearch = document.getElementById('google-search-toggle').checked;
+		    const useKB = document.getElementById('kb-toggle').checked;
+		
+		    let contextPrompt = finalPrompt;
+		
+		    if (useKB) {
+		        const kbResults = await searchKB(rawInput, userToken);
+		        if (kbResults) {
+		            contextPrompt = "GUNAKAN REFERENSI BERIKUT UNTUK MENJAWAB:\n" + kbResults + "\n\nPERTANYAAN: " + finalPrompt;
+		        }
+		    }
+		
+		    const apiContents = [
+		        ...chatHistory.slice(0, -1).map(h => ({ role: h.role, parts: h.parts })),
+		        {
+		            role: "user",
+		            parts: apiParts.length > 0 ? [...apiParts, { text: contextPrompt }] : [{ text: contextPrompt }]
+		        }
+		    ];
+		
+		    try {
+		        const payload = {
+		            system_instruction: { parts: [{ text: combinedSystemInstruction }] },
+		            contents: apiContents,
+		            generation_config: {
+		                temperature: currentTemp,
+		                max_output_tokens: currentMaxTokens
+		            }
+		        };
+		
+		        if (useGoogleSearch) {
+		            payload.tools = [{ google_search: {} }];
+		        }
+		
+		        if (currentSelectedModel.includes('think')) {
+		            payload.thinking_config = { include_thoughts: true, thinking_budget_tokens: currentBudget };
+		        }
+		
+		        const response = await fetch(PROXY_URL + `?model=${currentSelectedModel}&action=generateContent`, {
+		            method: 'POST',
+		            headers: {
+		                'Content-Type': 'application/json',
+		                'apikey': SUPABASE_KEY,
+		                'Authorization': `Bearer ${userToken}`
+		            },
+		            signal: abortController.signal,
+		            body: JSON.stringify(payload)
+		        });
+		
+		        const data = await response.json();
+		        if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+		
+		        const parts = data.candidates?.[0]?.content?.parts || [];
+		        let finalResponse = "";
+		        parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
+		
+		        hideTyping();
+		
+		        if (finalResponse) {
+		            const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
+		            const resParts = finalResponse.split(mediaSplitRegex);
+		            const aiContainerTop = appendMessageToUI('model', "");
+		            let currentProseEl = aiContainerTop;
+		            const messageBody = aiContainerTop.parentElement;
+		            let proseUsed = false;
+		
+		            chatHistory.push({ role: "model", parts: [{ text: "" }] });
+		
+		            for (let i = 0; i < resParts.length; i++) {
+		                if (!isGenerating) break;
+		                const part = resParts[i];
+		                if (!part.trim()) continue;
+		
+		                const imgMatch = part.match(/\[image\]([\s\S]*?)\[\/image\]/i);
+		                const vidMatch = part.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
+		
+		                if (imgMatch) {
+		                    const mediaDiv = document.createElement('div');
+		                    mediaDiv.className = "media-container w-full flex flex-col";
+		                    messageBody.appendChild(mediaDiv);
+		                    await generateImage(imgMatch[1].trim(), mediaDiv);
+		                } else if (vidMatch) {
+		                    const mediaDiv = document.createElement('div');
+		                    mediaDiv.className = "media-container w-full flex flex-col";
+		                    messageBody.appendChild(mediaDiv);
+		                    await generateYoutubeVideo(vidMatch[1].trim(), mediaDiv);
+		                } else {
+		                    if (i > 0) {
+		                        const div = document.createElement('div');
+		                        div.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium";
+		                        messageBody.appendChild(div);
+		                        currentProseEl = div;
+		                    }
+		                    const lastMsg = chatHistory[chatHistory.length - 1];
+		                    lastMsg.parts[0].text += (lastMsg.parts[0].text ? "\n\n" : "") + part;
+		
+		                    proseUsed = true;
+		                    await streamText(currentProseEl, part);
+		                }
+		            }
+		            if (!proseUsed && aiContainerTop) aiContainerTop.remove();
+		
+		            const finalAiText = chatHistory[chatHistory.length - 1].parts[0].text;
+		            await saveMessageToSupabase('model', finalAiText);
+		
+		            if (chatHistory.length === 2) {
+		                const aiResponse = chatHistory[1].parts[0].text;
+		                const newTitle = await generateAiTitle(aiResponse);
+		                await updateSessionTitle(currentSessionId, newTitle);
+		            }
+		        }
+		    } catch (error) {
+		        hideTyping();
+		        if (error.name !== 'AbortError') {
+		            appendMessageToUI('error', "Gagal menghubungi AI. Silakan coba lagi.");
+		        }
+		    } finally {
+		        setGeneratingState(false);
+		        userInput.disabled = false;
+		        abortController = null;
+		    }
+		}
 
-    const rawInput = userInput.value.trim();
-    if (!rawInput && pendingFiles.length === 0) return;
-
-    const filesToProcess = [...pendingFiles];
-    let fileMetadata = filesToProcess.map(f => ({ name: f.name, size: f.size }));
-    let fileCardsHTML = "";
-    filesToProcess.forEach(f => {
-        fileCardsHTML += getFileCardHTML(f.name, f.size);
-    });
-
-    const dynamicMainPrompt = document.getElementById('systemPromptInput').value || MAIN_SYSTEM_PROMPT;
-    const sliderVal = document.getElementById('settings-thinking').value;
-    const currentBudget = thinkingMap[sliderVal] || 16000;
-    const currentTemp = parseFloat(document.getElementById('settings-temp').value) || 1.0;
-    const currentMaxTokens = parseInt(document.getElementById('settings-tokens').value) || 65536;
-
-    const { data: { session } } = await _supabase.auth.getSession();
-    if (!session) return;
-    const userToken = session.access_token;
-
-    userInput.blur();
-    userInput.value = '';
-    userInput.style.height = 'auto';
-    userInput.disabled = true;
-    setGeneratingState(true);
-    abortController = new AbortController();
-
-    let apiParts = [];
-    let textContext = "";
-    pendingFiles = [];
-    renderPreviews();
-
-    for (const f of filesToProcess) {
-        const ext = f.name.split('.').pop().toLowerCase();
-        if (f.mime.startsWith('image/') || f.mime === 'application/pdf') {
-            const cleanBase64 = f.base64.includes(',') ? f.base64.split(',')[1] : f.base64;
-            apiParts.push({ inline_data: { mime_type: f.mime, data: cleanBase64 } });
-        } else {
-            textContext += await (['docx', 'xlsx', 'xls', 'pptx'].includes(ext) ? extractTextFromOffice(f) : readCodeFile(f));
-        }
-    }
-
-    const finalPrompt = rawInput + (textContext ? "\n\nKONTEKS DOKUMEN:\n" + textContext : "");
-    const userMessageParts = apiParts.length > 0 ? [...apiParts, { text: finalPrompt }] : [{ text: finalPrompt }];
-
-    chatHistory.push({ role: "user", parts: userMessageParts, fileMetadata: fileMetadata });
-    appendMessageToUI('user', rawInput, true, false, fileCardsHTML);
-
-    await saveMessageToSupabase('user', rawInput, fileMetadata);
-
-    showTyping();
-
-    const useImageGen = document.getElementById('image-feature-toggle').checked;
-    const useYoutube = document.getElementById('youtube-feature-toggle').checked;
-
-    let combinedSystemInstruction = dynamicMainPrompt;
-    if (useImageGen) combinedSystemInstruction += `\n\n${IMAGE_GEN_PROMPT}`;
-    if (useYoutube) combinedSystemInstruction += `\n\n${VIDEO_GEN_PROMPT}`;
-
-    const useGoogleSearch = document.getElementById('google-search-toggle').checked;
-    const useKB = document.getElementById('kb-toggle').checked;
-
-    let contextPrompt = finalPrompt;
-
-    if (useKB) {
-        const kbResults = await searchKB(rawInput, userToken);
-        if (kbResults) {
-            contextPrompt = "GUNAKAN REFERENSI BERIKUT UNTUK MENJAWAB:\n" + kbResults + "\n\nPERTANYAAN: " + finalPrompt;
-        }
-    }
-
-    const apiContents = [
-        ...chatHistory.slice(0, -1).map(h => ({ role: h.role, parts: h.parts })),
-        {
-            role: "user",
-            parts: apiParts.length > 0 ? [...apiParts, { text: contextPrompt }] : [{ text: contextPrompt }]
-        }
-    ];
-
-    try {
-        const payload = {
-            system_instruction: { parts: [{ text: combinedSystemInstruction }] },
-            contents: apiContents,
-            generation_config: {
-                temperature: currentTemp,
-                max_output_tokens: currentMaxTokens
-            }
-        };
-
-        if (useGoogleSearch) {
-            payload.tools = [{ google_search: {} }];
-        }
-
-        if (currentSelectedModel.includes('think')) {
-            payload.thinking_config = { include_thoughts: true, thinking_budget_tokens: currentBudget };
-        }
-
-        const response = await fetch(PROXY_URL + `?model=${currentSelectedModel}&action=generateContent`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${userToken}`
-            },
-            signal: abortController.signal,
-            body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
-
-        const parts = data.candidates?.[0]?.content?.parts || [];
-        let finalResponse = "";
-        parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
-
-        hideTyping();
-
-        if (finalResponse) {
-            const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
-            const resParts = finalResponse.split(mediaSplitRegex);
-            const aiContainerTop = appendMessageToUI('model', "");
-            let currentProseEl = aiContainerTop;
-            const messageBody = aiContainerTop.parentElement;
-            let proseUsed = false;
-
-            chatHistory.push({ role: "model", parts: [{ text: "" }] });
-
-            for (let i = 0; i < resParts.length; i++) {
-                if (!isGenerating) break;
-                const part = resParts[i];
-                if (!part.trim()) continue;
-
-                const imgMatch = part.match(/\[image\]([\s\S]*?)\[\/image\]/i);
-                const vidMatch = part.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
-
-                if (imgMatch) {
-                    const mediaDiv = document.createElement('div');
-                    mediaDiv.className = "media-container w-full flex flex-col";
-                    messageBody.appendChild(mediaDiv);
-                    await generateImage(imgMatch[1].trim(), mediaDiv);
-                } else if (vidMatch) {
-                    const mediaDiv = document.createElement('div');
-                    mediaDiv.className = "media-container w-full flex flex-col";
-                    messageBody.appendChild(mediaDiv);
-                    await generateYoutubeVideo(vidMatch[1].trim(), mediaDiv);
-                } else {
-                    if (i > 0) {
-                        const div = document.createElement('div');
-                        div.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium";
-                        messageBody.appendChild(div);
-                        currentProseEl = div;
-                    }
-                    const lastMsg = chatHistory[chatHistory.length - 1];
-                    lastMsg.parts[0].text += (lastMsg.parts[0].text ? "\n\n" : "") + part;
-
-                    proseUsed = true;
-                    await streamText(currentProseEl, part);
-                }
-            }
-            if (!proseUsed && aiContainerTop) aiContainerTop.remove();
-
-            const finalAiText = chatHistory[chatHistory.length - 1].parts[0].text;
-            await saveMessageToSupabase('model', finalAiText);
-
-            if (chatHistory.length === 2) {
-                const aiResponse = chatHistory[1].parts[0].text;
-                const newTitle = await generateAiTitle(aiResponse);
-                await updateSessionTitle(currentSessionId, newTitle);
-            }
-        }
-    } catch (error) {
-        hideTyping();
-        if (error.name !== 'AbortError') {
-            appendMessageToUI('error', "Gagal menghubungi AI. Silakan coba lagi.");
-        }
-    } finally {
-        setGeneratingState(false);
-        userInput.disabled = false;
-        abortController = null;
-    }
-}
-
-async function saveMessageToSupabase(role, content, fileMetadata = null) {
-    try {
-        const { data: { session } } = await _supabase.auth.getSession();
-        if (!session) return;
-
-        const { error: sessionError } = await _supabase.from('chat_sessions').upsert({
-            id: currentSessionId,
-            user_id: session.user.id,
-            title: chatHistory[0]?.parts[0]?.text?.substring(0, 50).replace(/\n/g, ' ') || "Percakapan Baru",
-            timestamp: Date.now()
-        }, { onConflict: 'id' });
-
-        if (sessionError) throw sessionError;
-
-        const { error: msgError } = await _supabase.from('chat_messages').insert([{
-            session_id: currentSessionId,
-            role: role,
-            content: content,
-            file_metadata: fileMetadata,
-            timestamp: Date.now()
-        }]);
-
-        if (msgError) throw msgError;
-
-        await loadSidebarHistory();
-    } catch (err) {
-        console.error("ALISA Database Error:", err.message);
-    }
-}
-
-async function saveCurrentSession() {
-    const { data: { session } } = await _supabase.auth.getSession();
-    if (!session) return;
-
-    const lastMsg = chatHistory[chatHistory.length - 1];
-    if (lastMsg) {
-        await saveMessageToSupabase(lastMsg.role, lastMsg.parts[0].text, lastMsg.fileMetadata);
-    }
-}
-
-async function updateSessionTitle(id, newTitle) {
-    await _supabase
-        .from('chat_sessions')
-        .update({ title: newTitle })
-        .eq('id', id);
-    await loadSidebarHistory();
-}
-
-async function loadSidebarHistory() {
-    const { data: { session } } = await _supabase.auth.getSession();
-    if (!session || !historyListEl) return;
-
-    const { data: sessions, error } = await _supabase
-        .from('chat_sessions')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('timestamp', { ascending: false });
-
-    if (error || !sessions) return;
-    
-    historyListEl.innerHTML = '';
-    const groups = { 'Hari Ini': [], 'Kemarin': [], 'Lebih Lama': [] };
-    const now = new Date();
-    const todayStr = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const yesterdayStr = todayStr - 86400000;
-
-    sessions.forEach(s => {
-        const ts = Number(s.timestamp);
-        const sDate = new Date(ts).setHours(0, 0, 0, 0);
-        if (sDate === todayStr) groups['Hari Ini'].push(s);
-        else if (sDate === yesterdayStr) groups['Kemarin'].push(s);
-        else groups['Lebih Lama'].push(s);
-    });
-
-    Object.entries(groups).forEach(([label, groupSessions]) => {
-        if (groupSessions.length > 0) {
-            const groupDiv = document.createElement('div');
-			groupDiv.className = "mb-0.5"; // Diperkecil dari mb-1 agar antar grup lebih rapat
-			groupDiv.innerHTML = `<h3 class="px-3 text-[10px] font-black text-slate-300 mb-0 uppercase tracking-tighter">${label}</h3>`; // mb dihilangkan
-			
-			const listDiv = document.createElement('div');
-			listDiv.className = "space-y-0"; 
-			
-			groupSessions.forEach(s => {
-			    const isActive = s.id === currentSessionId;
-			    const item = document.createElement('div');
-			    // Tinggi baris dikurangi dari h-[38px] menjadi h-[32px] agar lebih rapat
-			    item.className = "relative overflow-hidden w-full h-[32px] bg-slate-50"; 
-			    item.innerHTML = `
-			        <div class="absolute inset-y-0 right-0 w-[50px] flex items-center justify-center">
-			            <button onclick="deleteSession('${s.id}', event)" class="w-full h-full flex items-center justify-center text-red-500">
-			                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-			            </button>
-			        </div>
-			        <div id="swipe-content-${s.id}" 
-			             class="absolute inset-0 bg-white flex items-center px-3 cursor-pointer z-10 transition-transform duration-200"
-			             ontouchstart="swipeStart(event, '${s.id}')"
-			             ontouchmove="swipeMove(event)"
-			             ontouchend="swipeEnd(event)"
-			             onmousedown="mouseSwipeStart(event, '${s.id}')"
-			             onclick="handleSwipeClick('${s.id}')">
-			            <span class="truncate text-[13px] ${isActive ? 'text-slate-900 font-bold' : 'text-slate-600 font-medium'}">
-			                ${s.title}
-			            </span>
-			        </div>
-			    `;
-			    listDiv.appendChild(item);
-			});
-            groupDiv.appendChild(listDiv);
-            historyListEl.appendChild(groupDiv);
-        }
-    });
-    lucide.createIcons();
-}
-
-async function loadSession(id) {
-    if (!id) return;
-    currentSessionId = id;
-    localStorage.setItem(ACTIVE_SESSION_KEY, id);
-    
-    const { data: messages, error } = await _supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('session_id', id)
-        .order('timestamp', { ascending: true });
-
-    if (error) return;
-
-    chatHistory = messages.map(m => ({
-        role: m.role,
-        parts: [{ text: m.content }],
-        fileMetadata: m.file_metadata
-    }));
-
-    messagesArea.innerHTML = ''; // Pastikan ini ada untuk membersihkan layar
-    renderHistory();
-    await loadSidebarHistory();
-    toggleSidebar(false);
-}
-
-async function deleteSession(id, event) {
-    if (event) event.stopPropagation();
-    if (!confirm("Hapus percakapan ini secara permanen?")) return;
-
-    await _supabase.from('chat_sessions').delete().eq('id', id);
-    if (id === currentSessionId) startNewSession();
-    else await loadSidebarHistory();
-}
-
-function startNewSession() {
-    currentSessionId = Date.now().toString();
-    chatHistory = [];
-    messagesArea.innerHTML = '';
-    localStorage.setItem(ACTIVE_SESSION_KEY, currentSessionId);
-    loadSidebarHistory();
-}
+		async function saveMessageToSupabase(role, content, fileMetadata = null) {
+		    try {
+		        const { data: { session } } = await _supabase.auth.getSession();
+		        if (!session) return;
+		
+		        const { error: sessionError } = await _supabase.from('chat_sessions').upsert({
+		            id: currentSessionId,
+		            user_id: session.user.id,
+		            title: chatHistory[0]?.parts[0]?.text?.substring(0, 50).replace(/\n/g, ' ') || "Percakapan Baru",
+		            timestamp: Date.now()
+		        }, { onConflict: 'id' });
+		
+		        if (sessionError) throw sessionError;
+		
+		        const { error: msgError } = await _supabase.from('chat_messages').insert([{
+		            session_id: currentSessionId,
+		            role: role,
+		            content: content,
+		            file_metadata: fileMetadata,
+		            timestamp: Date.now()
+		        }]);
+		
+		        if (msgError) throw msgError;
+		
+		        await loadSidebarHistory();
+		    } catch (err) {
+		        console.error("ALISA Database Error:", err.message);
+		    }
+		}
+		
+		async function saveCurrentSession() {
+		    const { data: { session } } = await _supabase.auth.getSession();
+		    if (!session) return;
+		
+		    const lastMsg = chatHistory[chatHistory.length - 1];
+		    if (lastMsg) {
+		        await saveMessageToSupabase(lastMsg.role, lastMsg.parts[0].text, lastMsg.fileMetadata);
+		    }
+		}
+		
+		async function updateSessionTitle(id, newTitle) {
+		    await _supabase
+		        .from('chat_sessions')
+		        .update({ title: newTitle })
+		        .eq('id', id);
+		    await loadSidebarHistory();
+		}
+		
+		async function loadSidebarHistory() {
+		    const { data: { session } } = await _supabase.auth.getSession();
+		    if (!session || !historyListEl) return;
+		
+		    const { data: sessions, error } = await _supabase
+		        .from('chat_sessions')
+		        .select('*')
+		        .eq('user_id', session.user.id)
+		        .order('timestamp', { ascending: false });
+		
+		    if (error || !sessions) return;
+		    
+		    historyListEl.innerHTML = '';
+		    const groups = { 'Hari Ini': [], 'Kemarin': [], 'Lebih Lama': [] };
+		    const now = new Date();
+		    const todayStr = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+		    const yesterdayStr = todayStr - 86400000;
+		
+		    sessions.forEach(s => {
+		        const ts = Number(s.timestamp);
+		        const sDate = new Date(ts).setHours(0, 0, 0, 0);
+		        if (sDate === todayStr) groups['Hari Ini'].push(s);
+		        else if (sDate === yesterdayStr) groups['Kemarin'].push(s);
+		        else groups['Lebih Lama'].push(s);
+		    });
+		
+		    Object.entries(groups).forEach(([label, groupSessions]) => {
+		        if (groupSessions.length > 0) {
+		            const groupDiv = document.createElement('div');
+					groupDiv.className = "mb-0.5";
+					groupDiv.innerHTML = `<h3 class="px-3 text-[11px] font-black text-slate-300 mb-0 uppercase tracking-tighter">${label}</h3>`; 
+					const listDiv = document.createElement('div');
+					listDiv.className = "space-y-0"; 
+					
+					groupSessions.forEach(s => {
+					    const isActive = s.id === currentSessionId;
+					    const item = document.createElement('div');
+					 
+					    item.className = "relative overflow-hidden w-full h-[32px] bg-slate-50"; 
+					    item.innerHTML = `
+					        <div class="absolute inset-y-0 right-0 w-[50px] flex items-center justify-center">
+					            <button onclick="deleteSession('${s.id}', event)" class="w-full h-full flex items-center justify-center text-red-500">
+					                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+					            </button>
+					        </div>
+					        <div id="swipe-content-${s.id}" 
+					             class="absolute inset-0 bg-white flex items-center px-3 cursor-pointer z-10 transition-transform duration-200"
+					             ontouchstart="swipeStart(event, '${s.id}')"
+					             ontouchmove="swipeMove(event)"
+					             ontouchend="swipeEnd(event)"
+					             onmousedown="mouseSwipeStart(event, '${s.id}')"
+					             onclick="handleSwipeClick('${s.id}')">
+					            <span class="truncate text-[14px] ${isActive ? 'text-slate-900 font-bold' : 'text-slate-600 font-medium'}">
+					                ${s.title}
+					            </span>
+					        </div>
+					    `;
+					    listDiv.appendChild(item);
+					});
+		            groupDiv.appendChild(listDiv);
+		            historyListEl.appendChild(groupDiv);
+		        }
+		    });
+		    lucide.createIcons();
+		}
+		
+		async function loadSession(id) {
+		    if (!id) return;
+		    currentSessionId = id;
+		    localStorage.setItem(ACTIVE_SESSION_KEY, id);
+		    
+		    const { data: messages, error } = await _supabase
+		        .from('chat_messages')
+		        .select('*')
+		        .eq('session_id', id)
+		        .order('timestamp', { ascending: true });
+		
+		    if (error) return;
+		
+		    chatHistory = messages.map(m => ({
+		        role: m.role,
+		        parts: [{ text: m.content }],
+		        fileMetadata: m.file_metadata
+		    }));
+		
+		    messagesArea.innerHTML = ''; // Pastikan ini ada untuk membersihkan layar
+		    renderHistory();
+		    await loadSidebarHistory();
+		    toggleSidebar(false);
+		}
+		
+		async function deleteSession(id, event) {
+		    if (event) event.stopPropagation();
+		    if (!confirm("Hapus percakapan ini secara permanen?")) return;
+		
+		    await _supabase.from('chat_sessions').delete().eq('id', id);
+		    if (id === currentSessionId) startNewSession();
+		    else await loadSidebarHistory();
+		}
+		
+		function startNewSession() {
+		    currentSessionId = Date.now().toString();
+		    chatHistory = [];
+		    messagesArea.innerHTML = '';
+		    localStorage.setItem(ACTIVE_SESSION_KEY, currentSessionId);
+		    loadSidebarHistory();
+		}
 
 		async function generateAiTitle(aiMsg) {
 			const { data: { session } } = await _supabase.auth.getSession();
@@ -1558,35 +1558,34 @@ function startNewSession() {
 		}
 
 		loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('loginBtn');
-    const errorEl = document.getElementById('loginError');
-    const originalText = btn.innerHTML;
-
-    btn.disabled = true;
-    btn.innerHTML = `MEMPROSES...`;
-    errorEl.classList.add('hidden');
-
-    try {
-        const { data, error } = await _supabase.auth.signInWithPassword({
-            email: emailInput.value,
-            password: passwordInput.value
-        });
-
-        if (error) throw error;
-
-        // Pemicu refresh setelah login
-        sidebarEmail.innerText = emailInput.value;
-        await loadSidebarHistory(); // Muat histori
-        startNewSession(); // Mulai chat baru
-        showApp();
-    } catch (err) {
-        errorEl.innerText = "LOGIN GAGAL: " + err.message.toUpperCase();
-        errorEl.classList.remove('hidden');
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
-});
+		    e.preventDefault();
+		    const btn = document.getElementById('loginBtn');
+		    const errorEl = document.getElementById('loginError');
+		    const originalText = btn.innerHTML;
+		
+		    btn.disabled = true;
+		    btn.innerHTML = `MEMPROSES...`;
+		    errorEl.classList.add('hidden');
+		
+		    try {
+		        const { data, error } = await _supabase.auth.signInWithPassword({
+		            email: emailInput.value,
+		            password: passwordInput.value
+		        });
+		
+		        if (error) throw error;
+		
+		        sidebarEmail.innerText = emailInput.value;
+		        await loadSidebarHistory();
+		        startNewSession();
+		        showApp();
+		    } catch (err) {
+		        errorEl.innerText = "LOGIN GAGAL: " + err.message.toUpperCase();
+		        errorEl.classList.remove('hidden');
+		        btn.disabled = false;
+		        btn.innerHTML = originalText;
+		    }
+		});
 
 		function renderHistory() {
 			messagesArea.innerHTML = '';
@@ -1647,14 +1646,14 @@ function startNewSession() {
 		});
 
 		if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', () => {
-        if (document.activeElement.tagName === 'TEXTAREA' && !sidebar.classList.contains('-translate-x-full')) {
-            requestAnimationFrame(() => {
-                scrollBottom(true, 'auto');
-            });
-        }
-    });
-}
+		    window.visualViewport.addEventListener('resize', () => {
+		        if (document.activeElement.tagName === 'TEXTAREA' && !sidebar.classList.contains('-translate-x-full')) {
+		            requestAnimationFrame(() => {
+		                scrollBottom(true, 'auto');
+		            });
+		        }
+		    });
+		}
 
 		userInput.addEventListener('keydown', function (e) {
 			if (e.key === 'Enter' && !e.shiftKey) {
@@ -2220,13 +2219,11 @@ function startNewSession() {
 		});
 
 		chatForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (!isGenerating) {
-        sendMessage();
-    }
-});
-
-
+		    e.preventDefault();
+		    if (!isGenerating) {
+		        sendMessage();
+		    }
+		});
 
 		const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn');
 		if (sidebarLogoutBtn) {
@@ -2412,8 +2409,6 @@ function startNewSession() {
 				loadSession(id);
 			}
 		}
-
-
 
 		async function downloadImageFromBtn(btn, event) {
 			if (event) event.stopPropagation();
@@ -2945,21 +2940,16 @@ function startNewSession() {
 		}
 
 		function updateStartLoading() {
-			const bar = document.getElementById('loadBar');
-			const text = document.getElementById('loadingText');
-			let progress = 0;
-
-			const interval = setInterval(() => {
-				progress += Math.floor(Math.random() * 15) + 5;
-				if (progress > 100) progress = 100;
-
-				if (bar) bar.style.width = progress + '%';
-				if (text) text.innerText = progress + '%';
-
-				if (progress >= 100) {
-					clearInterval(interval);
-				}
-			}, 150);
+		    const bar = document.getElementById('loadBar');
+		    let progress = 0;
+		    const interval = setInterval(() => {
+		        progress += Math.floor(Math.random() * 15) + 5;
+		        if (progress > 100) progress = 100;
+		        if (bar) bar.style.width = progress + '%';
+		        if (progress >= 100) {
+		            clearInterval(interval);
+		        }
+		    }, 150);
 		}
 		updateStartLoading();
 
@@ -3159,7 +3149,6 @@ function startNewSession() {
 		        }
 		    }
 		});
-
 	</script>
 </body>
 
