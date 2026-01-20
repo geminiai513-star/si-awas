@@ -217,19 +217,17 @@
 		}
 
 		#userInput {
-		    width: 100%;
-		    background: transparent;
-		    border: none;
-		    outline: none;
-		    resize: none;
-		    font-size: 16px;
-		    font-weight: 500;
-		    color: #1f2937;
-		    line-height: 24px;
-		    max-height: 150px;
-		    display: block;
-		    padding-top: 12px;
-		    padding-bottom: 12px;
+			width: 100%;
+			background: transparent;
+			border: none;
+			outline: none;
+			resize: none;
+			font-size: 16px;
+			font-weight: 500;
+			color: #1f2937;
+			line-height: 20px;
+			max-height: 150px;
+			display: block;
 		}
 
 		#userInput::placeholder {
@@ -392,7 +390,7 @@
 	<div id="loadingOverlay">
 		<div class="loading-wrapper">
 			<div class="loading-container">
-				<div id="loadingText">LOADING...</div>
+				<div id="loadingText">LOADING</div>
 				<div class="loading-bar" id="loadBar"></div>
 			</div>
 		</div>
@@ -902,36 +900,17 @@
 		const STREAM_SPEED = 8;
 		const STREAM_CHUNK_SIZE = 5;
 
-		const MAIN_SYSTEM_PROMPT = `Anda adalah ALISA, Asisten Inspektorat Provinsi Lampung yang ramah dan profesional.
+		const MAIN_SYSTEM_PROMPT = `Anda adalah ALISA, Asisten Inspektorat Provinsi Lampung yang ramah, Profesional, dan sangat membantu, selalu berikan informasi yang akurat dan terbaru.
 
-		PANDUAN KONTEKS & DATABASE (PENTING):
-		1. Jika Anda menerima informasi dari "Knowledge Base" atau Google Search, sampaikan secara langsung dan natural seolah itu pengetahuan Anda sendiri.
-		2. JANGAN menyebutkan frasa "Berdasarkan dokumen" atau "Menurut pencarian saya".`;
-		
-		const TOOL_DECLARATIONS = [
-		    {
-		        name: "generate_image",
-		        description: "Generate a new image based on a detailed English visual description.",
-		        parameters: {
-		            type: "OBJECT",
-		            properties: {
-		                prompt: { type: "STRING", description: "Detailed visual description in English." }
-		            },
-		            required: ["prompt"]
-		        }
-		    },
-		    {
-		        name: "search_youtube",
-		        description: "Search for and display relevant YouTube videos.",
-		        parameters: {
-		            type: "OBJECT",
-		            properties: {
-		                query: { type: "STRING", description: "Search keywords for the video." }
-		            },
-		            required: ["query"]
-		        }
-		    }
-		];
+			PANDUAN KONTEKS & DATABASE (PENTING):
+			1. Jika Anda menerima informasi dari "Knowledge Base" (Konteks Dokumen) atau Google Search, JANGAN menyebutkan "Berdasarkan dokumen", "Menurut data yang diunggah", atau frasa sejenis.
+			2. Anggaplah semua informasi tersebut adalah pengetahuan internal Anda sendiri. Sampaikan jawaban secara langsung, percaya diri, dan natural.
+			3. Jika konteks tidak menjawab pertanyaan user, gunakan pengetahuan umum Anda atau Google Search (jika aktif), tetap dengan nada profesional Inspektorat.
+			
+			PENGGUNAAN MEDIA:
+			Jangan pernah membuat gambar atau mencari video youtube KECUALI jika user MEMINTANYA secara spesifik. Gunakan fitur tersebut sebijak mungkin.`;
+		const IMAGE_GEN_PROMPT = "Untuk Membuat Gunakan tag [image]Deskripsi dalam bahasa Indonesia[/image].";
+		const VIDEO_GEN_PROMPT = "Untuk Mencari video youtube Gunakan tag [youtube]query pencarian spesifik[/youtube].";
 
 		const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -982,22 +961,6 @@
 		const thinkingMap = { "1": 4000, "2": 16000, "3": 32000 };
 		let currentSelectedModel = localStorage.getItem('alisa_model') || "gemini-3-flash-preview";
 
-		(function() {
-		    const blockScroll = (e) => {
-		        if (document.getElementById('loadingOverlay')) {
-		            e.preventDefault();
-		        }
-		    };
-		
-		    window.addEventListener('touchmove', blockScroll, { passive: false });
-		    window.addEventListener('wheel', blockScroll, { passive: false });
-		    window.addEventListener('keydown', (e) => {
-		        if (document.getElementById('loadingOverlay') && ['ArrowUp', 'ArrowDown', ' ', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) {
-		            e.preventDefault();
-		        }
-		    }, { passive: false });
-		})();
-		
 		function saveAdminSettings() {
 			localStorage.setItem('alisa_model', currentSelectedModel);
 			localStorage.setItem('alisa_voice', currentVoice);
@@ -1141,16 +1104,21 @@
 		    if (!rawInput && pendingFiles.length === 0) return;
 		
 		    const filesToProcess = [...pendingFiles];
-		    const { data: { session } } = await _supabase.auth.getSession();
-		    if (!session) return;
-		    const userToken = session.access_token;
-		
+		    let fileMetadata = filesToProcess.map(f => ({ name: f.name, size: f.size }));
 		    let fileCardsHTML = "";
 		    filesToProcess.forEach(f => {
 		        fileCardsHTML += getFileCardHTML(f.name, f.size);
 		    });
 		
-		    appendMessageToUI('user', rawInput, true, false, fileCardsHTML);
+		    const dynamicMainPrompt = document.getElementById('systemPromptInput').value || MAIN_SYSTEM_PROMPT;
+		    const sliderVal = document.getElementById('settings-thinking').value;
+		    const currentBudget = thinkingMap[sliderVal] || 16000;
+		    const currentTemp = parseFloat(document.getElementById('settings-temp').value) || 1.0;
+		    const currentMaxTokens = parseInt(document.getElementById('settings-tokens').value) || 65536;
+		
+		    const { data: { session } } = await _supabase.auth.getSession();
+		    if (!session) return;
+		    const userToken = session.access_token;
 		
 		    userInput.blur();
 		    userInput.value = '';
@@ -1161,84 +1129,58 @@
 		
 		    let apiParts = [];
 		    let textContext = "";
-		    let fileMetadata = [];
 		    pendingFiles = [];
 		    renderPreviews();
 		
+		    for (const f of filesToProcess) {
+		        const ext = f.name.split('.').pop().toLowerCase();
+		        if (f.mime.startsWith('image/') || f.mime === 'application/pdf') {
+		            const cleanBase64 = f.base64.includes(',') ? f.base64.split(',')[1] : f.base64;
+		            apiParts.push({ inline_data: { mime_type: f.mime, data: cleanBase64 } });
+		        } else {
+		            textContext += await (['docx', 'xlsx', 'xls', 'pptx'].includes(ext) ? extractTextFromOffice(f) : readCodeFile(f));
+		        }
+		    }
+		
+		    const finalPrompt = rawInput + (textContext ? "\n\nKONTEKS DOKUMEN:\n" + textContext : "");
+		    const userMessageParts = apiParts.length > 0 ? [...apiParts, { text: finalPrompt }] : [{ text: finalPrompt }];
+		
+		    chatHistory.push({ role: "user", parts: userMessageParts, fileMetadata: fileMetadata });
+		    appendMessageToUI('user', rawInput, true, false, fileCardsHTML);
+		    await saveMessageToSupabase('user', rawInput, fileMetadata);
+		
+		    showTyping();
+		
+		    const useImageGen = document.getElementById('image-feature-toggle').checked;
+		    const useYoutube = document.getElementById('youtube-feature-toggle').checked;
+		    let combinedSystemInstruction = dynamicMainPrompt;
+		    if (useImageGen) combinedSystemInstruction += `\n\n${IMAGE_GEN_PROMPT}`;
+		    if (useYoutube) combinedSystemInstruction += `\n\n${VIDEO_GEN_PROMPT}`;
+		
+		    const useGoogleSearch = document.getElementById('google-search-toggle').checked;
+		    const useKB = document.getElementById('kb-toggle').checked;
+		    let contextPrompt = finalPrompt;
+		
+		    if (useKB) {
+		        const kbResults = await searchKB(rawInput, userToken);
+		        if (kbResults) contextPrompt = "GUNAKAN REFERENSI BERIKUT UNTUK MENJAWAB:\n" + kbResults + "\n\nPERTANYAAN: " + finalPrompt;
+		    }
+		
+		    const apiContents = [
+		        ...chatHistory.slice(0, -1).map(h => ({ role: h.role, parts: h.parts })),
+		        { role: "user", parts: apiParts.length > 0 ? [...apiParts, { text: contextPrompt }] : [{ text: contextPrompt }] }
+		    ];
+		
 		    try {
-		        for (const f of filesToProcess) {
-		            const ext = f.name.split('.').pop().toLowerCase();
-		            const fileName = `user_${Date.now()}_${f.name}`;
-		            const publicUrl = await uploadImageToSupabase(f.base64, fileName, f.mime);
-		            
-		            fileMetadata.push({ 
-		                name: f.name, 
-		                size: f.size, 
-		                url: publicUrl,
-		                type: f.mime 
-		            });
-		
-		            if (f.mime.startsWith('image/') || f.mime === 'application/pdf') {
-		                apiParts.push({ 
-		                    inlineData: { mimeType: f.mime, data: f.base64 } 
-		                });
-		            } else {
-		                textContext += await (['docx', 'xlsx', 'xls', 'pptx'].includes(ext) ? extractTextFromOffice(f) : readCodeFile(f));
-		            }
-		        }
-		
-		        const finalPrompt = rawInput + (textContext ? "\n\nKONTEKS DOKUMEN:\n" + textContext : "");
-		        const userMessageParts = [...apiParts];
-		        if (finalPrompt.trim() !== "" || userMessageParts.length === 0) {
-		            userMessageParts.push({ text: finalPrompt || "Tolong analisis file ini." });
-		        }
-		
-		        chatHistory.push({ role: "user", parts: userMessageParts, fileMetadata: fileMetadata });
-		        await saveMessageToSupabase('user', rawInput, fileMetadata);
-		
-		        showTyping();
-		
-		        const useImageGen = document.getElementById('image-feature-toggle').checked;
-		        const useYoutube = document.getElementById('youtube-feature-toggle').checked;
-		        const useGoogleSearch = document.getElementById('google-search-toggle').checked;
-		        const useKB = document.getElementById('kb-toggle').checked;
-		
-		        const apiContents = chatHistory.map(h => ({
-		            role: h.role,
-		            parts: h.parts.map(p => {
-		                const part = { ...p };
-		                delete part._isVoice;
-		                return part;
-		            })
-		        }));
-		
-		        if (useKB) {
-		            const kbResults = await searchKB(rawInput, userToken);
-		            if (kbResults) {
-		                const lastIdx = apiContents.length - 1;
-		                const textPart = apiContents[lastIdx].parts.find(p => p.text);
-		                if (textPart) {
-		                    textPart.text = `REFERENSI DATABASE:\n${kbResults}\n\nPERTANYAAN USER: ${textPart.text}`;
-		                }
-		            }
-		        }
-		
-		        const tools = [];
-		        if (useGoogleSearch) tools.push({ google_search: {} });
-		        const functions = [];
-		        if (useImageGen) functions.push(TOOL_DECLARATIONS[0]);
-		        if (useYoutube) functions.push(TOOL_DECLARATIONS[1]);
-		        if (functions.length > 0) tools.push({ function_declarations: functions });
-		
 		        const payload = {
-		            system_instruction: { parts: [{ text: document.getElementById('systemPromptInput').value || MAIN_SYSTEM_PROMPT }] },
+		            system_instruction: { parts: [{ text: combinedSystemInstruction }] },
 		            contents: apiContents,
-		            tools: tools.length > 0 ? tools : undefined,
-		            generation_config: {
-		                temperature: parseFloat(document.getElementById('settings-temp').value) || 1.0,
-		                max_output_tokens: parseInt(document.getElementById('settings-tokens').value) || 65536
-		            }
+		            generation_config: { temperature: currentTemp, max_output_tokens: currentMaxTokens }
 		        };
+		        if (useGoogleSearch) payload.tools = [{ google_search: {} }];
+		        if (currentSelectedModel.includes('think')) {
+		            payload.thinking_config = { include_thoughts: true, thinking_budget_tokens: currentBudget };
+		        }
 		
 		        const response = await fetch(PROXY_URL + `?model=${currentSelectedModel}&action=generateContent`, {
 		            method: 'POST',
@@ -1249,77 +1191,91 @@
 		
 		        const data = await response.json();
 		        hideTyping();
-		
-		        if (!response.ok) throw new Error(data.error?.message || "Koneksi API Gagal");
+		        if (!response.ok) throw new Error(data.error?.message || "Error");
 		
 		        const parts = data.candidates?.[0]?.content?.parts || [];
-		        if (parts.length > 0) {
-		            const aiWrapper = appendMessageToUI('model', "");
-		            const messageBody = aiWrapper.parentElement;
-		            aiWrapper.remove(); 
+		        let finalResponse = "";
+		        parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
 		
-		            let historyText = "";
+		        if (finalResponse) {
+		            // Buat gelembung pesan utama
+		            const initialContainer = appendMessageToUI('model', "");
+		            const messageBody = initialContainer.parentElement;
+		            
+		            // Bersihkan kontainer bawaan agar urutan benar-benar dari nol
+		            messageBody.querySelector('.prose-container').remove();
+		            messageBody.querySelector('.media-container').remove();
+		            messageBody.querySelector('.prose-container-bottom').remove();
+		
+		            const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
+		            const resParts = finalResponse.split(mediaSplitRegex);
+		            
 		            chatHistory.push({ role: "model", parts: [{ text: "" }] });
 		
-		            for (const part of parts) {
+		            for (let i = 0; i < resParts.length; i++) {
 		                if (!isGenerating) break;
-		                if (part.text) {
-		                    const textEl = document.createElement('div');
-		                    textEl.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium mb-4 last:mb-0";
-		                    messageBody.appendChild(textEl);
-		                    const streamed = await streamText(textEl, part.text);
-		                    historyText += streamed;
-		                }
-		                if (part.functionCall) {
-		                    const call = part.functionCall;
-		                    const mediaBox = document.createElement('div');
-		                    mediaBox.className = "media-container w-full flex flex-col mb-4 last:mb-0";
-		                    messageBody.appendChild(mediaBox);
-		                    if (call.name === "generate_image") {
-		                        const imgHtml = await generateImage(call.args.prompt, mediaBox);
-		                        historyText += imgHtml;
-		                    } else if (call.name === "search_youtube") {
-		                        const vidHtml = await generateYoutubeVideo(call.args.query, mediaBox);
-		                        historyText += vidHtml;
-		                    }
+		                const part = resParts[i];
+		                if (!part.trim()) continue;
+		
+		                const imgMatch = part.match(/\[image\]([\s\S]*?)\[\/image\]/i);
+		                const vidMatch = part.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
+		
+		                if (imgMatch) {
+		                    // Buat kontainer media baru di akhir antrian
+		                    const newMediaBox = document.createElement('div');
+		                    newMediaBox.className = "media-container w-full flex flex-col mb-4";
+		                    messageBody.appendChild(newMediaBox);
+		                    
+		                    const tag = await generateImage(imgMatch[1].trim(), newMediaBox);
+		                    chatHistory[chatHistory.length - 1].parts[0].text += tag;
+		                } else if (vidMatch) {
+		                    // Buat kontainer media baru di akhir antrian
+		                    const newMediaBox = document.createElement('div');
+		                    newMediaBox.className = "media-container w-full flex flex-col mb-4";
+		                    messageBody.appendChild(newMediaBox);
+		                    
+		                    const tag = await generateYoutubeVideo(vidMatch[1].trim(), newMediaBox);
+		                    chatHistory[chatHistory.length - 1].parts[0].text += tag;
+		                } else {
+		                    // Buat kontainer teks baru di akhir antrian
+		                    const newTextEl = document.createElement('div');
+		                    newTextEl.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium mb-4";
+		                    messageBody.appendChild(newTextEl);
+		                    
+		                    chatHistory[chatHistory.length - 1].parts[0].text += part;
+		                    await streamText(newTextEl, part);
 		                }
 		            }
-		            chatHistory[chatHistory.length - 1].parts[0].text = historyText;
-		            await saveMessageToSupabase('model', historyText);
 		
-		            if (chatHistory.length <= 2) {
-		                const aiTitle = await generateAiTitle(historyText);
-		                await updateSessionTitle(currentSessionId, aiTitle);
+		            const finalAiText = chatHistory[chatHistory.length - 1].parts[0].text;
+		            await saveMessageToSupabase('model', finalAiText);
+		            
+		            if (chatHistory.length === 2) {
+		                const newTitle = await generateAiTitle(finalAiText);
+		                await updateSessionTitle(currentSessionId, newTitle);
 		            }
 		        }
 		    } catch (error) {
 		        hideTyping();
-		        if (error.name !== 'AbortError') {
-		            appendMessageToUI('error', `Gagal memproses permintaan: ${error.message}`);
-		        }
+		        if (error.name !== 'AbortError') appendMessageToUI('error', "Gagal menghubungi AI.");
 		    } finally {
 		        setGeneratingState(false);
 		        userInput.disabled = false;
 		        abortController = null;
 		    }
 		}
-		
+
 		async function saveMessageToSupabase(role, content, fileMetadata = null) {
 		    try {
 		        const { data: { session } } = await _supabase.auth.getSession();
 		        if (!session) return;
 		
-		        const sessionData = {
+		        const { error: sessionError } = await _supabase.from('chat_sessions').upsert({
 		            id: currentSessionId,
 		            user_id: session.user.id,
+		            title: chatHistory[0]?.parts[0]?.text?.substring(0, 50).replace(/\n/g, ' ') || "Percakapan Baru",
 		            timestamp: Date.now()
-		        };
-		
-		        if (chatHistory.length <= 2) {
-		            sessionData.title = chatHistory[0]?.parts[0]?.text?.substring(0, 50).replace(/\n/g, ' ') || "Percakapan Baru";
-		        }
-		
-		        const { error: sessionError } = await _supabase.from('chat_sessions').upsert(sessionData, { onConflict: 'id' });
+		        }, { onConflict: 'id' });
 		
 		        if (sessionError) throw sessionError;
 		
@@ -1335,7 +1291,7 @@
 		
 		        await loadSidebarHistory();
 		    } catch (err) {
-		        console.error(err.message);
+		        console.error("ALISA Database Error:", err.message);
 		    }
 		}
 		
@@ -1442,7 +1398,7 @@
 		        fileMetadata: m.file_metadata
 		    }));
 		
-		    messagesArea.innerHTML = '';
+		    messagesArea.innerHTML = ''; // Pastikan ini ada untuk membersihkan layar
 		    renderHistory();
 		    await loadSidebarHistory();
 		    toggleSidebar(false);
@@ -1450,15 +1406,19 @@
 		
 		async function deleteSession(id, event) {
 		    if (event) event.stopPropagation();
+		    if (!confirm("Hapus percakapan ini beserta semua media di dalamnya secara permanen?")) return;
 		
 		    try {
-		        const { data: messages } = await _supabase
+		        const { data: messages, error: fetchError } = await _supabase
 		            .from('chat_messages')
-		            .select('file_metadata')
+		            .select('content, file_metadata')
 		            .eq('session_id', id);
 		
+		        if (fetchError) throw fetchError;
+		
+		        const filesToDelete = [];
+		
 		        if (messages && messages.length > 0) {
-		            const filesToDelete = [];
 		            messages.forEach(msg => {
 		                if (msg.file_metadata && Array.isArray(msg.file_metadata)) {
 		                    msg.file_metadata.forEach(file => {
@@ -1468,18 +1428,31 @@
 		                        }
 		                    });
 		                }
-		            });
 		
-		            if (filesToDelete.length > 0) {
-		                await _supabase.storage
-		                    .from('media')
-		                    .remove(filesToDelete);
-		            }
+		                const content = msg.content || "";
+		                const aiImageRegex = /\[AI_IMAGE:(.*?)\]/g;
+		                let match;
+		                while ((match = aiImageRegex.exec(content)) !== null) {
+		                    const url = match[1];
+		                    const path = url.split('/storage/v1/object/public/media/')[1];
+		                    if (path) filesToDelete.push(path);
+		                }
+		            });
 		        }
 		
-		        const { error } = await _supabase.from('chat_sessions').delete().eq('id', id);
-		        
-		        if (error) throw error;
+		        if (filesToDelete.length > 0) {
+		            const uniqueFiles = [...new Set(filesToDelete)];
+		            await _supabase.storage
+		                .from('media')
+		                .remove(uniqueFiles);
+		        }
+		
+		        const { error: deleteError } = await _supabase
+		            .from('chat_sessions')
+		            .delete()
+		            .eq('id', id);
+		
+		        if (deleteError) throw deleteError;
 		
 		        if (id === currentSessionId) {
 		            startNewSession();
@@ -1489,6 +1462,7 @@
 		
 		    } catch (err) {
 		        console.error(err);
+		        alert("Terjadi kesalahan saat menghapus data.");
 		    }
 		}
 		
@@ -1501,33 +1475,33 @@
 		}
 
 		async function generateAiTitle(aiMsg) {
-    const { data: { session } } = await _supabase.auth.getSession();
-    if (!session) return "Percakapan Baru";
-    try {
-        const response = await fetch(PROXY_URL + "?model=gemini-2.5-flash-lite&action=generateContent", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${session.access_token}`
-            },
-            body: JSON.stringify({
-                contents: [{
-                    role: "user",
-                    parts: [{
-                        text: `Buat judul sangat singkat (2-4 kata) untuk percakapan ini berdasarkan jawaban AI berikut: "${aiMsg.substring(0, 500)}". JANGAN gunakan tanda baca, JANGAN gunakan awalan seperti 'Judul:', langsung berikan judulnya saja.`
-                    }]
-                }],
-                generation_config: { temperature: 0.7, max_output_tokens: 20 }
-            })
-        });
-        const data = await response.json();
-        const resText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        return resText ? resText.replace(/[:"'*./]/g, '').trim() : "Percakapan Baru";
-    } catch (e) {
-        return "Percakapan Baru";
-    }
-}
+			const { data: { session } } = await _supabase.auth.getSession();
+			if (!session) return "Percakapan Baru";
+			try {
+				const response = await fetch(PROXY_URL + "?model=gemini-2.5-flash-lite&action=generateContent", {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'apikey': SUPABASE_KEY,
+						'Authorization': `Bearer ${session.access_token}`
+					},
+					body: JSON.stringify({
+						contents: [{
+							role: "user",
+							parts: [{
+								text: `Buat judul singkat (2-4 kata) tanpa tanda baca seperti ':' atau label kategori. Jika isinya sapaan (seperti halo, hai, selamat pagi/siang/malam), buat judul sapaan natural seperti 'Hai ALISA' atau 'Selamat Pagi'. Jika isinya informasi, rangkum intinya secara langsung. Jawaban AI: "${aiMsg}"`
+							}]
+						}],
+						generation_config: { temperature: 0.7, max_output_tokens: 20 }
+					})
+				});
+				const data = await response.json();
+				const resText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+				return resText ? resText.replace(/[:"'*./]/g, '').trim() : "Percakapan Baru";
+			} catch (e) {
+				return "Percakapan Baru";
+			}
+		}
 
 		function initDB() {
 			return new Promise((resolve, reject) => {
@@ -1779,10 +1753,10 @@
 		            <div class="media-container w-full mt-2 empty:hidden gap-3 flex flex-col"></div>
 		            <div class="prose-container-bottom w-full prose prose-container max-w-none text-slate-600 text-[15px] leading-relaxed font-medium mt-4 empty:hidden"></div>
 		            ${!isUser && !isError ? `
-					    <button class="copy-btn absolute bottom-2 right-2 p-1.5 text-slate-300 hover:text-slate-500 active:text-blue-500 transition-colors" title="Salin pesan">
-					        <i data-lucide="copy" class="w-3 h-3"></i>
-					    </button>
-					` : ''}
+		                <button class="copy-btn absolute bottom-2 right-2 p-1 text-slate-400 hover:text-slate-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity" title="Salin pesan">
+		                    <i data-lucide="copy" class="w-3 h-3"></i>
+		                </button>
+		            ` : ''}
 		        </div>
 		    `;
 
@@ -1854,19 +1828,39 @@
 		}
 
 		function parseMessageText(text) {
-			text = text.replace(/<div class="relative.*?src=".*?\/embed\/([a-zA-Z0-9_-]+)".*?<\/div>/g, '\n\n[VIDEO_EMBED:$1]\n\n');
-			const videos = [];
-			text = text.replace(/\[VIDEO_EMBED:([a-zA-Z0-9_-]+)\]/g, (match, id) => {
-				videos.push(id);
-				return `!!!VIDEO_PLACEHOLDER_${videos.length - 1}!!!`;
-			});
-			let html = marked.parse(text);
-			videos.forEach((id, index) => {
-				html = html.replace(new RegExp(`!!!VIDEO_PLACEHOLDER_${index}!!!`, 'g'), getYoutubeEmbedHTML(id));
-				html = html.replace(new RegExp(`<p>!!!VIDEO_PLACEHOLDER_${index}!!!</p>`, 'g'), getYoutubeEmbedHTML(id));
-			});
-
-			return html;
+		    if (!text) return "";
+		
+		    const mediaMap = new Map();
+		    let counter = 0;
+		
+		    const textWithRefs = text.replace(/\[(AI_IMAGE|VIDEO_EMBED):(.*?)\]/g, (match, type, val) => {
+		        const ref = `###MEDIA_REF_${counter++}###`;
+		        let html = "";
+		
+		        if (type === "AI_IMAGE") {
+				    html = `
+				        <div class="relative w-full my-4 rounded-xl overflow-hidden border border-slate-100 shadow-sm group">
+				            <img src="${val}" class="w-full h-auto block">
+				            <button onclick="downloadImageFromBtn(this, event)" class="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center border border-white/20">
+				                <i data-lucide="download" class="w-4 h-4"></i>
+				            </button>
+				        </div>`;
+				} else if (type === "VIDEO_EMBED") {
+		            html = getYoutubeEmbedHTML(val);
+		        }
+		
+		        mediaMap.set(ref, html);
+		        return `\n\n${ref}\n\n`;
+		    });
+		
+		    let rendered = marked.parse(textWithRefs);
+		
+		    mediaMap.forEach((html, ref) => {
+		        rendered = rendered.split(`<p>${ref}</p>`).join(html);
+		        rendered = rendered.split(ref).join(html);
+		    });
+		
+		    return rendered;
 		}
 
 		function showTyping() {
@@ -2061,19 +2055,29 @@
 			renderPreviews();
 		}
 
-		async function generateImage(prompt, targetContainer) {
+		async function generateImage(prompt, targetContainer = null) {
 		    const { data: { session } } = await _supabase.auth.getSession();
+		    if (!session) return "";
+		
 		    const userToken = session.access_token;
 		    let loaderId = `loader-${Date.now()}`;
 		    
-		    const loaderHTML = `
-		        <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 animate-in fade-in duration-300">
-		            <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-blue-600"></i>
-		            <span class="text-[13px] font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Membuat Gambar</span>
-		        </div>`;
-		        
-		    targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
-		    lucide.createIcons();
+		    // Indikator asli v1
+		    if (targetContainer) {
+		        const loaderHTML = `
+		            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 animate-in fade-in duration-300">
+		                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-blue-600"></i>
+		                <span class="text-[13px] font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Membuat Gambar</span>
+		                <div class="flex gap-0.5 items-center pt-1">
+		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></span>
+		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+		                </div>
+		            </div>`;
+		        targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
+		        lucide.createIcons();
+		        scrollBottom(true, 'auto');
+		    }
 		
 		    try {
 		        const response = await fetch(PROXY_URL + `?model=${IMAGE_MODEL_NAME}&action=generateContent`, {
@@ -2087,49 +2091,55 @@
 		
 		        const data = await response.json();
 		        const imagePart = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-		        if (!imagePart) throw new Error("Gagal generate");
+		        if (!imagePart) throw new Error("Gagal");
 		
 		        const fileName = `ai_${Date.now()}.png`;
 		        const publicUrl = await uploadImageToSupabase(imagePart.inlineData.data, fileName, imagePart.inlineData.mimeType);
 		
 		        const imageHTML = `
-		            <div class="relative w-full my-4 rounded-xl overflow-hidden border border-slate-100 shadow-sm group">
-		                <img src="${publicUrl}" class="w-full h-auto block">
-		                <button onclick="window.open('${publicUrl}', '_blank')" class="absolute top-2 right-2 p-2 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
-		                    <i data-lucide="download" class="w-4 h-4"></i>
-		                </button>
-		            </div>`;
+			    <div class="relative w-full my-4 rounded-xl overflow-hidden border border-slate-100 shadow-sm group">
+			        <img src="${publicUrl}" class="w-full h-auto block">
+			        <button onclick="downloadImageFromBtn(this, event)" class="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center border border-white/20">
+			            <i data-lucide="download" class="w-4 h-4"></i>
+			        </button>
+			    </div>`;
 		
-		        const loader = document.getElementById(loaderId);
-		        if (loader) loader.outerHTML = imageHTML;
-		        lucide.createIcons();
+		        if (targetContainer) {
+		            const loader = document.getElementById(loaderId);
+		            if (loader) loader.outerHTML = imageHTML;
+		            lucide.createIcons();
+		        }
 		        
-		        return `\n${imageHTML}\n`;
+		        return `\n\n[AI_IMAGE:${publicUrl}]\n\n`;
 		    } catch (e) {
-		        const loader = document.getElementById(loaderId);
-		        if (loader) loader.innerHTML = `<span class="text-red-500 text-[11px] font-bold uppercase">Gagal membuat gambar</span>`;
+		        if (targetContainer) document.getElementById(loaderId).innerHTML = `<span class="text-red-500 text-xs font-bold">Gagal membuat gambar</span>`;
 		        return "";
 		    }
 		}
 		
-		async function generateYoutubeVideo(query, targetContainer) {
+		async function generateYoutubeVideo(query, targetContainer = null) {
 		    const { data: { session } } = await _supabase.auth.getSession();
+		    if (!session) return "";
+		
 		    const userToken = session.access_token;
 		    let loaderId = `vid-loader-${Date.now()}`;
 		
-		    const loaderHTML = `
-		        <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 animate-in fade-in duration-300">
-		            <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-blue-600"></i>
-		            <span class="text-[13px] font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Mencari Youtube Video</span>
-		            <div class="flex gap-0.5 items-center pt-1">
-		                <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></span>
-		                <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
-		                <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-		            </div>
-		        </div>`;
-		
-		    targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
-		    lucide.createIcons();
+		    // Indikator asli v1
+		    if (targetContainer) {
+		        const loaderHTML = `
+		            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 animate-in fade-in duration-300">
+		                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-blue-600"></i>
+		                <span class="text-[13px] font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Mencari Youtube Video</span>
+		                <div class="flex gap-0.5 items-center pt-1">
+		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></span>
+		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+		                </div>
+		            </div>`;
+		        targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
+		        lucide.createIcons();
+		        scrollBottom(true, 'auto');
+		    }
 		
 		    try {
 		        const response = await fetch(YOUTUBE_PROXY_URL, {
@@ -2142,20 +2152,20 @@
 		        const videoId = data.items?.[0]?.id?.videoId;
 		        
 		        if (videoId) {
-		            const videoHTML = getYoutubeEmbedHTML(videoId);
-		            const loader = document.getElementById(loaderId);
-		            if (loader) loader.outerHTML = videoHTML;
+		            const html = getYoutubeEmbedHTML(videoId);
+		            if (targetContainer) {
+		                const loader = document.getElementById(loaderId);
+		                if (loader) loader.outerHTML = html;
+		            }
 		            return `\n\n[VIDEO_EMBED:${videoId}]\n\n`;
-		        } else {
-		            throw new Error("Video tidak ditemukan");
 		        }
+		        return "";
 		    } catch (error) {
-		        const loader = document.getElementById(loaderId);
-		        if (loader) loader.innerHTML = `<span class="text-red-500 text-[11px] font-bold uppercase">Video tidak ditemukan</span>`;
+		        if (targetContainer) document.getElementById(loaderId).innerHTML = `<span class="text-red-500 text-xs font-bold">Video tidak ditemukan</span>`;
 		        return "";
 		    }
 		}
-
+		
 		async function uploadImageToSupabase(base64Data, fileName, mimeType) {
 		    const pureBase64 = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
 		    const byteCharacters = atob(pureBase64);
@@ -2383,34 +2393,45 @@
 		}
 
 		async function downloadImageFromBtn(btn, event) {
-			if (event) event.stopPropagation();
-			const img = btn.parentElement.querySelector('img');
-			const url = img.src;
-
-			const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-			if (isIOS) {
-				if (navigator.share && url.startsWith('blob:')) {
-					try {
-						const blob = await fetch(url).then(r => r.blob());
-						const file = new File([blob], `sinta_generated_${Date.now()}.png`, { type: blob.type });
-						await navigator.share({
-							files: [file]
-						});
-					} catch (err) {
-						window.open(url, '_blank');
-					}
-				} else {
-					window.open(url, '_blank');
-				}
-			} else {
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `sinta_generated_${Date.now()}.png`;
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
-			}
+		    if (event) event.stopPropagation();
+		    const img = btn.parentElement.querySelector('img');
+		    const url = img.src;
+		    const filename = `sinta_generated_${Date.now()}.png`;
+		
+		    try {
+		        const response = await fetch(url);
+		        const blob = await response.blob();
+		        const blobUrl = window.URL.createObjectURL(blob);
+		
+		        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+		
+		        if (isIOS && navigator.share) {
+		            const file = new File([blob], filename, { type: blob.type });
+		            try {
+		                await navigator.share({
+		                    files: [file]
+		                });
+		            } catch (shareErr) {
+		                const a = document.createElement('a');
+		                a.href = blobUrl;
+		                a.download = filename;
+		                document.body.appendChild(a);
+		                a.click();
+		                document.body.removeChild(a);
+		            }
+		        } else {
+		            const a = document.createElement('a');
+		            a.href = blobUrl;
+		            a.download = filename;
+		            document.body.appendChild(a);
+		            a.click();
+		            document.body.removeChild(a);
+		        }
+		
+		        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 200);
+		    } catch (err) {
+		        console.error(err);
+		    }
 		}
 
 		window.loadSession = loadSession;
@@ -3104,29 +3125,16 @@
 		    if (!btn) return;
 		
 		    const container = btn.parentElement;
-		    const textElement = container.querySelector('.prose-container');
+		    const textElement = container.querySelector('.prose-container') || container.querySelector('.prose');
 		    
 		    if (textElement) {
 		        const textToCopy = textElement.innerText;
 		
 		        try {
-		            if (navigator.clipboard && window.isSecureContext) {
-		                await navigator.clipboard.writeText(textToCopy);
-		            } else {
-		                const textArea = document.createElement("textarea");
-		                textArea.value = textToCopy;
-		                textArea.style.position = "fixed";
-		                textArea.style.left = "-999999px";
-		                textArea.style.top = "-999999px";
-		                document.body.appendChild(textArea);
-		                textArea.focus();
-		                textArea.select();
-		                document.execCommand('copy');
-		                textArea.remove();
-		            }
+		            await navigator.clipboard.writeText(textToCopy);
 		            
 		            const originalHTML = btn.innerHTML;
-		            btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-green-500"></i>';
+		            btn.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-green-500"></i>';
 		            lucide.createIcons();
 		
 		            setTimeout(() => {
@@ -3134,7 +3142,8 @@
 		                lucide.createIcons();
 		            }, 2000);
 		        } catch (err) {
-		            console.error(err);
+		            console.error('Gagal menyalin teks: ', err);
+		            alert('Gagal menyalin teks.');
 		        }
 		    }
 		});
