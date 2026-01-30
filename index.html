@@ -4,123 +4,52 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-	<title>ALISA AI</title>
+	<title>ASISTEN</title>
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 	<meta name="theme-color" content="#ffffff">
-	<meta name="apple-mobile-web-app-title" content="ALISA AI">
+	<meta name="apple-mobile-web-app-title" content="ASISTEN">
 	<link rel="apple-touch-icon" href="icon/icon-512.png">
 	<link rel="icon" type="image/png" href="icon/icon-512.png">
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+	<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 	<script src="https://cdn.tailwindcss.com"></script>
 	<script src="https://unpkg.com/lucide@latest"></script>
 	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-	<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 	<link
-		href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&family=Outfit:wght@400..900&display=swap"
+		href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap"
 		rel="stylesheet">
 	<style>
+		/* CSS ASLI DARI FILE ANDA */
 		html,
 		body {
-		    margin: 0;
-		    padding: 0;
-		    height: 100%;
-		    height: 100dvh;
-		    width: 100vw;
-		    overflow: hidden !important;
-		    background-color: #ffffff;
-		    font-family: 'Inter', sans-serif;
-		    -webkit-text-size-adjust: none;
-		    touch-action: none;
-		    -webkit-user-select: none;
-		    user-select: none;
-		    -webkit-tap-highlight-color: transparent;
-		    position: fixed;
-		    top: 0;
-		    left: 0;
-		    overscroll-behavior: none !important;
-		}
-		
-		#loadingOverlay {
-		    position: fixed;
-		    inset: 0;
-		    width: 100vw;
-		    height: 100dvh;
-		    background: #ffffff;
-		    z-index: 99999;
-		    display: flex;
-		    flex-direction: column;
-		    align-items: center;
-		    justify-content: center;
-		    touch-action: none;
-		    user-select: none;
-		    -webkit-user-select: none;
-		    overscroll-behavior: none;
-		    overflow: hidden; 
-		    pointer-events: all;
+			margin: 0;
+			padding: 0;
+			height: 100%;
+			height: 100dvh;
+			width: 100vw;
+			overflow: hidden !important;
+			background-color: #ffffff;
+			font-family: 'Inter', sans-serif;
+			position: fixed;
+			top: 0;
+			left: 0;
+			overscroll-behavior: none !important;
+			touch-action: manipulation;
 		}
 
 		#appInterface {
 			width: 100%;
-			height: 100%;
-			height: -webkit-fill-available;
 			height: 100dvh;
 			display: none;
 			flex-direction: column;
 			background-color: #ffffff;
 			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-		}
-
-		.loading-wrapper {
-			width: 200px;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			gap: 12px;
-		}
-
-		.loading-container {
-			width: 100%;
-			height: 30px;
-			background-color: #f1f5f9;
-			border-radius: 2px;
-			overflow: hidden;
-			position: relative;
-			border: 1px solid #f1f5f9;
-		}
-
-		.loading-bar {
-			width: 0%;
-			height: 100%;
-			background-color: #000000;
-			position: absolute;
-			top: 0;
-			left: 0;
-			transition: width 0.3s ease-out;
-		}
-
-		#loadingText {
-		    position: absolute;
-		    inset: 0;
-		    display: flex;
-		    align-items: center;
-		    justify-content: center;
-		    font-size: 10px;
-		    font-weight: 900;
-		    font-family: 'Inter', sans-serif;
-		    letter-spacing: 2px;
-		    mix-blend-mode: difference;
-		    color: #ffffff;
-		    z-index: 10;
-		    text-transform: uppercase;
 		}
 
 		#mainSidebar {
@@ -133,200 +62,89 @@
 			flex: 0 0 auto;
 			background-color: #ffffff;
 			border-top: 1px solid #f8fafc;
-			padding: 12px 1rem;
-			padding-bottom: 24px;
+			padding: 12px 1rem 24px;
 		}
 
 		#historyList {
 			flex: 1 1 auto;
 			overflow-y: auto;
-			-webkit-overflow-scrolling: touch;
-			overscroll-behavior-y: contain;
 			padding-bottom: 32px;
+		}
+
+		.history-item-container {
+			position: relative;
+			overflow: hidden;
+			border-radius: 8px;
+			margin-bottom: 2px;
+			background-color: transparent;
+		}
+
+		.history-item-delete {
+			position: absolute;
+			right: 0;
+			top: 0;
+			bottom: 0;
+			width: 50px;
+			background-color: #fef2f2;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 1;
+			opacity: 0;
+			transition: opacity 0.2s ease;
+			border-radius: 0 8px 8px 0;
+		}
+
+		.history-item-delete i,
+		.history-item-delete svg {
+			width: 14px !important;
+			height: 14px !important;
+			color: #ef4444 !important;
+		}
+
+		.history-item-content {
+			position: relative;
+			z-index: 2;
+			background-color: #ffffff;
+			border-radius: 8px;
+			transition: transform 0.15s ease-out;
+			will-change: transform;
+			border: 0.5px solid #f1f5f9;
+		}
+
+		.swiped-left .history-item-delete {
+			opacity: 1;
+		}
+
+		.swiped-left .history-item-content {
+			transform: translateX(-50px);
+			border-top-right-radius: 0;
+			border-bottom-right-radius: 0;
 		}
 
 		header {
 			flex: 0 0 auto;
 			background: white;
 			border-bottom: 1px solid #f8fafc;
-			padding-top: env(safe-area-inset-top, 0px);
 			z-index: 100;
 		}
 
 		main {
 			flex: 1 1 auto;
 			overflow-y: auto;
-			-webkit-overflow-scrolling: touch;
 			background-color: #ffffff;
 			position: relative;
 			overscroll-behavior: contain;
-			transform: translateZ(0);
-			-webkit-transform: translateZ(0);
-			backface-visibility: hidden;
-			-webkit-backface-visibility: hidden;
-			will-change: transform;
 		}
 
 		footer {
 			flex: 0 0 auto;
 			background-color: #ffffff;
 			z-index: 100;
-			padding-bottom: 12px;
+			padding-top: 16px;
+			padding-bottom: 20px;
 			border-top: 1px solid #ffffff;
 			margin-top: -1px;
-		}
-
-		.footer-content {
-			width: 100%;
-			max-width: 48rem;
-			margin: 0 auto;
-			padding: 12px 1rem;
-		}
-
-		*,
-		*::before,
-		*::after {
-			-webkit-user-drag: none;
-			-khtml-user-drag: none;
-			-moz-user-drag: none;
-			-o-user-drag: none;
-			user-drag: none;
-			-webkit-user-select: none;
-			-moz-user-select: none;
-			-ms-user-select: none;
-			user-select: none;
-		}
-
-		.prose,
-		.prose *,
-		input,
-		textarea {
-			-webkit-user-select: text;
-			-moz-user-select: text;
-			-ms-user-select: text;
-			user-select: text;
-		}
-
-		img,
-		svg {
-			pointer-events: none;
-		}
-
-		.prose img {
-			pointer-events: auto;
-		}
-
-		#userInput {
-			width: 100%;
-			background: transparent;
-			border: none;
-			outline: none;
-			resize: none;
-			font-size: 16px;
-			font-weight: 500;
-			color: #1f2937;
-			line-height: 20px;
-			max-height: 150px;
-			display: block;
-		}
-
-		#userInput::placeholder {
-			font-size: 15px;
-			color: #94a3b8;
-		}
-
-		#loginScreen {
-			position: fixed;
-			inset: 0;
-			background: white;
-			z-index: 100;
-			display: none;
-			align-items: center;
-			justify-content: center;
-			padding: 2rem;
-		}
-
-		code {
-			font-family: 'JetBrains Mono', monospace;
-		}
-
-		.prose pre {
-			background: #f3f4f6 !important;
-			padding: 1rem !important;
-			border-radius: 1rem !important;
-			margin: 0.75rem 0;
-			overflow-x: auto;
-		}
-
-		.prose table {
-			display: block;
-			width: 100%;
-			overflow-x: auto;
-			border-collapse: collapse;
-			margin: 0.75rem 0;
-		}
-
-		.prose code {
-			background-color: #f1f5f9 !important;
-			color: #475569 !important;
-			padding: 2px 5px !important;
-			border-radius: 4px !important;
-			font-weight: 600 !important;
-			font-size: 0.85em !important;
-			font-family: 'JetBrains Mono', monospace !important;
-			vertical-align: 1px;
-		}
-
-		.prose pre code {
-			background-color: transparent !important;
-			padding: 0 !important;
-			font-weight: 500 !important;
-		}
-
-		.prose-container {
-			overflow-x: visible;
-		}
-
-		.prose ul,
-		.prose ol {
-			padding-left: 2.2rem;
-			margin-bottom: 0.75rem;
-			list-style-position: outside;
-		}
-
-		.prose li {
-			margin-bottom: 0.2rem;
-		}
-
-		.prose ul {
-			list-style-type: disc;
-		}
-
-		.prose ol {
-			list-style-type: decimal;
-		}
-
-		.prose th,
-		.prose td {
-			border: 1px solid #e5e7eb;
-			padding: 0.5rem 0.75rem;
-			font-size: 14px !important;
-		}
-
-		.prose p {
-			margin-bottom: 0.5rem;
-		}
-
-		::-webkit-scrollbar {
-			display: none;
-			width: 0;
-			height: 0;
-			background: transparent;
-		}
-
-		.custom-scroll {
-			scrollbar-width: none;
-			-ms-overflow-style: none;
 		}
 
 		.content-width {
@@ -336,18 +154,89 @@
 			padding: 0 1rem;
 		}
 
-		@keyframes appearance {
 
-			0%,
-			100% {
-				opacity: 0.3;
-				transform: scale(0.8);
-			}
 
-			50% {
-				opacity: 1;
-				transform: scale(1);
-			}
+		.prose pre {
+			background: #f3f4f6 !important;
+			padding: 1rem !important;
+			border-radius: 1rem !important;
+			margin: 0.75rem 0;
+			overflow-x: auto;
+		}
+
+		.prose code {
+			background-color: #f1f5f9 !important;
+			padding: 2px 5px !important;
+			border-radius: 4px !important;
+			font-family: 'JetBrains Mono', monospace !important;
+			font-size: 0.875rem;
+		}
+
+		.prose ul {
+			list-style-type: disc;
+			padding-left: 1.25rem;
+			margin: 0.5rem 0;
+		}
+
+		.prose ol {
+			list-style-type: decimal;
+			padding-left: 1.25rem;
+			margin: 0.5rem 0;
+		}
+
+		.prose li {
+			margin: 0.25rem 0;
+		}
+
+		.prose table {
+			width: 100%;
+			border-collapse: collapse;
+			margin: 1rem 0;
+			font-size: 0.875rem;
+			border: 1px solid #e2e8f0;
+			border-radius: 0.5rem;
+			overflow: hidden;
+		}
+
+		.prose th,
+		.prose td {
+			border: 1px solid #e2e8f0;
+			padding: 0.75rem;
+			text-align: left;
+		}
+
+		.prose th {
+			background-color: #f8fafc;
+			font-weight: 600;
+			color: #475569;
+		}
+
+		.prose blockquote {
+			border-left: 4px solid #e2e8f0;
+			padding-left: 1rem;
+			color: #64748b;
+			font-style: italic;
+			margin: 1rem 0;
+		}
+
+		.prose p {
+			margin-bottom: 0.75rem;
+			line-height: 1.6;
+		}
+
+		.prose strong {
+			font-weight: 700;
+			color: #1e293b;
+		}
+
+		.prose a {
+			color: #2563eb;
+			text-decoration: underline;
+			font-weight: 500;
+		}
+
+		::-webkit-scrollbar {
+			display: none;
 		}
 
 		.typing-indicator {
@@ -355,15 +244,15 @@
 			align-items: center;
 			gap: 4px;
 			height: 22px;
-			margin-top: 2px;
 		}
 
 		.typing-dot {
-			width: 4px;
-			height: 4px;
+			width: 3px;
+			height: 3px;
 			background-color: #94a3b8;
 			border-radius: 50%;
-			animation: appearance 1.4s infinite ease-in-out;
+			animation: dot-sequence 1.5s infinite ease-in-out;
+			opacity: 0;
 		}
 
 		.typing-dot:nth-child(1) {
@@ -378,32 +267,27 @@
 			animation-delay: 0.4s;
 		}
 
-		.media-container>* {
-			margin-top: 0 !important;
+		@keyframes dot-sequence {
+
+			0%,
+			100% {
+				opacity: 0.2;
+				transform: scale(0.8);
+			}
+
+			50% {
+				opacity: 1;
+				transform: scale(1.2);
+			}
 		}
 	</style>
 </head>
 
 <body class="text-slate-900">
-
-	<!-- Loading Spiner -->
-	<div id="loadingOverlay">
-		<div class="loading-wrapper">
-			<div class="loading-container">
-				<div id="loadingText">LOADING</div>
-				<div class="loading-bar" id="loadBar"></div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Sidebar Overlay -->
 	<div id="sidebarOverlay"
 		class="fixed inset-0 bg-black/20 z-[150] hidden backdrop-blur-sm transition-opacity opacity-0"></div>
-
-	<!-- Sidebar -->
 	<div id="mainSidebar"
-		class="fixed inset-y-0 left-0 w-[280px] bg-white z-[160] transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col border-r border-slate-100 shadow-2xl">
-
+		class="fixed inset-y-0 left-0 w-[280px] bg-white z-[160] transform -translate-x-full flex flex-col border-r border-slate-100 shadow-2xl">
 		<div class="h-16 flex items-center px-4 border-b border-slate-50 shrink-0">
 			<div class="flex items-center gap-3 w-full">
 				<div
@@ -411,124 +295,84 @@
 					<i data-lucide="user" class="w-5 h-5"></i>
 				</div>
 				<div class="flex-1 min-w-0">
-					<p id="sidebarEmail" class="text-[14px] font-bold text-slate-600 truncate font-sans leading-tight">
+					<p id="sidebarEmail" class="text-[14px] font-bold text-slate-600 truncate font-sans">
 						user@example.com</p>
 				</div>
 			</div>
 		</div>
-
-		<div class="flex-1 overflow-y-auto custom-scroll p-3 space-y-4" id="historyList"></div>
-
+		<div class="flex-1 overflow-y-auto px-3 pt-4 pb-2" id="historyList"></div>
 		<div class="sidebar-bottom-controls">
 			<div class="space-y-2">
 				<button id="newChatSidebarBtn"
-					class="w-full flex items-center justify-start gap-3 px-4 py-3 text-slate-700 bg-slate-50 rounded-xl transition-all group active:scale-[0.98]">
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-						stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-						class="text-current transition-colors opacity-60 group-hover:opacity-100">
-						<path
-							d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" />
-						<path d="M8 12h8" />
-						<path d="M12 8v8" />
-					</svg>
-					<span class="font-bold text-sm tracking-wide">Percakapan Baru</span>
+					class="w-full flex items-center gap-3 px-4 py-3 text-slate-700 bg-slate-50 rounded-xl font-bold text-sm">
+					<i data-lucide="plus" class="w-[18px] h-[18px]"></i> Percakapan Baru
 				</button>
 				<button id="sidebarLogoutBtn"
-					class="w-full flex items-center justify-start gap-3 px-4 py-3 text-slate-500 bg-slate-50 rounded-xl transition-all group active:scale-[0.98] hover:text-red-600">
-					<i data-lucide="log-out" stroke-width="2.5"
-						class="w-[18px] h-[18px] text-current transition-colors opacity-60 group-hover:opacity-100"></i>
-					<span class="font-bold text-sm tracking-wide">Keluar</span>
+					class="w-full flex items-center gap-3 px-4 py-3 text-slate-500 bg-slate-50 rounded-xl font-bold text-sm hover:text-red-600">
+					<i data-lucide="log-out" class="w-[18px] h-[18px]"></i> Keluar
 				</button>
 			</div>
 		</div>
 	</div>
 
-	<!-- Login Screen -->
-	<div id="loginScreen" class="fixed inset-0 bg-white z-[100] flex items-center justify-center p-6">
-		<div
-			class="w-full max-w-[360px] bg-white rounded-[32px] px-8 py-8 flex flex-col items-center shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
-			<div class="mb-8 flex items-center justify-center">
-				<img src="icon/icon.png" alt="Logo" class="w-16 h-16 object-contain">
-			</div>
+	<div id="loginScreen" class="fixed inset-0 bg-white z-[100] flex items-center justify-center p-6"
+		style="display: none;">
+		<div class="w-full max-w-[360px] bg-white rounded-[32px] px-8 py-8 flex flex-col items-center shadow-lg">
+			<img src="icon/icon.png" alt="Logo" class="w-16 h-16 mb-8 object-contain">
 			<form id="loginForm" class="w-full space-y-4">
-				<input type="email" id="emailInput" placeholder="Email" required onblur="window.scrollTo(0,0)"
-					class="w-full px-5 py-4 bg-gray-50 rounded-2xl text-sm font-semibold border-none outline-none focus:ring-0">
-				<input type="password" id="passwordInput" placeholder="Password" required onblur="window.scrollTo(0,0)"
-					class="w-full px-5 py-4 bg-gray-50 rounded-2xl text-sm font-semibold border-none outline-none focus:ring-0">
+				<input type="email" id="emailInput" placeholder="Email" required
+					class="w-full px-5 py-4 bg-gray-50 rounded-2xl text-sm font-semibold border-none outline-none">
+				<input type="password" id="passwordInput" placeholder="Password" required
+					class="w-full px-5 py-4 bg-gray-50 rounded-2xl text-sm font-semibold border-none outline-none">
 				<button type="submit" id="loginBtn"
-					class="w-full py-4 bg-black text-white rounded-2xl font-bold text-sm active:scale-95 transition-all mt-2 uppercase">
-					Masuk
-				</button>
+					class="w-full py-4 bg-black text-white rounded-2xl font-bold text-sm uppercase">Masuk</button>
 				<div id="loginError"
-					class="text-red-500 text-[11px] font-bold hidden text-center uppercase tracking-wider mt-2"></div>
+					class="text-red-500 text-[11px] font-bold hidden text-center uppercase mt-2 tracking-widest"></div>
 			</form>
-			<div id="loginError" class="text-red-500 text-sm mt-6 font-bold hidden text-center uppercase"></div>
 		</div>
 	</div>
 
-	<div id="appInterface">
+	<div id="appInterface" style="display: none;">
 		<header class="h-16 px-4 md:px-8 flex items-center">
 			<div class="w-full flex justify-between items-center">
-				<div class="flex items-center gap-3">
-					<img src="icon/icon.png" alt="Logo" class="w-10 h-10 object-contain">
+				<div class="flex items-center">
+					<img src="icon/icon.png" alt="Logo" class="h-8 w-auto object-contain">
 				</div>
 				<div class="flex items-center gap-1">
-					<button id="voiceBtn"
-						class="p-2.5 hover:bg-slate-50 text-slate-400 rounded-xl transition-all active:scale-95">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-							class="lucide lucide-audio-lines">
-							<path d="M2 10v3" />
-							<path d="M6 6v11" />
-							<path d="M10 3v18" />
-							<path d="M14 8v7" />
-							<path d="M18 5v13" />
-							<path d="M22 10v3" />
-						</svg>
-					</button>
-					<button id="settingsBtn"
-						class="p-2.5 hover:bg-slate-50 text-slate-400 rounded-xl transition-all active:scale-95">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-							class="lucide lucide-settings-2">
-							<path d="M14 17H5" />
-							<path d="M19 7h-9" />
-							<circle cx="17" cy="17" r="3" />
-							<circle cx="7" cy="7" r="3" />
-						</svg>
-					</button>
-					<button id="menuBtn"
-					    class="p-2.5 hover:bg-slate-50 text-slate-400 rounded-xl transition-all active:scale-95 -mr-2.5">
-					    <i data-lucide="menu" class="w-6 h-6"></i>
-					</button>
+					<button id="settingsBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95"><i
+							data-lucide="settings-2" class="w-6 h-6"></i></button>
+					<button id="menuBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95 -mr-2.5"><i
+							data-lucide="menu" class="w-6 h-6"></i></button>
 				</div>
 			</div>
 		</header>
 
 		<main id="chatContainer" class="custom-scroll">
-			<div class="content-width pt-4 md:pt-8 pb-8">
+			<div class="content-width pt-4 pb-8">
 				<div id="messagesArea" class="space-y-4"></div>
 			</div>
 		</main>
 
 		<footer>
-			<div class="footer-content">
+			<div class="footer-content content-width">
 				<div id="file-preview-container" class="grid grid-cols-2 md:grid-cols-4 gap-2 empty:hidden mb-4"></div>
-
 				<form id="chatForm" class="w-full">
 					<div id="inputWrapper"
-						class="relative flex items-center bg-slate-50 rounded-full px-1 py-1.5 transition-colors duration-200">
+						class="relative flex items-end gap-1 bg-slate-50 rounded-[28px] p-1.5 border border-slate-100 transition-all duration-200">
 						<input type="file" id="file-input" multiple
 							accept="image/*,application/pdf,.docx,.xlsx,.xls,.pptx,.js,.css,.java,.html,.xml,.py,.sql,.ts,.cpp,.h,.hpp,.lua,.swift"
 							class="hidden" onchange="handleFileSelect(event)">
 
 						<button type="button" id="uploadBtn" onclick="document.getElementById('file-input').click()"
-							class="p-2 text-slate-400 hover:text-slate-600 transition-colors shrink-0">
+							class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 shrink-0 transition-colors">
 							<i data-lucide="plus" class="w-6 h-6"></i>
 						</button>
+
 						<textarea id="userInput" placeholder="Tulis pesan..." rows="1"
-							class="flex-1 w-full bg-transparent border-none outline-none resize-none px-2 text-sm font-medium text-slate-900 leading-[24px] max-h-[150px] block placeholder:text-slate-400 pl-4"></textarea>
-						<button type="submit" id="sendBtn" class="p-2 text-slate-800 transition-colors shrink-0">
+							class="flex-1 min-h-[40px] max-h-[150px] py-2.5 px-2 bg-transparent border-none outline-none resize-none text-[15px] font-medium text-slate-700 placeholder:text-slate-400 leading-tight"></textarea>
+
+						<button type="submit" id="sendBtn"
+							class="w-10 h-10 flex items-center justify-center bg-transparent text-black shrink-0 active:scale-90 transition-transform">
 							<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6"
 								fill="currentColor">
 								<path
@@ -542,17 +386,11 @@
 		</footer>
 	</div>
 
-	<!-- ADMIN SCREEN -->
 	<div id="adminScreen" class="fixed inset-0 bg-white z-[200] hidden flex-col">
 		<header class="h-16 px-4 md:px-8 flex items-center border-b border-slate-100 shrink-0 relative">
 			<div class="flex items-center z-10">
-				<button id="backFromAdmin"
-					class="p-2 -ml-2 text-slate-400 hover:text-slate-600 transition-all active:scale-90">
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-						class="lucide lucide-chevron-left">
-						<path d="m15 18-6-6 6-6" />
-					</svg>
+				<button id="backFromAdmin" class="p-2 -ml-2 text-slate-400 active:scale-90">
+					<i data-lucide="chevron-left" class="w-6 h-6"></i>
 				</button>
 			</div>
 			<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -560,16 +398,16 @@
 			</div>
 		</header>
 
-		<main id="adminScroller" class="flex-1 overflow-y-auto bg-white custom-scroll">
-			<div class="content-width pt-4 md:pt-8 pb-8 space-y-4">
-				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm border-none" id="model-dropdown">
+		<main class="flex-1 overflow-y-auto bg-white">
+			<div class="content-width pt-4 pb-8 space-y-4">
+				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm">
 					<div class="mb-4">
 						<span class="text-xs font-black text-slate-500 uppercase tracking-widest">Model AI</span>
 					</div>
 					<div class="space-y-4">
-						<div class="relative">
+						<div class="relative" id="model-dropdown">
 							<button type="button" id="dropdown-trigger"
-								class="w-full bg-gray-100 rounded-xl px-5 py-3 text-[15px] font-bold text-slate-700 shadow-sm flex items-center justify-between outline-none">
+								class="w-full bg-gray-100 rounded-xl px-5 py-3 text-[15px] font-bold text-slate-700 flex items-center justify-between outline-none">
 								<span id="selected-model-text">Gemini 3 Flash</span>
 								<i data-lucide="chevron-down"
 									class="w-4 h-4 text-slate-400 transition-transform duration-200"
@@ -583,51 +421,22 @@
 									<div class="dropdown-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
 										data-value="gemini-2.5-flash">Gemini 2.5 Flash</div>
 									<div class="dropdown-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
-										data-value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</div>
-									<div class="dropdown-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
 										data-value="gemini-3-flash-preview">Gemini 3 Flash</div>
 									<div class="dropdown-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
 										data-value="gemini-3-pro-preview">Gemini 3 Pro</div>
-									<div class="dropdown-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
-										data-value="gemini-3-deep-think-preview">Gemini 3 Deep Think</div>
-								</div>
-							</div>
-						</div>
-
-						<div class="relative">
-							<button type="button" id="voice-trigger"
-								class="w-full bg-gray-100 rounded-xl px-5 py-3 text-[15px] font-bold text-slate-700 shadow-sm flex items-center justify-between outline-none">
-								<span id="selected-voice-text">Kore (Default)</span>
-								<i data-lucide="chevron-down"
-									class="w-4 h-4 text-slate-400 transition-transform duration-200"
-									id="voice-icon"></i>
-							</button>
-							<div id="voice-menu"
-								class="hidden absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-[210]">
-								<div class="flex flex-col max-h-48 overflow-y-auto">
-									<div class="voice-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
-										data-value="Kore">Kore (Default)</div>
-									<div class="voice-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
-										data-value="Aoede">Aoede</div>
-									<div class="voice-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
-										data-value="Zephyr">Zephyr</div>
-									<div class="voice-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
-										data-value="Leda">Leda</div>
-									<div class="voice-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
-										data-value="Fenrir">Fenrir</div>
 								</div>
 							</div>
 						</div>
 					</div>
 				</div>
 
-				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm border-none mb-4">
+				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm">
 					<div class="mb-4">
 						<span class="text-xs font-black text-slate-500 uppercase tracking-widest">Sumber Data</span>
 					</div>
 					<div class="space-y-4">
-						<!-- Google Search Switch -->
-						<div class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100">
+						<div
+							class="flex items-center justify-center justify-between bg-white p-3 rounded-xl border border-slate-100">
 							<div class="flex items-center gap-3">
 								<div
 									class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
@@ -638,100 +447,49 @@
 							<label class="relative inline-flex items-center cursor-pointer">
 								<input type="checkbox" id="google-search-toggle" class="sr-only peer" checked>
 								<div
-									class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+									class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
 								</div>
 							</label>
 						</div>
 
-						<!-- Knowledge Base Switch -->
 						<div class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100">
 							<div class="flex items-center gap-3">
 								<div
-									class="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
+									class="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
 									<i data-lucide="database" class="w-4 h-4"></i>
 								</div>
 								<span class="text-sm font-bold text-slate-700">Knowledge Base</span>
 							</div>
 							<label class="relative inline-flex items-center cursor-pointer">
-								<input type="checkbox" id="kb-toggle" class="sr-only peer">
+								<input type="checkbox" id="kb-search-toggle" class="sr-only peer">
 								<div
-									class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600">
+									class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600">
 								</div>
 							</label>
 						</div>
-
-						<!-- Upload KB -->
-						<div class="mt-4 pt-4 border-t border-slate-100">
-							<div class="flex justify-between items-center mb-2">
-								<span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Upload
-									Pengetahuan (.txt)</span>
-							</div>
-
-							<div id="kb-upload-status" class="hidden mb-3">
-								<div class="flex justify-between items-center mb-1">
-									<span id="kb-filename"
-										class="text-[9px] font-black text-slate-400 uppercase tracking-tighter truncate max-w-[200px]"></span>
-									<span id="kb-percent" class="text-[9px] font-black text-black">0%</span>
-								</div>
-								<div class="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-									<div id="kb-progress" class="h-full bg-purple-600 transition-all duration-300"
+						<div class="mt-2">
+							<input type="file" id="kb-file-upload" accept=".txt,.md" class="hidden"
+								onchange="handleKbUpload(event)">
+							<button onclick="document.getElementById('kb-file-upload').click()"
+								class="w-full border border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50/30 transition-colors rounded-xl p-3 flex items-center justify-center gap-2 group">
+								<i data-lucide="upload-cloud"
+									class="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
+								<span class="text-xs font-bold text-slate-600 group-hover:text-emerald-700">Upload
+									Knowledge Base</span>
+							</button>
+							<div id="kb-upload-status" class="hidden mt-3 text-center">
+								<div class="w-full bg-slate-200 rounded-full h-1.5 mb-2 overflow-hidden">
+									<div id="kb-progress-bar" class="bg-emerald-500 h-1.5 rounded-full"
 										style="width: 0%"></div>
 								</div>
+								<span id="kb-status-text"
+									class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Memproses...</span>
 							</div>
-
-							<input type="file" id="kb-file-input" multiple accept=".txt" class="hidden"
-								onchange="handleKbUpload(event)">
-							<button type="button" onclick="document.getElementById('kb-file-input').click()"
-								class="w-full flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-50 active:scale-[0.98] transition-all uppercase tracking-wide">
-								<i data-lucide="upload" class="w-4 h-4"></i>
-								Upload Dokumen Baru
-							</button>
 						</div>
 					</div>
 				</div>
 
-				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm border-none mb-4">
-					<div class="mb-4">
-						<span class="text-xs font-black text-slate-500 uppercase tracking-widest">Fitur & Media</span>
-					</div>
-					<div class="space-y-4">
-						<!-- Voice Mode Switch -->
-						<div class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100">
-							<div class="flex items-center gap-3">
-								<div
-									class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-									<i data-lucide="mic" class="w-4 h-4"></i>
-								</div>
-								<span class="text-sm font-bold text-slate-700">Voice Mode</span>
-							</div>
-							<label class="relative inline-flex items-center cursor-pointer">
-								<input type="checkbox" id="voice-feature-toggle" class="sr-only peer" checked>
-								<div
-									class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600">
-								</div>
-							</label>
-						</div>
-
-						<!-- Upload File Switch -->
-						<div class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100">
-							<div class="flex items-center gap-3">
-								<div
-									class="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
-									<i data-lucide="upload-cloud" class="w-4 h-4"></i>
-								</div>
-								<span class="text-sm font-bold text-slate-700">Upload File</span>
-							</div>
-							<label class="relative inline-flex items-center cursor-pointer">
-								<input type="checkbox" id="upload-feature-toggle" class="sr-only peer" checked>
-								<div
-									class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600">
-								</div>
-							</label>
-						</div>
-					</div>
-				</div>
-
-				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm border-none">
+				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm">
 					<div class="mb-6">
 						<span class="text-xs font-black text-slate-500 uppercase tracking-widest">Parameter AI</span>
 					</div>
@@ -768,1090 +526,323 @@
 					</div>
 				</div>
 
-				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm border-none">
+				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm">
 					<div class="mb-4">
 						<span class="text-xs font-black text-slate-500 uppercase tracking-widest">System Prompt</span>
 					</div>
-					<textarea id="systemPromptInput" rows="4" onblur="window.scrollTo(0,0)"
-						class="w-full bg-gray-100 rounded-xl px-4 py-3 text-[15px] leading-relaxed font-medium text-slate-600 outline-none focus:ring-1 focus:ring-slate-200 transition-all resize-none"></textarea>
+					<textarea id="systemPromptInput" rows="4"
+						class="w-full bg-gray-100 rounded-xl px-4 py-3 text-[15px] font-medium text-slate-600 outline-none resize-none"></textarea>
+				</div>
+
+				<!-- MANAJEMEN USER SECTION -->
+				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm">
+					<div class="flex justify-between items-center mb-4">
+						<span class="text-xs font-black text-slate-500 uppercase tracking-widest">Manajemen User</span>
+						<button onclick="toggleAddUserForm()"
+							class="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">
+							+ Add User
+						</button>
+					</div>
+
+					<!-- Form Add User -->
+					<div id="addUserForm" class="hidden mb-4 bg-white p-4 rounded-xl border border-slate-100 space-y-3">
+						<input type="email" id="newUserEmail" placeholder="Email User"
+							class="w-full px-4 py-2 bg-slate-50 rounded-lg text-sm border-none outline-none font-medium text-slate-700 placeholder:text-slate-400">
+						<input type="password" id="newUserPassword" placeholder="Password"
+							class="w-full px-4 py-2 bg-slate-50 rounded-lg text-sm border-none outline-none font-medium text-slate-700 placeholder:text-slate-400">
+						<div class="flex gap-2">
+							<button onclick="createNewUser()"
+								class="flex-1 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 py-2 rounded-lg transition-colors">SIMPAN</button>
+							<button onclick="toggleAddUserForm()"
+								class="px-4 bg-slate-100 text-slate-500 py-2 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors">BATAL</button>
+						</div>
+					</div>
+
+					<div id="userListContainer" class="space-y-3">
+						<!-- User Items will be injected here -->
+						<div class="text-center py-4">
+							<span class="text-xs font-medium text-slate-400">Memuat data user...</span>
+						</div>
+					</div>
 				</div>
 			</div>
 		</main>
-
-		<footer class="bg-white shrink-0 h-6 mb-[env(safe-area-inset-bottom,0px)]"></footer>
 	</div>
 
-	<!-- VOICE SCREEN -->
-	<div id="voiceScreen" class="fixed inset-0 bg-white z-[250] hidden flex-col">
-		<header class="h-16 px-4 md:px-8 flex items-center border-none shrink-0 relative">
-			<div class="flex items-center z-10">
-				<button id="backFromVoice"
-					class="p-2 -ml-2 text-slate-400 hover:text-slate-600 transition-all active:scale-90">
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-						class="lucide lucide-chevron-left">
-						<path d="m15 18-6-6 6-6" />
-					</svg>
-				</button>
-			</div>
-			<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-				<h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Live Voice</h2>
-			</div>
-		</header>
-
-		<main
-			class="flex-1 w-full max-w-3xl mx-auto px-4 py-0 flex flex-col items-center justify-center overflow-hidden relative">
-			<div id="voice-visual-box" class="w-full h-full relative flex items-center justify-center overflow-hidden">
-				<canvas id="voice-canvas" class="block"></canvas>
-				<video id="voice-large-video" autoplay playsinline muted
-					class="hidden absolute inset-0 w-full h-full object-cover rounded-[2rem] shadow-xl bg-slate-900 border-none z-20">
-				</video>
-				<canvas id="voice-frame-canvas" style="display:none;"></canvas>
-			</div>
-		</main>
-
-		<footer class="w-full shrink-0 bg-white">
-			<div class="max-w-4xl mx-auto px-6 pb-8 pt-4 flex flex-col items-center gap-6">
-				<div id="voice-timer" class="text-slate-300 font-mono text-xs tracking-[0.3em] font-bold">00:00:00</div>
-				<div class="flex justify-center items-center gap-6 md:gap-10">
-					<button id="switchCameraBtn"
-						class="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center bg-slate-50 text-slate-500 rounded-full active:scale-90 transition-all border border-slate-100 shadow-sm shrink-0">
-						<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-							class="lucide lucide-switch-camera">
-							<path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
-							<path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5" />
-							<circle cx="12" cy="12" r="3" />
-							<path d="m18 22-3-3 3-3" />
-							<path d="m6 2 3 3-3 3" />
-						</svg>
-					</button>
-
-					<button id="endCallBtn"
-						class="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center bg-red-50 text-red-500 rounded-full active:scale-90 transition-all border border-red-100 shadow-sm shrink-0">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-							class="lucide lucide-phone-off">
-							<path
-								d="M10.1 13.9a14 14 0 0 0 3.732 2.668 1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2 18 18 0 0 1-12.728-5.272" />
-							<path d="M22 2 2 22" />
-							<path
-								d="M4.76 13.582A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 .244.473" />
-						</svg>
-					</button>
-
-					<button id="cameraToggleBtn"
-						class="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center bg-slate-50 text-slate-500 rounded-full active:scale-90 transition-all border border-slate-100 shadow-sm shrink-0">
-						<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-							class="lucide lucide-camera">
-							<path
-								d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z" />
-							<circle cx="12" cy="13" r="3" />
-						</svg>
-					</button>
-				</div>
-			</div>
-		</footer>
-	</div>
 	<script>
-		const SUPABASE_URL = "https://wluwdfbvkyafscotpils.supabase.co";
-		const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsdXdkZmJ2a3lhZnNjb3RwaWxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMjgwNjIsImV4cCI6MjA4MzcwNDA2Mn0.RpCI9gd2v8_K6aEp2rKLTv3OWf952kTWkdlxo8NfozU";
+		const SUPABASE_URL = "https://wddsihtjvntvipswmbtp.supabase.co";
+		const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkZHNpaHRqdm50dmlwc3dtYnRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMjg2NDMsImV4cCI6MjA4NDYwNDY0M30.fyz5Uv7eOUb9zQIbH2OBuZbGu1FZ1_2aYT6deOmojrY";
 		const PROXY_URL = `${SUPABASE_URL}/functions/v1/gemini-proxy`;
-		const YOUTUBE_PROXY_URL = `${SUPABASE_URL}/functions/v1/youtube-proxy`;
-		const IMAGE_MODEL_NAME = "gemini-2.5-flash-image";
-		const STORAGE_KEY = "sinta_chat_sessions";
-		const ACTIVE_SESSION_KEY = "sinta_active_session_id";
-
-		const STREAM_SPEED = 8;
-		const STREAM_CHUNK_SIZE = 5;
-
-		const MAIN_SYSTEM_PROMPT = `Kamu adalah Asisten Virtual yang Profesional, Ramah dan sangat membantu.`;
-
-		const MEDIA_GEN_PROMPT = `PANDUAN PEMBUATAN MEDIA:
-		- Untuk membuat gambar, gunakan tag [image]Deskripsi visual dalam Bahasa Indonesia[/image].
-		- Untuk mencari video YouTube, gunakan tag [youtube]Query pencarian spesifik[/youtube].
-		- PENTING!!! Jangan pernah membuat gambar ataupun mencari video di youtube jika User tidak memintanya secara eksplisit.`;
-
+		const EMBEDDING_URL = `${SUPABASE_URL}/functions/v1/gemini-embedding`;
+		const USER_MGMT_URL = `${SUPABASE_URL}/functions/v1/user-management`;
+		const SELECTED_MODEL = "gemini-3-flash-preview";
+		const SYSTEM_PROMPT = "Kamu adalah Asisten Virtual yang Ramah, Profesional, dan Sangat Membantu.";
 		const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-		const loginScreen = document.getElementById('loginScreen');
-		const appInterface = document.getElementById('appInterface');
-		const loginForm = document.getElementById('loginForm');
-		const loginError = document.getElementById('loginError');
-
-		const chatForm = document.getElementById('chatForm');
-		const userInput = document.getElementById('userInput');
-		const chatContainer = document.getElementById('chatContainer');
-		const messagesArea = document.getElementById('messagesArea');
-		const sendBtn = document.getElementById('sendBtn');
-		const menuBtn = document.getElementById('menuBtn');
-		const sidebar = document.getElementById('mainSidebar');
-		const overlay = document.getElementById('sidebarOverlay');
-		const sidebarEmail = document.getElementById('sidebarEmail');
-		const newChatSidebarBtn = document.getElementById('newChatSidebarBtn');
-
-		const historyListEl = document.getElementById('historyList');
 
 		let chatHistory = [];
 		let currentSessionId = null;
-		let typingBubble = null;
 		let isGenerating = false;
-		let abortController = null;
-		
-		let swipeOpenId = null;
-		let swipeStartX = 0;
-		let swipeCurrentEl = null;
-
+		let typingBubble = null;
 		let pendingFiles = [];
 
-		let currentVoice = localStorage.getItem('alisa_voice') || 'Kore';
-		let voiceWs, voiceInCtx, voiceOutCtx, voiceAnalyser, aiAnalyser, voiceDataArray, voiceStream;
-		let isAISpeaking = false, voiceNextTime = 0, voiceSessionId = 0, voiceInterrupted = false;
-		let voiceTimerInterval, voiceCamStream, voiceCamInterval, isVoiceCamOn = false, facingMode = 'user';
-		let activeVoiceSources = [], energyCounter = 0;
-
-		const DB_NAME = "Sinta_Images_DB";
-		const DB_VERSION = 1;
-		const STORE_NAME = "images";
-		let dbInstance = null;
-
-		const settingsBtn = document.getElementById('settingsBtn');
-		const adminScreen = document.getElementById('adminScreen');
-		const backFromAdmin = document.getElementById('backFromAdmin');
+		let currentSelectedModel = localStorage.getItem('awas_model') || "gemini-3-flash-preview";
 		const thinkingMap = { "1": 4000, "2": 16000, "3": 32000 };
-		let currentSelectedModel = localStorage.getItem('alisa_model') || "gemini-3-flash-preview";
 
 		function saveAdminSettings() {
-    localStorage.setItem('alisa_model', currentSelectedModel);
-    localStorage.setItem('alisa_voice', currentVoice);
-    localStorage.setItem('alisa_thinking', document.getElementById('settings-thinking').value);
-    localStorage.setItem('alisa_prompt', document.getElementById('systemPromptInput').value);
-    localStorage.setItem('alisa_temp', document.getElementById('settings-temp').value);
-    localStorage.setItem('alisa_tokens', document.getElementById('settings-tokens').value);
-    localStorage.setItem('alisa_google_search', document.getElementById('google-search-toggle').checked);
-    localStorage.setItem('alisa_kb_toggle', document.getElementById('kb-toggle').checked);
-
-    const voiceEnabled = document.getElementById('voice-feature-toggle').checked;
-    localStorage.setItem('alisa_voice_enabled', voiceEnabled);
-
-    const uploadEnabled = document.getElementById('upload-feature-toggle').checked;
-    localStorage.setItem('alisa_upload_enabled', uploadEnabled);
-    const voiceBtn = document.getElementById('voiceBtn');
-    if (voiceBtn) voiceBtn.style.display = voiceEnabled ? 'block' : 'none';
-
-    const uploadBtn = document.getElementById('uploadBtn');
-    const inputField = document.getElementById('userInput');
-    if (uploadBtn) {
-        if (uploadEnabled) {
-            uploadBtn.style.display = 'block';
-            uploadBtn.classList.remove('hidden');
-            if (inputField) {
-                inputField.classList.remove('pl-4');
-                inputField.classList.add('px-2');
-            }
-        } else {
-            uploadBtn.style.display = 'none';
-            uploadBtn.classList.add('hidden');
-            if (inputField) {
-                inputField.classList.add('pl-4');
-                inputField.classList.remove('px-2');
-            }
-        }
-    }
-}
-
-		if (settingsBtn && adminScreen) {
-			settingsBtn.addEventListener('click', () => {
-				adminScreen.classList.remove('hidden');
-				adminScreen.classList.add('flex');
-			});
+			localStorage.setItem('awas_model', currentSelectedModel);
+			localStorage.setItem('awas_temp', document.getElementById('settings-temp').value);
+			localStorage.setItem('awas_tokens', document.getElementById('settings-tokens').value);
+			localStorage.setItem('awas_thinking', document.getElementById('settings-thinking').value);
+			localStorage.setItem('awas_prompt', document.getElementById('systemPromptInput').value);
+			localStorage.setItem('awas_google_search', document.getElementById('google-search-toggle').checked);
+			localStorage.setItem('awas_kb_search', document.getElementById('kb-search-toggle').checked);
 		}
 
-		if (backFromAdmin && adminScreen) {
-			backFromAdmin.addEventListener('click', () => {
-				adminScreen.classList.add('hidden');
-				adminScreen.classList.remove('flex');
-				saveAdminSettings();
-			});
+		function loadAdminSettings() {
+			const savedModel = localStorage.getItem('awas_model') || "gemini-3-flash-preview";
+			const savedTemp = localStorage.getItem('awas_temp') || "1.0";
+			const savedTokens = localStorage.getItem('awas_tokens') || "65536";
+			const savedThinking = localStorage.getItem('awas_thinking') || "2";
+			const savedPrompt = localStorage.getItem('awas_prompt') || SYSTEM_PROMPT;
+			const savedGoogle = localStorage.getItem('awas_google_search') === 'true';
+			const savedKb = localStorage.getItem('awas_kb_search') === 'true';
+
+			currentSelectedModel = savedModel;
+			const modelLabels = {
+				"gemini-2.5-pro": "Gemini 2.5 Pro",
+				"gemini-2.5-flash": "Gemini 2.5 Flash",
+				"gemini-3-flash-preview": "Gemini 3 Flash",
+				"gemini-3-pro-preview": "Gemini 3 Pro"
+			};
+			document.getElementById('selected-model-text').innerText = modelLabels[savedModel] || "Gemini 3 Flash";
+			document.getElementById('settings-temp').value = savedTemp;
+			document.getElementById('label-temp').innerText = savedTemp;
+			document.getElementById('settings-tokens').value = savedTokens;
+			document.getElementById('label-tokens').innerText = savedTokens;
+			document.getElementById('settings-thinking').value = savedThinking;
+			document.getElementById('label-thinking').innerText = ["LOW", "MEDIUM", "HIGH"][savedThinking - 1];
+			document.getElementById('systemPromptInput').value = savedPrompt;
+			document.getElementById('google-search-toggle').checked = savedGoogle;
+
+			const kbToggle = document.getElementById('kb-search-toggle');
+			if (kbToggle) kbToggle.checked = savedKb;
 		}
 
-		document.querySelectorAll('.dropdown-option').forEach(option => {
-			option.addEventListener('click', function () {
-				currentSelectedModel = this.getAttribute('data-value');
-				document.getElementById('selected-model-text').innerText = this.innerText;
-				document.getElementById('dropdown-menu').classList.add('hidden');
-				document.getElementById('dropdown-icon').style.transform = 'rotate(0deg)';
-				saveAdminSettings();
-			});
-		});
+		async function handleKbUpload(event) {
+			const file = event.target.files[0];
+			if (!file) return;
 
-		document.getElementById('dropdown-trigger').addEventListener('click', () => {
-			const menu = document.getElementById('dropdown-menu');
-			const icon = document.getElementById('dropdown-icon');
-			const isHidden = menu.classList.toggle('hidden');
-			icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
-		});
+			const statusDiv = document.getElementById('kb-upload-status');
+			const progressBar = document.getElementById('kb-progress-bar');
+			const statusText = document.getElementById('kb-status-text');
 
-		window.addEventListener('click', (e) => {
-			const modelMenu = document.getElementById('dropdown-menu');
-			const modelIcon = document.getElementById('dropdown-icon');
-			if (!e.target.closest('#model-dropdown')) {
-				modelMenu.classList.add('hidden');
-				if (modelIcon) modelIcon.style.transform = 'rotate(0deg)';
-			}
+			statusDiv.classList.remove('hidden');
+			progressBar.style.width = '5%';
+			statusText.innerText = "MEMBACA FILE...";
+			statusText.classList.remove('text-red-500', 'text-emerald-600');
 
-			const voiceMenu = document.getElementById('voice-menu');
-			const voiceIcon = document.getElementById('voice-icon');
-			if (!e.target.closest('#voice-trigger')) {
-				if (voiceMenu && !voiceMenu.classList.contains('hidden')) {
-					voiceMenu.classList.add('hidden');
-					if (voiceIcon) voiceIcon.style.transform = 'rotate(0deg)';
+			try {
+				const text = await file.text();
+				const chunks = splitTextIdeally(text, 1000, 200);
+
+				statusText.innerText = `MEMPROSES ${chunks.length} POTONGAN...`;
+
+				let successCount = 0;
+				const { data: { session } } = await _supabase.auth.getSession();
+				const token = session?.access_token;
+
+				for (let i = 0; i < chunks.length; i++) {
+					const chunkContent = chunks[i];
+
+					const res = await fetch(EMBEDDING_URL, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${token}`
+						},
+						body: JSON.stringify({
+							action: 'embed',
+							text: chunkContent
+						})
+					});
+
+					if (!res.ok) {
+						console.error("Gagal embed chunk ke-", i);
+						continue;
+					}
+
+					const { embedding } = await res.json();
+
+					const { error } = await _supabase.from('documents').insert({
+						content: chunkContent,
+						embedding: embedding,
+						metadata: {
+							source: file.name,
+							chunk_index: i,
+							type: "text_upload"
+						}
+					});
+
+					if (!error) successCount++;
+
+					const percent = Math.floor(((i + 1) / chunks.length) * 100);
+					progressBar.style.width = `${percent}%`;
+					statusText.innerText = `UPLOAD: ${percent}%`;
 				}
-			}
-		});
 
-		document.getElementById('settings-thinking').addEventListener('input', function () {
+				statusText.innerText = "SELESAI!";
+				statusText.classList.add('text-emerald-600');
+				setTimeout(() => {
+					statusDiv.classList.add('hidden');
+					event.target.value = '';
+					alert(`Sukses! ${successCount} data masuk ke Knowledge Base.`);
+				}, 1000);
+
+			} catch (e) {
+				console.error(e);
+				statusText.innerText = "ERROR KONEKSI";
+				statusText.classList.add('text-red-500');
+			}
+		}
+
+		function splitTextIdeally(text, maxLength, overlap) {
+			const chunks = [];
+			let startIndex = 0;
+
+			while (startIndex < text.length) {
+				let endIndex = startIndex + maxLength;
+
+				if (endIndex >= text.length) {
+					chunks.push(text.substring(startIndex).trim());
+					break;
+				}
+
+				const windowText = text.substring(startIndex, endIndex);
+				let splitIndex = -1;
+
+				const lastParagraph = windowText.lastIndexOf('\n\n');
+				if (lastParagraph > maxLength * 0.7) {
+					splitIndex = lastParagraph;
+				}
+
+				if (splitIndex === -1) {
+					const sentenceEnd = Math.max(
+						windowText.lastIndexOf('. '),
+						windowText.lastIndexOf('? '),
+						windowText.lastIndexOf('! '),
+						windowText.lastIndexOf('.\n')
+					);
+					if (sentenceEnd > maxLength * 0.5) {
+						splitIndex = sentenceEnd + 1;
+					}
+				}
+
+				if (splitIndex === -1) {
+					const lastEnter = windowText.lastIndexOf('\n');
+					if (lastEnter > maxLength * 0.5) {
+						splitIndex = lastEnter;
+					}
+				}
+
+				if (splitIndex === -1) {
+					const lastSpace = windowText.lastIndexOf(' ');
+					if (lastSpace > maxLength * 0.3) {
+						splitIndex = lastSpace;
+					}
+				}
+
+				if (splitIndex === -1) {
+					splitIndex = maxLength;
+				}
+
+				let realEndIndex = startIndex + splitIndex;
+
+				const chunk = text.substring(startIndex, realEndIndex).trim();
+				if (chunk.length > 0) {
+					chunks.push(chunk);
+				}
+
+				let nextStart = realEndIndex - overlap;
+
+				if (nextStart > 0 && nextStart < text.length) {
+					const spaceBefore = text.lastIndexOf(' ', nextStart);
+					const enterBefore = text.lastIndexOf('\n', nextStart);
+					const safeStart = Math.max(spaceBefore, enterBefore);
+
+					if (safeStart !== -1) {
+						nextStart = safeStart + 1;
+					}
+				}
+
+				if (nextStart <= startIndex) {
+					nextStart = realEndIndex;
+				}
+
+				startIndex = nextStart;
+			}
+
+			return chunks;
+		}
+
+		document.getElementById('settings-tokens').oninput = function () {
+			document.getElementById('label-tokens').innerText = this.value;
+			saveAdminSettings();
+		};
+
+		document.getElementById('settings-temp').oninput = function () {
+			document.getElementById('label-temp').innerText = this.value;
+			saveAdminSettings();
+		};
+
+		document.getElementById('settings-thinking').oninput = function () {
 			const labels = ["LOW", "MEDIUM", "HIGH"];
 			document.getElementById('label-thinking').innerText = labels[this.value - 1];
 			saveAdminSettings();
-		});
-
-		document.getElementById('settings-temp').addEventListener('input', function () {
-			document.getElementById('label-temp').innerText = this.value;
-			saveAdminSettings();
-		});
-
-		document.getElementById('settings-tokens').addEventListener('input', function () {
-			document.getElementById('label-tokens').innerText = this.value;
-			saveAdminSettings();
-		});
-
-		document.getElementById('voiceBtn').onclick = async () => {
-		    const success = await initVoiceAudio();
-		    if (success) {
-		        openVoiceMode();
-		    }
 		};
-		const voiceScreen = document.getElementById('voiceScreen');
-		const backFromVoice = document.getElementById('backFromVoice');
 
-		if (voiceBtn && voiceScreen) {
-			voiceBtn.addEventListener('click', () => {
-				voiceScreen.classList.remove('hidden');
-				voiceScreen.classList.add('flex');
-			});
-		}
+		const dropdownTrigger = document.getElementById('dropdown-trigger');
+		const dropdownMenu = document.getElementById('dropdown-menu');
+		const dropdownIcon = document.getElementById('dropdown-icon');
+		const dropdownOptions = document.querySelectorAll('.dropdown-option');
 
-		if (backFromVoice && voiceScreen) {
-			backFromVoice.addEventListener('click', () => {
-				voiceScreen.classList.add('hidden');
-				voiceScreen.classList.remove('flex');
-			});
-		}
+		dropdownTrigger.onclick = (e) => {
+			e.stopPropagation();
+			dropdownMenu.classList.toggle('hidden');
+			dropdownIcon.style.transform = dropdownMenu.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+		};
 
-		async function sendMessage(e) {
-    if (e) e.preventDefault();
-    if (isGenerating) {
-        if (abortController) abortController.abort();
-        setGeneratingState(false);
-        return;
-    }
-
-    const rawInput = userInput.value.trim();
-    if (!rawInput && pendingFiles.length === 0) return;
-
-    const filesToProcess = [...pendingFiles];
-    let fileMetadata = filesToProcess.map(f => ({ name: f.name, size: f.size }));
-    let fileCardsHTML = "";
-    filesToProcess.forEach(f => {
-        fileCardsHTML += getFileCardHTML(f.name, f.size);
-    });
-
-    const dynamicMainPrompt = document.getElementById('systemPromptInput').value || MAIN_SYSTEM_PROMPT;
-    const combinedSystemInstruction = `${dynamicMainPrompt}\n\n${MEDIA_GEN_PROMPT}`;
-    
-    const sliderVal = document.getElementById('settings-thinking').value;
-    const currentBudget = thinkingMap[sliderVal] || 16000;
-    const currentTemp = parseFloat(document.getElementById('settings-temp').value) || 1.0;
-    const currentMaxTokens = parseInt(document.getElementById('settings-tokens').value) || 65536;
-
-    const { data: { session } } = await _supabase.auth.getSession();
-    if (!session) return;
-    const userToken = session.access_token;
-
-    userInput.blur();
-    userInput.value = '';
-    userInput.style.height = 'auto';
-    userInput.disabled = true;
-    setGeneratingState(true);
-    abortController = new AbortController();
-
-    let apiParts = [];
-    let textContext = "";
-    pendingFiles = [];
-    renderPreviews();
-
-    for (const f of filesToProcess) {
-        const ext = f.name.split('.').pop().toLowerCase();
-        if (f.mime.startsWith('image/') || f.mime === 'application/pdf') {
-            const cleanBase64 = f.base64.includes(',') ? f.base64.split(',')[1] : f.base64;
-            apiParts.push({ inline_data: { mime_type: f.mime, data: cleanBase64 } });
-        } else {
-            textContext += await (['docx', 'xlsx', 'xls', 'pptx'].includes(ext) ? extractTextFromOffice(f) : readCodeFile(f));
-        }
-    }
-
-    const finalPrompt = rawInput + (textContext ? "\n\nKONTEKS DOKUMEN:\n" + textContext : "");
-    const userMessageParts = apiParts.length > 0 ? [...apiParts, { text: finalPrompt }] : [{ text: finalPrompt }];
-
-    chatHistory.push({ role: "user", parts: userMessageParts, fileMetadata: fileMetadata });
-    appendMessageToUI('user', rawInput, true, false, fileCardsHTML);
-    await saveMessageToSupabase('user', rawInput, fileMetadata);
-
-    showTyping();
-
-    const useGoogleSearch = document.getElementById('google-search-toggle').checked;
-    const useKB = document.getElementById('kb-toggle').checked;
-    let contextPrompt = finalPrompt;
-
-    if (useKB) {
-        const kbResults = await searchKB(rawInput, userToken);
-        if (kbResults) contextPrompt = "GUNAKAN REFERENSI BERIKUT UNTUK MENJAWAB:\n" + kbResults + "\n\nPERTANYAAN: " + finalPrompt;
-    }
-
-    const apiContents = [
-        ...chatHistory.slice(0, -1).map(h => ({ role: h.role, parts: h.parts })),
-        { role: "user", parts: apiParts.length > 0 ? [...apiParts, { text: contextPrompt }] : [{ text: contextPrompt }] }
-    ];
-
-    try {
-        const payload = {
-            system_instruction: { parts: [{ text: combinedSystemInstruction }] },
-            contents: apiContents,
-            generation_config: { temperature: currentTemp, max_output_tokens: currentMaxTokens }
-        };
-        if (useGoogleSearch) payload.tools = [{ google_search: {} }];
-        if (currentSelectedModel.includes('think')) {
-            payload.thinking_config = { include_thoughts: true, thinking_budget_tokens: currentBudget };
-        }
-
-        const response = await fetch(PROXY_URL + `?model=${currentSelectedModel}&action=generateContent`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${userToken}` },
-            signal: abortController.signal,
-            body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-        hideTyping();
-        if (!response.ok) throw new Error(data.error?.message || "Error");
-
-        const parts = data.candidates?.[0]?.content?.parts || [];
-        let finalResponse = "";
-        parts.forEach(part => { if (part.text && !part.thought) finalResponse += part.text; });
-
-        if (finalResponse) {
-            const initialContainer = appendMessageToUI('model', "");
-            const messageBody = initialContainer.parentElement;
-            
-            messageBody.querySelector('.prose-container').remove();
-            messageBody.querySelector('.media-container').remove();
-            messageBody.querySelector('.prose-container-bottom').remove();
-
-            const mediaSplitRegex = /(\[image\][\s\S]*?\[\/image\]|\[youtube\][\s\S]*?\[\/youtube\])/gi;
-            const resParts = finalResponse.split(mediaSplitRegex);
-            
-            chatHistory.push({ role: "model", parts: [{ text: "" }] });
-
-            for (let i = 0; i < resParts.length; i++) {
-                if (!isGenerating) break;
-                const part = resParts[i];
-                if (!part.trim()) continue;
-
-                const imgMatch = part.match(/\[image\]([\s\S]*?)\[\/image\]/i);
-                const vidMatch = part.match(/\[youtube\]([\s\S]*?)\[\/youtube\]/i);
-
-                if (imgMatch) {
-                    const newMediaBox = document.createElement('div');
-                    newMediaBox.className = "media-container w-full flex flex-col mb-4";
-                    messageBody.appendChild(newMediaBox);
-                    
-                    const tag = await generateImage(imgMatch[1].trim(), newMediaBox);
-                    chatHistory[chatHistory.length - 1].parts[0].text += tag;
-                } else if (vidMatch) {
-                    const newMediaBox = document.createElement('div');
-                    newMediaBox.className = "media-container w-full flex flex-col mb-4";
-                    messageBody.appendChild(newMediaBox);
-                    
-                    const tag = await generateYoutubeVideo(vidMatch[1].trim(), newMediaBox);
-                    chatHistory[chatHistory.length - 1].parts[0].text += tag;
-                } else {
-                    const newTextEl = document.createElement('div');
-                    newTextEl.className = "w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium mb-4";
-                    messageBody.appendChild(newTextEl);
-                    
-                    chatHistory[chatHistory.length - 1].parts[0].text += part;
-                    await streamText(newTextEl, part);
-                }
-            }
-
-            const finalAiText = chatHistory[chatHistory.length - 1].parts[0].text;
-            await saveMessageToSupabase('model', finalAiText);
-            
-            if (chatHistory.length === 2) {
-                const newTitle = await generateAiTitle(finalAiText);
-                await updateSessionTitle(currentSessionId, newTitle);
-            }
-        }
-    } catch (error) {
-        hideTyping();
-        if (error.name !== 'AbortError') appendMessageToUI('error', "Gagal menghubungi AI.");
-    } finally {
-        setGeneratingState(false);
-        userInput.disabled = false;
-        abortController = null;
-    }
-}
-
-		async function saveMessageToSupabase(role, content, fileMetadata = null) {
-		    try {
-		        const { data: { session } } = await _supabase.auth.getSession();
-		        if (!session) return;
-		
-		        const { error: sessionError } = await _supabase.from('chat_sessions').upsert({
-		            id: currentSessionId,
-		            user_id: session.user.id,
-		            title: chatHistory[0]?.parts[0]?.text?.substring(0, 50).replace(/\n/g, ' ') || "Percakapan Baru",
-		            timestamp: Date.now()
-		        }, { onConflict: 'id' });
-		
-		        if (sessionError) throw sessionError;
-		
-		        const { error: msgError } = await _supabase.from('chat_messages').insert([{
-		            session_id: currentSessionId,
-		            role: role,
-		            content: content,
-		            file_metadata: fileMetadata,
-		            timestamp: Date.now()
-		        }]);
-		
-		        if (msgError) throw msgError;
-		
-		        await loadSidebarHistory();
-		    } catch (err) {
-		        console.error("ALISA Database Error:", err.message);
-		    }
-		}
-		
-		async function saveCurrentSession() {
-		    const { data: { session } } = await _supabase.auth.getSession();
-		    if (!session) return;
-		
-		    const lastMsg = chatHistory[chatHistory.length - 1];
-		    if (lastMsg) {
-		        await saveMessageToSupabase(lastMsg.role, lastMsg.parts[0].text, lastMsg.fileMetadata);
-		    }
-		}
-		
-		async function updateSessionTitle(id, newTitle) {
-		    await _supabase
-		        .from('chat_sessions')
-		        .update({ title: newTitle })
-		        .eq('id', id);
-		    await loadSidebarHistory();
-		}
-		
-		async function loadSidebarHistory() {
-		    const { data: { session } } = await _supabase.auth.getSession();
-		    if (!session || !historyListEl) return;
-		
-		    const { data: sessions, error } = await _supabase
-		        .from('chat_sessions')
-		        .select('*')
-		        .eq('user_id', session.user.id)
-		        .order('timestamp', { ascending: false });
-		
-		    if (error || !sessions) return;
-		    
-		    historyListEl.innerHTML = '';
-		    const groups = { 'Hari Ini': [], 'Kemarin': [], 'Lebih Lama': [] };
-		    const now = new Date();
-		    const todayStr = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-		    const yesterdayStr = todayStr - 86400000;
-		
-		    sessions.forEach(s => {
-		        const ts = Number(s.timestamp);
-		        const sDate = new Date(ts).setHours(0, 0, 0, 0);
-		        if (sDate === todayStr) groups['Hari Ini'].push(s);
-		        else if (sDate === yesterdayStr) groups['Kemarin'].push(s);
-		        else groups['Lebih Lama'].push(s);
-		    });
-		
-		    Object.entries(groups).forEach(([label, groupSessions]) => {
-		        if (groupSessions.length > 0) {
-		            const groupDiv = document.createElement('div');
-					groupDiv.className = "mb-0.5";
-					groupDiv.innerHTML = `<h3 class="px-3 text-[11px] font-black text-slate-300 mb-0 uppercase tracking-tighter">${label}</h3>`; 
-					const listDiv = document.createElement('div');
-					listDiv.className = "space-y-0"; 
-					
-					groupSessions.forEach(s => {
-					    const isActive = s.id === currentSessionId;
-					    const item = document.createElement('div');
-					 
-					    item.className = "relative overflow-hidden w-full h-[32px] bg-slate-50"; 
-					    item.innerHTML = `
-					        <div class="absolute inset-y-0 right-0 w-[50px] flex items-center justify-center">
-					            <button onclick="deleteSession('${s.id}', event)" class="w-full h-full flex items-center justify-center text-red-500">
-					                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-					            </button>
-					        </div>
-					        <div id="swipe-content-${s.id}" 
-					             class="absolute inset-0 bg-white flex items-center px-3 cursor-pointer z-10 transition-transform duration-200"
-					             ontouchstart="swipeStart(event, '${s.id}')"
-					             ontouchmove="swipeMove(event)"
-					             ontouchend="swipeEnd(event)"
-					             onmousedown="mouseSwipeStart(event, '${s.id}')"
-					             onclick="handleSwipeClick('${s.id}')">
-					            <span class="truncate text-[14px] ${isActive ? 'text-slate-900 font-bold' : 'text-slate-600 font-medium'}">
-					                ${s.title}
-					            </span>
-					        </div>
-					    `;
-					    listDiv.appendChild(item);
-					});
-		            groupDiv.appendChild(listDiv);
-		            historyListEl.appendChild(groupDiv);
-		        }
-		    });
-		    lucide.createIcons();
-		}
-		
-		async function loadSession(id) {
-		    if (!id) return;
-		    currentSessionId = id;
-		    localStorage.setItem(ACTIVE_SESSION_KEY, id);
-		    
-		    const { data: messages, error } = await _supabase
-		        .from('chat_messages')
-		        .select('*')
-		        .eq('session_id', id)
-		        .order('timestamp', { ascending: true });
-		
-		    if (error) return;
-		
-		    chatHistory = messages.map(m => ({
-		        role: m.role,
-		        parts: [{ text: m.content }],
-		        fileMetadata: m.file_metadata
-		    }));
-		
-		    messagesArea.innerHTML = ''; // Pastikan ini ada untuk membersihkan layar
-		    renderHistory();
-		    await loadSidebarHistory();
-		    toggleSidebar(false);
-		}
-		
-		async function deleteSession(id, event) {
-		    if (event) event.stopPropagation();
-		    if (!confirm("Hapus percakapan ini beserta semua media di dalamnya secara permanen?")) return;
-		
-		    try {
-		        const { data: messages, error: fetchError } = await _supabase
-		            .from('chat_messages')
-		            .select('content, file_metadata')
-		            .eq('session_id', id);
-		
-		        if (fetchError) throw fetchError;
-		
-		        const filesToDelete = [];
-		
-		        if (messages && messages.length > 0) {
-		            messages.forEach(msg => {
-		                if (msg.file_metadata && Array.isArray(msg.file_metadata)) {
-		                    msg.file_metadata.forEach(file => {
-		                        if (file.url) {
-		                            const path = file.url.split('/storage/v1/object/public/media/')[1];
-		                            if (path) filesToDelete.push(path);
-		                        }
-		                    });
-		                }
-		
-		                const content = msg.content || "";
-		                const aiImageRegex = /\[AI_IMAGE:(.*?)\]/g;
-		                let match;
-		                while ((match = aiImageRegex.exec(content)) !== null) {
-		                    const url = match[1];
-		                    const path = url.split('/storage/v1/object/public/media/')[1];
-		                    if (path) filesToDelete.push(path);
-		                }
-		            });
-		        }
-		
-		        if (filesToDelete.length > 0) {
-		            const uniqueFiles = [...new Set(filesToDelete)];
-		            await _supabase.storage
-		                .from('media')
-		                .remove(uniqueFiles);
-		        }
-		
-		        const { error: deleteError } = await _supabase
-		            .from('chat_sessions')
-		            .delete()
-		            .eq('id', id);
-		
-		        if (deleteError) throw deleteError;
-		
-		        if (id === currentSessionId) {
-		            startNewSession();
-		        } else {
-		            await loadSidebarHistory();
-		        }
-		
-		    } catch (err) {
-		        console.error(err);
-		        alert("Terjadi kesalahan saat menghapus data.");
-		    }
-		}
-		
-		function startNewSession() {
-		    currentSessionId = Date.now().toString();
-		    chatHistory = [];
-		    messagesArea.innerHTML = '';
-		    localStorage.setItem(ACTIVE_SESSION_KEY, currentSessionId);
-		    loadSidebarHistory();
-		}
-
-		async function generateAiTitle(aiMsg) {
-			const { data: { session } } = await _supabase.auth.getSession();
-			if (!session) return "Percakapan Baru";
-			try {
-				const response = await fetch(PROXY_URL + "?model=gemini-2.5-flash-lite&action=generateContent", {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'apikey': SUPABASE_KEY,
-						'Authorization': `Bearer ${session.access_token}`
-					},
-					body: JSON.stringify({
-						contents: [{
-							role: "user",
-							parts: [{
-								text: `Buat judul singkat (2-4 kata) tanpa tanda baca seperti ':' atau label kategori. Jika isinya sapaan (seperti halo, hai, selamat pagi/siang/malam), buat judul sapaan natural seperti 'Hai ALISA' atau 'Selamat Pagi'. Jika isinya informasi, rangkum intinya secara langsung. Jawaban AI: "${aiMsg}"`
-							}]
-						}],
-						generation_config: { temperature: 0.7, max_output_tokens: 20 }
-					})
-				});
-				const data = await response.json();
-				const resText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-				return resText ? resText.replace(/[:"'*./]/g, '').trim() : "Percakapan Baru";
-			} catch (e) {
-				return "Percakapan Baru";
-			}
-		}
-
-		function initDB() {
-			return new Promise((resolve, reject) => {
-				if (dbInstance) return resolve(dbInstance);
-				const request = indexedDB.open(DB_NAME, DB_VERSION);
-				request.onupgradeneeded = (event) => {
-					const db = event.target.result;
-					if (!db.objectStoreNames.contains(STORE_NAME)) {
-						db.createObjectStore(STORE_NAME, { keyPath: "id" });
-					}
-				};
-				request.onsuccess = (event) => {
-					dbInstance = event.target.result;
-					resolve(dbInstance);
-				};
-				request.onerror = (event) => reject("DB Error: " + event.target.error);
-			});
-		}
-
-		async function saveImageToIDB(id, blob) {
-			const db = await initDB();
-			return new Promise((resolve, reject) => {
-				const tx = db.transaction(STORE_NAME, "readwrite");
-				const store = tx.objectStore(STORE_NAME);
-				const request = store.put({ id, blob, timestamp: Date.now() });
-				request.onsuccess = () => resolve(id);
-				request.onerror = () => reject(request.error);
-			});
-		}
-
-		async function getImageFromIDB(id) {
-			const db = await initDB();
-			return new Promise((resolve, reject) => {
-				const tx = db.transaction(STORE_NAME, "readonly");
-				const store = tx.objectStore(STORE_NAME);
-				const request = store.get(id);
-				request.onsuccess = (e) => {
-					resolve(e.target.result ? e.target.result.blob : null);
-				};
-				request.onerror = () => resolve(null);
-			});
-		}
-
-		async function deleteImageFromIDB(id) {
-			const db = await initDB();
-			return new Promise((resolve, reject) => {
-				const tx = db.transaction(STORE_NAME, "readwrite");
-				const store = tx.objectStore(STORE_NAME);
-				store.delete(id);
-				tx.oncomplete = () => resolve();
-			});
-		}
-
-		lucide.createIcons();
-
-		marked.setOptions({
-			gfm: true,
-			breaks: true,
-			headerIds: false,
-			mangle: false
-		});
-
-		function showApp() {
-			loginScreen.style.display = 'none';
-			appInterface.style.display = 'flex';
-
-			requestAnimationFrame(() => {
-				chatContainer.scrollTop = chatContainer.scrollHeight;
-				requestAnimationFrame(() => {
-					chatContainer.scrollTop = chatContainer.scrollHeight;
-				});
-			});
-		}
-
-		function scrollBottom(force = false, behavior = 'auto') {
-			if (!chatContainer) return;
-
-			if (behavior === 'auto') {
-				chatContainer.scrollTop = chatContainer.scrollHeight;
-			} else {
-				chatContainer.scrollTo({
-					top: chatContainer.scrollHeight,
-					behavior: behavior
-				});
-			}
-		}
-
-		loginForm.addEventListener('submit', async (e) => {
-		    e.preventDefault();
-		    const btn = document.getElementById('loginBtn');
-		    const errorEl = document.getElementById('loginError');
-		    const originalText = btn.innerHTML;
-		
-		    btn.disabled = true;
-		    btn.innerHTML = `MEMPROSES...`;
-		    errorEl.classList.add('hidden');
-		
-		    try {
-		        const { data, error } = await _supabase.auth.signInWithPassword({
-		            email: emailInput.value,
-		            password: passwordInput.value
-		        });
-		
-		        if (error) throw error;
-		
-		        sidebarEmail.innerText = emailInput.value;
-		        await loadSidebarHistory();
-		        startNewSession();
-		        showApp();
-		    } catch (err) {
-		        errorEl.innerText = "LOGIN GAGAL: " + err.message.toUpperCase();
-		        errorEl.classList.remove('hidden');
-		        btn.disabled = false;
-		        btn.innerHTML = originalText;
-		    }
-		});
-
-		function renderHistory() {
-			messagesArea.innerHTML = '';
-			chatHistory.forEach(msg => {
-				const role = msg.role === 'user' ? 'user' : 'model';
-				let textToShow = "";
-				let cardsHTML = "";
-
-				if (msg.role === 'user') {
-					const textPart = msg.parts.find(p => p.text);
-					if (textPart && textPart.text) {
-						let cleanText = textPart.text;
-						if (cleanText.includes("\n\nKONTEKS DOKUMEN:")) {
-							cleanText = cleanText.split("\n\nKONTEKS DOKUMEN:")[0];
-						}
-						if (cleanText.includes("GUNAKAN REFERENSI BERIKUT UNTUK MENJAWAB:")) {
-							const parts = cleanText.split("GUNAKAN REFERENSI BERIKUT UNTUK MENJAWAB:");
-							if (cleanText.includes("\n\nPERTANYAAN: ")) {
-								cleanText = cleanText.split("\n\nPERTANYAAN: ").pop();
-							} else {
-								cleanText = parts[0] || parts[1] || textPart.text;
-							}
-						}
-						textToShow = cleanText.trim();
-					}
-					if (msg.fileMetadata) {
-						msg.fileMetadata.forEach(f => {
-							cardsHTML += getFileCardHTML(f.name, f.size);
-						});
-					}
-				} else {
-					textToShow = msg.parts.map(p => p.text || "").join("");
-				}
-
-				appendMessageToUI(role, textToShow, false, false, cardsHTML);
-			});
-		}
-
-		userInput.addEventListener('input', function () {
-			this.style.height = 'auto';
-			const newHeight = Math.min(this.scrollHeight, 150);
-			this.style.height = newHeight + 'px';
-
-			const wrapper = document.getElementById('inputWrapper');
-			if (this.scrollHeight > 50) {
-				wrapper.classList.remove('rounded-full');
-				wrapper.classList.add('rounded-[24px]');
-			} else {
-				wrapper.classList.remove('rounded-[24px]');
-				wrapper.classList.add('rounded-full');
-			}
-
-			this.style.overflowY = this.scrollHeight > 150 ? 'auto' : 'hidden';
-		});
-
-		userInput.addEventListener('blur', () => {
-			window.scrollTo(0, 0);
-		});
-
-		if (window.visualViewport) {
-		    window.visualViewport.addEventListener('resize', () => {
-		        if (document.activeElement.tagName === 'TEXTAREA' && !sidebar.classList.contains('-translate-x-full')) {
-		            requestAnimationFrame(() => {
-		                scrollBottom(true, 'auto');
-		            });
-		        }
-		    });
-		}
-
-		userInput.addEventListener('keydown', function (e) {
-			if (e.key === 'Enter' && !e.shiftKey) {
-				e.preventDefault();
-				if (!isGenerating && this.value.trim()) {
-					sendMessage();
-				}
+		document.addEventListener('click', (e) => {
+			if (!dropdownTrigger.contains(e.target) && !dropdownMenu.contains(e.target)) {
+				dropdownMenu.classList.add('hidden');
+				if (dropdownIcon) dropdownIcon.style.transform = 'rotate(0deg)';
 			}
 		});
 
-		window.addEventListener('resize', () => {
-			const screen = document.getElementById('voiceScreen');
-			const box = document.getElementById('voice-visual-box');
+		dropdownOptions.forEach(option => {
+			option.onclick = () => {
+				const value = option.getAttribute('data-value');
+				const text = option.innerText;
 
-			if (screen && !screen.classList.contains('hidden')) {
-				box.style.transition = 'none';
-				box.style.opacity = '0';
+				currentSelectedModel = value;
+				document.getElementById('selected-model-text').innerText = text;
 
-				clearTimeout(window.voiceResizeTimeout);
-				window.voiceResizeTimeout = setTimeout(() => {
-					resizeVoiceCanvas();
-					requestAnimationFrame(() => {
-						requestAnimationFrame(() => {
-							box.style.transition = 'opacity 0.4s ease-in-out';
-							box.style.opacity = '1';
-						});
-					});
-				}, 1100);
-			}
+				dropdownMenu.classList.add('hidden');
+				dropdownIcon.style.transform = 'rotate(0deg)';
+
+				saveAdminSettings();
+			};
 		});
 
-		function getFileCardHTML(name, size) {
-			const ext = name.split('.').pop().toLowerCase();
-			const visual = getFileIcon(ext);
-			return `
-		        <div class="bg-gray-100 rounded-2xl p-3 flex items-center gap-2 relative w-full min-h-[64px] border-none animate-in fade-in slide-in-from-bottom-1">
-		            <div class="w-10 h-10 flex-none flex items-center justify-center overflow-hidden shrink-0">${visual}</div>
-		            <div class="flex-1 flex flex-col justify-center min-w-0 h-10">
-		                <p class="text-[12px] font-bold text-gray-700 truncate leading-none mb-1 m-0 p-0">${name}</p>
-		                <p class="text-[10px] text-gray-400 font-medium leading-none m-0 p-0">${size}</p>
-		            </div>
-		        </div>`;
+		document.getElementById('google-search-toggle').onchange = () => {
+			saveAdminSettings();
+		};
+		const kbSearchToggle = document.getElementById('kb-search-toggle');
+		if (kbSearchToggle) {
+			kbSearchToggle.onchange = () => {
+				saveAdminSettings();
+			};
 		}
 
-		function appendMessageToUI(role, text, animate = true, isRawHtml = false, fileCardsHTML = "") {
-			const isUser = role === 'user';
-			const isError = role === 'error';
-			const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-			const nameLabel = isUser ? 'ANDA' : (isError ? 'SYSTEM ERROR' : 'ALISA');
-			const nameColorClass = isUser ? 'text-slate-600' : (isError ? 'text-red-600' : 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500');
-
-			const div = document.createElement('div');
-			div.className = `w-full ${animate ? 'animate-in fade-in slide-in-from-bottom-2 duration-300' : ''} mb-2`;
-
-			div.innerHTML = `
-		        <div class="w-full bg-slate-50 rounded-2xl p-4 ${!isUser && !isError ? 'pb-6' : ''} shadow-sm border-none group relative">
-		            <div class="flex justify-between items-center border-b border-slate-100 pb-1 mb-0.5">
-		                <span class="text-xs font-black ${nameColorClass} uppercase tracking-widest">${nameLabel}</span>
-		                <span class="text-xs font-bold text-slate-300 uppercase">${timeStr}</span>
-		            </div>
-		            <div class="w-full prose-container prose max-w-none text-slate-600 text-[15px] leading-relaxed font-medium">
-		                ${isError ? `<div class="text-red-600 text-xs font-mono whitespace-pre-wrap">${text}</div>` : (isRawHtml ? text : parseMessageText(text))}
-		            </div>
-		            <div class="user-file-cards grid grid-cols-2 md:grid-cols-4 gap-2 empty:hidden mt-3">${fileCardsHTML}</div>
-		            <div class="media-container w-full mt-2 empty:hidden gap-3 flex flex-col"></div>
-		            <div class="prose-container-bottom w-full prose prose-container max-w-none text-slate-600 text-[15px] leading-relaxed font-medium mt-4 empty:hidden"></div>
-		            ${!isUser && !isError ? `
-		                <button class="copy-btn absolute bottom-2 right-2 p-1 text-slate-400 hover:text-slate-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity" title="Salin pesan">
-		                    <i data-lucide="copy" class="w-3 h-3"></i>
-		                </button>
-		            ` : ''}
-		        </div>
-		    `;
-
-			messagesArea.appendChild(div);
-			lucide.createIcons();
-			if (window.hljs) div.querySelectorAll('pre code').forEach(hljs.highlightElement);
-			if (animate) scrollBottom(true, 'auto');
-			resolveIdbImages(div, animate);
-
-			return div.querySelector('.prose-container');
-		}
-
-		function resolveIdbImages(container, animate = false) {
-			container.querySelectorAll('img').forEach(async (img) => {
-				const src = img.getAttribute('src');
-				if (src && src.startsWith('idb://')) {
-					const id = src.replace('idb://', '');
-					try {
-						const blob = await getImageFromIDB(id);
-						if (blob) {
-							const url = URL.createObjectURL(blob);
-							img.src = url;
-							img.onload = () => {
-								if (animate) scrollBottom(true, 'auto');
-							};
-						} else {
-						}
-					} catch (e) {
-						console.error("IDB Image Load Error", e);
-					}
-				}
-			});
-		}
-
-		async function streamText(element, text) {
-			let cursor = 0;
-			while (cursor < text.length) {
-				if (!isGenerating) break;
-				cursor += STREAM_CHUNK_SIZE;
-				element.innerHTML = parseMessageText(text.substring(0, cursor));
-				scrollBottom(true, 'auto');
-				await new Promise(resolve => setTimeout(resolve, STREAM_SPEED));
-			}
-			let finalText = text.substring(0, cursor);
-			if (isGenerating) {
-				finalText = text;
-				element.innerHTML = parseMessageText(text);
-			}
-			if (window.hljs) element.querySelectorAll('pre code').forEach(hljs.highlightElement);
-			lucide.createIcons();
-			scrollBottom(true, 'auto');
-			return finalText;
-		}
-
-		function getYoutubeEmbedHTML(videoId) {
-			return `
-				<div class="relative w-full my-4 rounded-xl overflow-hidden border border-slate-100 shadow-sm aspect-video bg-black">
-					<iframe
-						width="100%"
-						height="100%"
-						src="https://www.youtube.com/embed/${videoId}"
-						title="YouTube video player"
-						frameborder="0"
-						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-						referrerpolicy="strict-origin-when-cross-origin"
-						allowfullscreen>
-					</iframe>
-				</div>`;
-		}
-
-		function parseMessageText(text) {
-		    if (!text) return "";
-		
-		    const mediaMap = new Map();
-		    let counter = 0;
-		
-		    const textWithRefs = text.replace(/\[(AI_IMAGE|VIDEO_EMBED):(.*?)\]/g, (match, type, val) => {
-		        const ref = `###MEDIA_REF_${counter++}###`;
-		        let html = "";
-		
-		        if (type === "AI_IMAGE") {
-				    html = `
-				        <div class="relative w-full my-4 rounded-xl overflow-hidden border border-slate-100 shadow-sm group">
-				            <img src="${val}" class="w-full h-auto block">
-				            <button onclick="downloadImageFromBtn(this, event)" class="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center border border-white/20">
-				                <i data-lucide="download" class="w-4 h-4"></i>
-				            </button>
-				        </div>`;
-				} else if (type === "VIDEO_EMBED") {
-		            html = getYoutubeEmbedHTML(val);
-		        }
-		
-		        mediaMap.set(ref, html);
-		        return `\n\n${ref}\n\n`;
-		    });
-		
-		    let rendered = marked.parse(textWithRefs);
-		
-		    mediaMap.forEach((html, ref) => {
-		        rendered = rendered.split(`<p>${ref}</p>`).join(html);
-		        rendered = rendered.split(ref).join(html);
-		    });
-		
-		    return rendered;
-		}
-
-		function showTyping() {
-			const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-			typingBubble = document.createElement('div');
-			typingBubble.className = "w-full animate-in fade-in slide-in-from-bottom-2 duration-300 mb-2";
-			typingBubble.innerHTML = `
-		        <div class="w-full bg-slate-50 rounded-2xl p-4 shadow-sm border-none">
-		            <div class="flex justify-between items-center border-b border-slate-100 pb-1 mb-0.5">
-		                <span class="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 uppercase tracking-widest">ALISA</span>
-		                <span class="text-xs font-bold text-slate-300 uppercase">${timeStr}</span>
-		            </div>
-		            <div class="typing-indicator">
-						<span class="text-[13px] font-medium text-slate-400">Thinking</span>
-		                <div class="typing-dot !w-1 !h-1 mt-1"></div>
-		                <div class="typing-dot !w-1 !h-1 mt-1"></div>
-		                <div class="typing-dot !w-1 !h-1 mt-1"></div>
-		            </div>
-		        </div>
-		    `;
-			messagesArea.appendChild(typingBubble);
-			scrollBottom(true, 'auto');
-		}
-
-		function hideTyping() {
-			if (typingBubble) {
-				typingBubble.remove();
-				typingBubble = null;
-			}
-		}
-
-		function setGeneratingState(state) {
-		    isGenerating = state;
-		    if (state) {
-		        sendBtn.innerHTML = '<i data-lucide="square" class="w-4 h-4 text-red-500" fill="currentColor"></i>';
-		        sendBtn.className = 'p-2.5 bg-slate-100 text-red-500 rounded-full shrink-0 flex items-center justify-center min-w-[40px] h-[40px] transition-colors';
-		    } else {
-		        sendBtn.innerHTML = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor"><path d="M21.66,12a2,2,0,0,1-1.14,1.81L5.87,20.75A2.08,2.08,0,0,1,5,21a2,2,0,0,1-1.82-2.82L5.46,13H11a1,1,0,0,0,0-2H5.46L3.18,5.87A2,2,0,0,1,5.86,3.25h0l14.65,6.94A2,2,0,0,1,21.66,12Z"></path></svg>';
-		        sendBtn.className = 'p-2 text-slate-800 transition-colors shrink-0';
-		    }
-		    lucide.createIcons();
-		}
 
 		function formatBytes(bytes, decimals = 2) {
 			if (bytes === 0) return '0 Bytes';
@@ -1940,6 +931,19 @@
 			} catch (e) { return `\n[Gagal membaca isi file ${file.name}]\n`; }
 		}
 
+		function getFileCardHTML(name, size) {
+			const ext = name.split('.').pop().toLowerCase();
+			const visual = getFileIcon(ext);
+			return `
+		        <div class="bg-gray-100 rounded-2xl p-3 flex items-center gap-2 relative w-full min-h-[64px] border-none animate-in fade-in slide-in-from-bottom-1">
+		            <div class="w-10 h-10 flex-none flex items-center justify-center overflow-hidden shrink-0">${visual}</div>
+		            <div class="flex-1 flex flex-col justify-center min-w-0 h-10">
+		                <p class="text-[12px] font-bold text-gray-700 truncate leading-none mb-1 m-0 p-0">${name}</p>
+		                <p class="text-[10px] text-gray-400 font-medium leading-none m-0 p-0">${size}</p>
+		            </div>
+		        </div>`;
+		}
+
 		async function handleFileSelect(event) {
 			const files = Array.from(event.target.files);
 			if (!files.length) return;
@@ -2004,1088 +1008,635 @@
 			renderPreviews();
 		}
 
-		async function generateImage(prompt, targetContainer = null) {
-		    const { data: { session } } = await _supabase.auth.getSession();
-		    if (!session) return "";
-		
-		    const userToken = session.access_token;
-		    let loaderId = `loader-${Date.now()}`;
-		    
-		    // Indikator asli v1
-		    if (targetContainer) {
-		        const loaderHTML = `
-		            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 animate-in fade-in duration-300">
-		                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-blue-600"></i>
-		                <span class="text-[13px] font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Membuat Gambar</span>
-		                <div class="flex gap-0.5 items-center pt-1">
-		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></span>
-		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
-		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-		                </div>
-		            </div>`;
-		        targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
-		        lucide.createIcons();
-		        scrollBottom(true, 'auto');
-		    }
-		
-		    try {
-		        const response = await fetch(PROXY_URL + `?model=${IMAGE_MODEL_NAME}&action=generateContent`, {
-		            method: 'POST',
-		            headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${userToken}` },
-		            body: JSON.stringify({
-		                contents: [{ role: "user", parts: [{ text: prompt }] }],
-		                generationConfig: { response_modalities: ["IMAGE"] }
-		            })
-		        });
-		
-		        const data = await response.json();
-		        const imagePart = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-		        if (!imagePart) throw new Error("Gagal");
-		
-		        const fileName = `ai_${Date.now()}.png`;
-		        const publicUrl = await uploadImageToSupabase(imagePart.inlineData.data, fileName, imagePart.inlineData.mimeType);
-		
-		        const imageHTML = `
-			    <div class="relative w-full my-4 rounded-xl overflow-hidden border border-slate-100 shadow-sm group">
-			        <img src="${publicUrl}" class="w-full h-auto block">
-			        <button onclick="downloadImageFromBtn(this, event)" class="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center border border-white/20">
-			            <i data-lucide="download" class="w-4 h-4"></i>
-			        </button>
-			    </div>`;
-		
-		        if (targetContainer) {
-		            const loader = document.getElementById(loaderId);
-		            if (loader) loader.outerHTML = imageHTML;
-		            lucide.createIcons();
-		        }
-		        
-		        return `\n\n[AI_IMAGE:${publicUrl}]\n\n`;
-		    } catch (e) {
-		        if (targetContainer) document.getElementById(loaderId).innerHTML = `<span class="text-red-500 text-xs font-bold">Gagal membuat gambar</span>`;
-		        return "";
-		    }
-		}
-		
-		async function generateYoutubeVideo(query, targetContainer = null) {
-		    const { data: { session } } = await _supabase.auth.getSession();
-		    if (!session) return "";
-		
-		    const userToken = session.access_token;
-		    let loaderId = `vid-loader-${Date.now()}`;
-		
-		    // Indikator asli v1
-		    if (targetContainer) {
-		        const loaderHTML = `
-		            <div id="${loaderId}" class="mt-2 flex items-center gap-1.5 animate-in fade-in duration-300">
-		                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-blue-600"></i>
-		                <span class="text-[13px] font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Mencari Youtube Video</span>
-		                <div class="flex gap-0.5 items-center pt-1">
-		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></span>
-		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
-		                    <span class="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-		                </div>
-		            </div>`;
-		        targetContainer.insertAdjacentHTML('beforeend', loaderHTML);
-		        lucide.createIcons();
-		        scrollBottom(true, 'auto');
-		    }
-		
-		    try {
-		        const response = await fetch(YOUTUBE_PROXY_URL, {
-		            method: 'POST',
-		            headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${userToken}` },
-		            body: JSON.stringify({ query: query })
-		        });
-		
-		        const data = await response.json();
-		        const videoId = data.items?.[0]?.id?.videoId;
-		        
-		        if (videoId) {
-		            const html = getYoutubeEmbedHTML(videoId);
-		            if (targetContainer) {
-		                const loader = document.getElementById(loaderId);
-		                if (loader) loader.outerHTML = html;
-		            }
-		            return `\n\n[VIDEO_EMBED:${videoId}]\n\n`;
-		        }
-		        return "";
-		    } catch (error) {
-		        if (targetContainer) document.getElementById(loaderId).innerHTML = `<span class="text-red-500 text-xs font-bold">Video tidak ditemukan</span>`;
-		        return "";
-		    }
-		}
-		
-		async function uploadImageToSupabase(base64Data, fileName, mimeType) {
-		    const pureBase64 = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
-		    const byteCharacters = atob(pureBase64);
-		    const byteNumbers = new Array(byteCharacters.length);
-		    for (let i = 0; i < byteCharacters.length; i++) {
-		        byteNumbers[i] = byteCharacters.charCodeAt(i);
-		    }
-		    const byteArray = new Uint8Array(byteNumbers);
-		    const blob = new Blob([byteArray], { type: mimeType });
-		    const filePath = `media/${fileName}`;
-		
-		    const { data, error } = await _supabase.storage
-		        .from('media')
-		        .upload(filePath, blob, {
-		            contentType: mimeType,
-		            upsert: true
-		        });
-		
-		    if (error) throw error;
-		
-		    const { data: { publicUrl } } = _supabase.storage
-		        .from('media')
-		        .getPublicUrl(filePath);
-		
-		    return publicUrl;
-		}
+		async function sendMessage(e) {
+			if (e) e.preventDefault();
+			const input = document.getElementById('userInput');
+			const rawInput = input.value.trim();
+			if (!rawInput && pendingFiles.length === 0 || isGenerating) return;
 
-		sendBtn.addEventListener('pointerdown', (e) => {
-			if (isGenerating || userInput.value.trim()) {
-				e.preventDefault();
-				sendMessage(e);
-			}
-		});
+			const currentTemp = parseFloat(document.getElementById('settings-temp').value) || 1.0;
+			const currentMaxTokens = parseInt(document.getElementById('settings-tokens').value) || 65536;
+			const sliderVal = document.getElementById('settings-thinking').value;
+			const currentBudget = thinkingMap[sliderVal] || 16000;
+			const useGoogleSearch = document.getElementById('google-search-toggle').checked;
+			const useKbSearch = document.getElementById('kb-search-toggle') ? document.getElementById('kb-search-toggle').checked : false;
+			let customSystemPrompt = document.getElementById('systemPromptInput').value || SYSTEM_PROMPT;
 
-		chatForm.addEventListener('submit', (e) => {
-		    e.preventDefault();
-		    if (!isGenerating) {
-		        sendMessage();
-		    }
-		});
+			input.value = '';
+			input.style.height = 'auto';
+			inputWrapper.classList.add('rounded-[28px]');
+			inputWrapper.classList.remove('rounded-[22px]');
+			setGeneratingState(true);
 
-		const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn');
-		if (sidebarLogoutBtn) {
-			sidebarLogoutBtn.addEventListener('click', async () => {
-				if (confirm("Keluar dari akun?")) {
-					const { error } = await _supabase.auth.signOut();
-					if (!error) {
-						localStorage.removeItem(STORAGE_KEY);
-						localStorage.removeItem(ACTIVE_SESSION_KEY);
-						location.reload();
-					}
-				}
-			});
-		}
-
-		document.addEventListener('touchstart', function (event) {
-			if (event.touches.length > 1) {
-				event.preventDefault();
-			}
-		}, { passive: false });
-
-		let lastTouchEnd = 0;
-		document.addEventListener('touchend', function (event) {
-			const now = (new Date()).getTime();
-			if (now - lastTouchEnd <= 300) {
-				event.preventDefault();
-			}
-			lastTouchEnd = now;
-		}, false);
-
-		document.addEventListener('gesturestart', function (event) {
-			event.preventDefault();
-		});
-
-		function toggleSidebar(show) {
-			if (show) {
-				if (document.activeElement && (document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'INPUT')) {
-					document.activeElement.blur();
-				}
-
-				sidebar.classList.remove('-translate-x-full');
-				overlay.classList.remove('hidden');
-				setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-			} else {
-				sidebar.classList.add('-translate-x-full');
-				overlay.classList.add('opacity-0');
-				setTimeout(() => overlay.classList.add('hidden'), 300);
-			}
-		}
-
-		if (menuBtn) {
-			menuBtn.addEventListener('click', () => toggleSidebar(true));
-		}
-		if (overlay) {
-			overlay.addEventListener('click', () => toggleSidebar(false));
-		}
-
-		if (newChatSidebarBtn) {
-			newChatSidebarBtn.addEventListener('click', () => {
-				startNewSession();
-				toggleSidebar(false);
-			});
-		}
-
-			document.querySelectorAll('.dropdown-option').forEach(option => {
-				option.addEventListener('click', function () {
-					currentSelectedModel = this.getAttribute('data-value');
-					document.getElementById('selected-model-text').innerText = this.innerText;
-					document.getElementById('dropdown-menu').classList.add('hidden');
-					document.getElementById('dropdown-icon').style.transform = 'rotate(0deg)';
-				});
+			let fileCardsHTML = "";
+			const filesToProcess = [...pendingFiles];
+			filesToProcess.forEach(f => {
+				fileCardsHTML += getFileCardHTML(f.name, f.size);
 			});
 
-			document.getElementById('settings-thinking').addEventListener('input', function () {
-				const labels = ["LOW", "MEDIUM", "HIGH"];
-				document.getElementById('label-thinking').innerText = labels[this.value - 1];
-			});
-		
+			appendMsg('user', rawInput, null, fileCardsHTML);
+			const loadingMsgId = appendTypingBubble();
 
-		function unify(e) { return e.changedTouches ? e.changedTouches[0] : e; }
+			let textContext = "";
+			let kbContext = "";
+			let apiParts = [];
+			pendingFiles = [];
+			renderPreviews();
 
-		let isDragging = false;
-		let dragThresholdMet = false;
-
-		function swipeStart(e, id) {
-			swipeStartX = e.touches[0].clientX;
-			swipeCurrentEl = document.getElementById(`swipe-content-${id}`);
-			handleSwipeStartCommon(id);
-		}
-
-		function swipeMove(e) {
-			if (!swipeCurrentEl) return;
-			const currentX = e.touches[0].clientX;
-			handleSwipeMoveCommon(currentX);
-		}
-
-		function swipeEnd(e) {
-			handleSwipeEndCommon();
-		}
-
-		function mouseSwipeStart(e, id) {
-			e.preventDefault();
-			isDragging = true;
-			dragThresholdMet = false;
-			swipeStartX = e.clientX;
-			swipeCurrentEl = document.getElementById(`swipe-content-${id}`);
-
-			document.addEventListener('mousemove', mouseSwipeMove);
-			document.addEventListener('mouseup', mouseSwipeEnd);
-
-			handleSwipeStartCommon(id);
-		}
-
-		function mouseSwipeMove(e) {
-			if (!isDragging || !swipeCurrentEl) return;
-			handleSwipeMoveCommon(e.clientX);
-		}
-
-		function mouseSwipeEnd(e) {
-			isDragging = false;
-			document.removeEventListener('mousemove', mouseSwipeMove);
-			document.removeEventListener('mouseup', mouseSwipeEnd);
-			handleSwipeEndCommon();
-		}
-
-		function handleSwipeStartCommon(id) {
-			if (swipeOpenId === id) {
-				swipeCurrentEl = null;
-				return;
-			}
-
-			if (swipeOpenId && swipeOpenId !== id) {
-				const openEl = document.getElementById(`swipe-content-${swipeOpenId}`);
-				if (openEl) openEl.style.transform = 'translateX(0)';
-				swipeOpenId = null;
-			}
-
-			if (swipeCurrentEl) {
-				swipeCurrentEl.style.transition = 'none';
-			}
-		}
-
-		function handleSwipeMoveCommon(currentX) {
-			const diff = currentX - swipeStartX;
-			if (Math.abs(diff) > 5) dragThresholdMet = true;
-
-			let newX = diff;
-			if (newX < -60) newX = -60;
-			if (newX > 0) newX = 0;
-
-			swipeCurrentEl.style.transform = `translateX(${newX}px)`;
-		}
-
-		function handleSwipeEndCommon() {
-			if (!swipeCurrentEl) return;
-			swipeCurrentEl.style.transition = 'transform 0.2s ease-out';
-
-			const currentTransform = swipeCurrentEl.style.transform;
-			const translateX = parseInt(currentTransform.replace('translateX(', '').replace('px)', '') || '0');
-			if (translateX < -30) {
-				swipeCurrentEl.style.transform = 'translateX(-60px)';
-				swipeOpenId = swipeCurrentEl.id.replace('swipe-content-', '');
-			} else {
-				swipeCurrentEl.style.transform = 'translateX(0)';
-				if (swipeOpenId === swipeCurrentEl.id.replace('swipe-content-', '')) {
-					swipeOpenId = null;
+			for (const f of filesToProcess) {
+				if (f.mime.startsWith('image/') || f.mime === 'application/pdf') {
+					apiParts.push({ inline_data: { mime_type: f.mime, data: f.base64 } });
+				} else {
+					const ext = f.name.split('.').pop().toLowerCase();
+					textContext += await (['docx', 'xlsx', 'xls', 'pptx'].includes(ext) ? extractTextFromOffice(f) : readCodeFile(f));
 				}
 			}
-			swipeCurrentEl = null;
-		}
-
-		function handleSwipeClick(id) {
-			if (dragThresholdMet) {
-				dragThresholdMet = false;
-				return;
-			}
-
-			const el = document.getElementById(`swipe-content-${id}`);
-			if (swipeOpenId === id) {
-				el.style.transform = 'translateX(0)';
-				swipeOpenId = null;
-			} else {
-				loadSession(id);
-			}
-		}
-
-		async function downloadImageFromBtn(btn, event) {
-		    if (event) event.stopPropagation();
-		    const img = btn.parentElement.querySelector('img');
-		    const url = img.src;
-		    const filename = `sinta_generated_${Date.now()}.png`;
-		
-		    try {
-		        const response = await fetch(url);
-		        if (!response.ok) return;
-		        
-		        const blob = await response.blob();
-		        const blobUrl = window.URL.createObjectURL(blob);
-		        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-		
-		        if (isIOS && navigator.share) {
-		            const file = new File([blob], filename, { type: blob.type });
-		            try {
-		                await navigator.share({ files: [file] });
-		            } catch (shareErr) {
-		                window.URL.revokeObjectURL(blobUrl);
-		                return;
-		            }
-		        } else {
-		            const a = document.createElement('a');
-		            a.href = blobUrl;
-		            a.download = filename;
-		            a.style.display = 'none';
-		            document.body.appendChild(a);
-		            a.click();
-		            setTimeout(() => {
-		                document.body.removeChild(a);
-		                window.URL.revokeObjectURL(blobUrl);
-		            }, 200);
-		        }
-		    } catch (err) {
-		        console.error(err);
-		    }
-		}
-
-		window.loadSession = loadSession;
-		window.deleteSession = deleteSession;
-		window.swipeStart = swipeStart;
-		window.swipeMove = swipeMove;
-		window.swipeEnd = swipeEnd;
-		window.handleSwipeClick = handleSwipeClick;
-		window.mouseSwipeStart = mouseSwipeStart;
-		window.downloadImageFromBtn = downloadImageFromBtn;
-
-		document.addEventListener('click', function (event) {
-			if (swipeOpenId && !event.target.closest(`#swipe-content-${swipeOpenId}`) && !event.target.closest('.bg-red-500')) {
-				const openEl = document.getElementById(`swipe-content-${swipeOpenId}`);
-				if (openEl) openEl.style.transform = 'translateX(0)';
-				swipeOpenId = null;
-			}
-		});
-
-		function openVoiceMode() {
-		    const screen = document.getElementById('voiceScreen');
-		    if (!screen) return;
-		
-		    isAISpeaking = false;
-		    voiceNextTime = 0;
-		    voiceInterrupted = false;
-		    activeVoiceSources = [];
-		    energyCounter = 0;
-		
-		    screen.classList.remove('hidden');
-		    screen.classList.add('flex');
-		
-		    setTimeout(() => {
-		        resizeVoiceCanvas();
-		        initVoiceSession();
-		    }, 200);
-		}
-
-		async function initVoiceAudio() {
-		    try {
-		        voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-		        
-		        if (voiceInCtx) await voiceInCtx.close();
-		        if (voiceOutCtx) await voiceOutCtx.close();
-		
-		        voiceInCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-		        voiceOutCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
-		
-		        await voiceInCtx.resume();
-		        await voiceOutCtx.resume();
-		
-		        aiAnalyser = voiceOutCtx.createAnalyser();
-		        aiAnalyser.fftSize = 1024;
-		        aiAnalyser.connect(voiceOutCtx.destination);
-		
-		        const source = voiceInCtx.createMediaStreamSource(voiceStream);
-		        voiceAnalyser = voiceInCtx.createAnalyser();
-		        voiceAnalyser.fftSize = 1024;
-		        voiceDataArray = new Uint8Array(voiceAnalyser.frequencyBinCount);
-		        source.connect(voiceAnalyser);
-		
-		        const workletJS = `class P extends AudioWorkletProcessor { process(inputs) { if (inputs[0][0]) this.port.postMessage(inputs[0][0]); return true; } }; registerProcessor('p', P);`;
-		        const url = 'data:application/javascript,' + encodeURIComponent(workletJS);
-		        await voiceInCtx.audioWorklet.addModule(url);
-		
-		        const node = new AudioWorkletNode(voiceInCtx, 'p');
-		        node.port.onmessage = (e) => {
-		            if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
-		                let sum = 0;
-		                for (let i = 0; i < e.data.length; i++) sum += Math.abs(e.data[i]);
-		                let energy = sum / e.data.length;
-		                if (isAISpeaking && energy > 0.04) {
-		                    energyCounter++;
-		                    if (energyCounter > 8) { interruptVoice(); energyCounter = 0; }
-		                } else { energyCounter = 1; }
-		                if (energy > 0.01 && voiceInterrupted) { voiceInterrupted = false; voiceSessionId++; }
-		                if (!voiceInterrupted && !isAISpeaking) {
-		                    const int16 = new Int16Array(e.data.length);
-		                    for (let i = 0; i < e.data.length; i++) int16[i] = e.data[i] * 0x7FFF;
-		                    voiceWs.send(JSON.stringify({
-		                        type: 'audio',
-		                        data: { data: btoa(String.fromCharCode(...new Uint8Array(int16.buffer))), mimeType: 'audio/pcm;rate=16000' }
-		                    }));
-		                }
-		            }
-		        };
-		        source.connect(node);
-		        return true;
-		    } catch (err) {
-		        console.error("Mic Error:", err);
-		        alert("Izin mikrofon diperlukan untuk mode suara.");
-		        return false;
-		    }
-		}
-
-		async function initVoiceSession() {
-			if (voiceWs) {
-				voiceWs.close();
-				voiceWs = null;
-			}
-
-			voiceNextTime = 0;
-			voiceInterrupted = false;
-			isAISpeaking = false;
-			activeVoiceSources = [];
-			energyCounter = 0;
-			voiceSessionId = Date.now();
-
-			const historyContext = chatHistory.map(h => `${h.role === 'model' ? 'ALISA' : 'User'}: ${h.parts[0].text}`).slice(-6).join('\n');
-			const fullPrompt = `${document.getElementById('systemPromptInput').value || MAIN_SYSTEM_PROMPT}\n\nKonteks Percakapan:\n${historyContext}`;
-
-			await initVoiceAudio();
 
 			try {
-				voiceWs = new WebSocket('wss://gemini-proxy-408925499207.asia-southeast2.run.app');
+				const { data: { session } } = await _supabase.auth.getSession();
+				const userToken = session.access_token;
 
-				voiceWs.onopen = () => {
-					startVoiceTimer();
-					voiceWs.send(JSON.stringify({
-						type: 'setup',
-						config: {
-							responseModalities: ['AUDIO'],
-							speechConfig: {
-								voiceConfig: {
-									prebuiltVoiceConfig: { voiceName: currentVoice }
-								}
-							},
-							systemInstruction: fullPrompt,
-							tools: [{ googleSearch: {} }]
-						}
-					}));
-				};
+				if (useKbSearch && rawInput.length > 0) {
+					const embedRes = await fetch(EMBEDDING_URL, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${userToken}`
+						},
+						body: JSON.stringify({ action: 'embed', text: rawInput })
+					});
 
-				voiceWs.onmessage = (e) => {
-					if (!voiceWs || voiceInterrupted) return;
-					const res = JSON.parse(e.data);
-					if (res.type === 'gemini_msg') {
-						const modelTurn = res.data.serverContent?.modelTurn;
-						if (modelTurn && modelTurn.parts) {
-							modelTurn.parts.forEach(p => {
-								if (p.inlineData) {
-									isAISpeaking = true;
-									playVoiceAudio(p.inlineData.data, voiceSessionId);
-								}
-								if (p.text) syncVoiceToChat('assistant', p.text);
-							});
+					if (embedRes.ok) {
+						const { embedding: queryVector } = await embedRes.json();
+
+						const { data: documents, error: searchError } = await _supabase.rpc('match_documents', {
+							query_embedding: queryVector,
+							match_threshold: 0.5,
+							match_count: 5
+						});
+						console.log("🔍 HASIL RAG (CHUNKS):", documents);
+
+						if (documents && documents.length > 0) {
+							kbContext = "\n\n[INFORMASI DARI KNOWLEDGE BASE]:\n" +
+								documents.map((d, i) => `Dokumen ${i + 1} (${d.metadata?.source || 'Unknown'}):\n${d.content}`).join("\n---\n");
 						}
+					}
+				}
+
+				const fullPrompt = `
+				${customSystemPrompt}
+				
+				[INSTRUKSI PENTING UNTUK AI]
+				1. Data di bawah label "KNOWLEDGE BASE (INGATAN)" adalah pengetahuan utamamu. ANGGAP INI ADALAH PENGETAHUAN MURNIMU SENDIRI.
+				2. JANGAN PERNAH mengawali jawaban dengan "Berdasarkan informasi yang diberikan..." atau "Menurut dokumen...". Langsung jawab intinya dengan percaya diri.
+				3. Jika jawaban ada di Knowledge Base, gunakan itu sebagai fakta mutlak.
+				4. Jika Knowledge Base tidak membahasnya, barulah gunakan pengetahuan umummu atau cari di Google (jika diizinkan), tapi jangan mengeluh data tidak lengkap.
+				
+				[KNOWLEDGE BASE (INGATAN)]
+				${kbContext || "Tidak ada ingatan spesifik tentang topik ini, gunakan pengetahuan umum."}
+				
+				[FILE LAMPIRAN USER (JIKA ADA)]
+				${textContext}
+				
+				PERTANYAAN USER:
+				${rawInput}
+				`;
+
+				const payload = {
+					contents: [
+						...chatHistory,
+						{ role: "user", parts: [...apiParts, { text: fullPrompt }] }
+					],
+					generationConfig: {
+						temperature: currentTemp,
+						max_output_tokens: currentMaxTokens
 					}
 				};
 
-				voiceWs.onclose = () => {
-					if (!document.getElementById('voiceScreen').classList.contains('hidden')) {
-						console.log("Reconnecting voice...");
-					}
-				};
+				if (useGoogleSearch) {
+					payload.tools = [{ google_search: {} }];
+				}
 
-				startVoiceVisualizer();
+				if (currentSelectedModel.includes('think')) {
+					payload.thinking_config = {
+						include_thoughts: true,
+						thinking_budget_tokens: currentBudget
+					};
+				}
+
+				const res = await fetch(`${PROXY_URL}?model=${currentSelectedModel}&action=generateContent`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${userToken}`,
+						'apikey': SUPABASE_KEY
+					},
+					body: JSON.stringify(payload)
+				});
+
+				const data = await res.json();
+				const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Gagal memproses jawaban.";
+
+				await typeWriter(loadingMsgId, aiText);
+
+				chatHistory.push(
+					{ role: "user", parts: [{ text: rawInput }] },
+					{ role: "model", parts: [{ text: aiText }] }
+				);
+
+				await saveMsg(session.user.id, rawInput, aiText);
 
 			} catch (err) {
-				closeVoiceMode();
+				console.error(err);
+				const el = document.getElementById(loadingMsgId);
+				if (el) el.innerHTML = "Terjadi kesalahan koneksi atau limit API.";
+			} finally {
+				setGeneratingState(false);
 			}
 		}
 
-		function playVoiceAudio(base64, sid) {
-			if (sid !== voiceSessionId || voiceInterrupted) return;
-			const binary = atob(base64);
-			const bytes = new Uint8Array(binary.length);
-			for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-			const int16 = new Int16Array(bytes.buffer);
-			const buf = voiceOutCtx.createBuffer(1, int16.length, 24000);
-			const data = buf.getChannelData(0);
-			for (let i = 0; i < int16.length; i++) data[i] = int16[i] / 32768.0;
-			const source = voiceOutCtx.createBufferSource();
-			source.buffer = buf;
-			source.connect(aiAnalyser);
-			const now = voiceOutCtx.currentTime;
-			if (voiceNextTime < now) voiceNextTime = now;
-			source.start(voiceNextTime);
-			voiceNextTime += buf.duration;
-			activeVoiceSources.push(source);
-			source.onended = () => {
-				activeVoiceSources = activeVoiceSources.filter(s => s !== source);
-				if (activeVoiceSources.length === 0) isAISpeaking = false;
-			};
+		function appendMsg(role, text, timestamp, fileCardsHTML = "") {
+			const area = document.getElementById('messagesArea');
+			const isUser = role === 'user';
+			const div = document.createElement('div');
+			div.className = "w-full animate-in fade-in slide-in-from-bottom-2 duration-300 mb-2";
+
+			const timeStr = timestamp
+				? new Date(timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+				: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+			const label = isUser ? 'ANDA' : `<div class="w-5 h-5 bg-gradient-to-r from-blue-600 to-cyan-400" style="-webkit-mask: url('icon/icon.png') no-repeat center; mask: url('icon/icon.png') no-repeat center; -webkit-mask-size: contain; mask-size: contain;"></div>`;
+
+			div.innerHTML = `
+		        <div class="w-full bg-slate-50 rounded-2xl p-4 shadow-sm group relative">
+		            <div class="flex justify-between items-center border-b border-slate-100 pb-1 mb-1">
+		                <span class="text-xs font-black uppercase tracking-widest ${isUser ? 'text-slate-600' : 'text-blue-600'}">${label}</span>
+		                <span class="text-xs font-medium text-slate-400">${timeStr}</span>
+		            </div>
+		            <div class="prose max-w-none text-slate-600 text-[15px] font-medium">${marked.parse(text)}</div>
+		            <div class="user-file-cards grid grid-cols-2 md:grid-cols-4 gap-2 empty:hidden mt-3">${fileCardsHTML}</div>
+		        </div>`;
+			area.appendChild(div);
 		}
 
-		function interruptVoice() {
-			isAISpeaking = false;
-			voiceInterrupted = true;
-			voiceSessionId++;
-			activeVoiceSources.forEach(s => { try { s.stop(); s.disconnect(); } catch (e) { } });
-			activeVoiceSources = [];
-			if (voiceWs && voiceWs.readyState === WebSocket.OPEN) voiceWs.send(JSON.stringify({ type: 'cancel' }));
+		function appendTypingBubble() {
+			const area = document.getElementById('messagesArea');
+			const msgId = `msg-${Date.now()}`;
+			const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+			const div = document.createElement('div');
+			div.className = "w-full animate-in fade-in slide-in-from-bottom-2 duration-300 mb-2";
+			div.innerHTML = `
+		        <div class="w-full bg-slate-50 rounded-2xl p-4 shadow-sm group relative">
+		            <div class="flex justify-between items-center border-b border-slate-100 pb-1 mb-1">
+		                <span class="text-xs font-black uppercase tracking-widest">
+		                    <div class="w-5 h-5 bg-gradient-to-r from-blue-600 to-cyan-400" style="-webkit-mask: url('icon/icon.png') no-repeat center; mask: url('icon/icon.png') no-repeat center; -webkit-mask-size: contain; mask-size: contain;"></div>
+		                </span>
+		                <span class="text-xs font-medium text-slate-400">${timeStr}</span>
+		            </div>
+		            <div id="${msgId}" class="prose max-w-none text-slate-600 text-[15px] font-medium min-h-[24px]">
+		                <div class="flex items-baseline gap-1 text-[14px] text-slate-400">
+		                    Thinking
+		                    <div class="flex gap-1 translate-y-[1px]">
+		                        <div class="typing-dot"></div>
+		                        <div class="typing-dot"></div>
+		                        <div class="typing-dot"></div>
+		                    </div>
+		                </div>
+		            </div>
+		        </div>`;
+			area.appendChild(div);
+
+			const container = document.getElementById('chatContainer');
+			container.scrollTop = container.scrollHeight;
+			return msgId;
 		}
 
-		function syncVoiceToChat(role, text) {
-			const lastMsg = chatHistory[chatHistory.length - 1];
-			if (lastMsg && lastMsg.role === (role === 'assistant' ? 'model' : 'user') && lastMsg._isVoice) {
-				lastMsg.parts[0].text += " " + text;
-			} else {
-				chatHistory.push({ role: role === 'assistant' ? 'model' : 'user', parts: [{ text }], _isVoice: true });
-				appendMessageToUI(role === 'assistant' ? 'model' : 'user', text);
+		async function saveMsg(uid, uText, aText) {
+			const payload = { id: currentSessionId, user_id: uid, timestamp: Date.now() };
+			if (chatHistory.length <= 2) {
+				let cleanTitle = aText.split('\n')[0].replace(/[*#_`]/g, '').trim();
+				if (cleanTitle.length > 45) cleanTitle = cleanTitle.substring(0, 45).trim() + '...';
+				payload.title = cleanTitle;
 			}
+
+			const { data: s } = await _supabase.from('chat_sessions').upsert(payload).select().single();
+			await _supabase.from('chat_messages').insert([{ session_id: currentSessionId, role: 'user', content: uText, timestamp: Date.now() }, { session_id: currentSessionId, role: 'model', content: aText, timestamp: Date.now() }]);
+			loadHistory();
 		}
 
-		function startVoiceTimer() {
-			let sec = 0;
-			const el = document.getElementById('voice-timer');
-			if (!el) return;
-			clearInterval(voiceTimerInterval);
-			voiceTimerInterval = setInterval(() => {
-				sec++;
-				const hrs = Math.floor(sec / 3600).toString().padStart(2, '0');
-				const mins = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
-				const secs = (sec % 60).toString().padStart(2, '0');
-				if (el) el.innerText = `${hrs}:${mins}:${secs}`;
-			}, 1000);
-		}
-
-		function closeVoiceMode() {
-			if (voiceWs) {
-				voiceWs.onmessage = null;
-				voiceWs.close();
-				voiceWs = null;
-			}
-			if (voiceStream) {
-				voiceStream.getTracks().forEach(t => t.stop());
-				voiceStream = null;
-			}
-			if (voiceInCtx) {
-				voiceInCtx.close();
-				voiceInCtx = null;
-			}
-			if (voiceOutCtx) {
-				voiceOutCtx.close();
-				voiceOutCtx = null;
-			}
-			stopVoiceCamera();
-			clearInterval(voiceTimerInterval);
-			isAISpeaking = false;
-			voiceInterrupted = false;
-			activeVoiceSources = [];
-			energyCounter = 0;
-
-			const screen = document.getElementById('voiceScreen');
-			if (screen) {
-				screen.classList.add('hidden');
-				screen.classList.remove('flex');
-			}
-		}
-
-		async function switchCamera() {
-			if (!isVoiceCamOn) return;
-			facingMode = (facingMode === 'user') ? 'environment' : 'user';
-			if (voiceCamStream) voiceCamStream.getTracks().forEach(t => t.stop());
-			isVoiceCamOn = false;
-			await toggleVoiceCamera();
-		}
-
-		async function toggleVoiceCamera() {
-			const btn = document.getElementById('cameraToggleBtn');
-			const video = document.getElementById('voice-large-video');
-			const canvas = document.getElementById('voice-canvas');
-			const box = document.getElementById('voice-visual-box');
-
-			if (!isVoiceCamOn) {
-				try {
-					voiceCamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
-					video.srcObject = voiceCamStream;
-					video.classList.remove('hidden');
-					canvas.classList.add('hidden');
-					box.classList.add('shadow-xl', 'rounded-[2rem]');
-					isVoiceCamOn = true;
-					btn.classList.replace('text-slate-500', 'text-blue-600');
-					if (voiceCamInterval) clearInterval(voiceCamInterval);
-					voiceCamInterval = setInterval(sendVoiceFrame, 1000);
-				} catch (e) { alert("Gagal Kamera"); }
-			} else { stopVoiceCamera(); }
-		}
-
-		function stopVoiceCamera() {
-			if (voiceCamStream) voiceCamStream.getTracks().forEach(t => t.stop());
-			clearInterval(voiceCamInterval);
-			const btn = document.getElementById('cameraToggleBtn');
-			const box = document.getElementById('voice-visual-box');
-			if (btn) btn.classList.replace('text-blue-600', 'text-slate-500');
-			document.getElementById('voice-large-video').classList.add('hidden');
-			document.getElementById('voice-canvas').classList.remove('hidden');
-			box.classList.remove('shadow-xl', 'rounded-[2rem]');
-			isVoiceCamOn = false;
-		}
-
-		function sendVoiceFrame() {
-			if (voiceWs && voiceWs.readyState === WebSocket.OPEN && isVoiceCamOn) {
-				const video = document.getElementById('voice-large-video');
-				const frameCanvas = document.getElementById('voice-frame-canvas');
-				const ctx = frameCanvas.getContext('2d');
-				if (video.videoWidth > 0) {
-					frameCanvas.width = 320;
-					frameCanvas.height = (video.videoHeight / video.videoWidth) * 320;
-					ctx.drawImage(video, 0, 0, frameCanvas.width, frameCanvas.height);
-					const base64 = frameCanvas.toDataURL('image/jpeg', 0.5).split(',')[1];
-					voiceWs.send(JSON.stringify({ type: 'image', data: { mimeType: "image/jpeg", data: base64 } }));
-				}
-			}
-		}
-
-		function resizeVoiceCanvas() {
-			const canvas = document.getElementById('voice-canvas');
-			const container = document.getElementById('voice-visual-box');
-			if (!canvas || !container) return;
-
-			const dpr = window.devicePixelRatio || 1;
-			const rect = container.getBoundingClientRect();
-
-			const size = Math.min(rect.width, rect.height) * 0.82;
-
-			canvas.style.width = size + 'px';
-			canvas.style.height = size + 'px';
-			canvas.width = size * dpr;
-			canvas.height = size * dpr;
-		}
-
-		function startVoiceVisualizer() {
-			const canvas = document.getElementById('voice-canvas');
-			const ctx = canvas.getContext('2d');
-			let currentVol = 0;
-
-			function draw() {
-				if (document.getElementById('voiceScreen').classList.contains('hidden')) return;
-				requestAnimationFrame(draw);
-
-				const w = canvas.width, h = canvas.height;
-				ctx.clearRect(0, 0, w, h);
-
-				const activeAn = isAISpeaking ? aiAnalyser : voiceAnalyser;
-				if (!activeAn) return;
-
-				activeAn.getByteFrequencyData(voiceDataArray);
-
-				let sum = 0;
-				for (let i = 10; i < 150; i++) sum += voiceDataArray[i];
-				let targetVol = sum / 140;
-
-				currentVol += (targetVol - currentVol) * 0.1;
-
-				const centerX = w / 2, centerY = h / 2;
-				const baseRadius = Math.min(w, h) / 8;
-
-				const maxRadius = (Math.min(w, h) / 2) - 20;
-
-				let dynamicRadius = baseRadius + (currentVol * (maxRadius / 150));
-				if (dynamicRadius > maxRadius) dynamicRadius = maxRadius;
-				if (dynamicRadius < baseRadius) dynamicRadius = baseRadius;
-
-				ctx.beginPath();
-				ctx.arc(centerX, centerY, dynamicRadius, 0, Math.PI * 2);
-
-				const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, dynamicRadius);
-				grad.addColorStop(0, '#f8fafc');
-				grad.addColorStop(0.8, '#f1f5f9');
-				grad.addColorStop(1, '#e2e8f0');
-
-				ctx.fillStyle = grad;
-				ctx.shadowBlur = 40;
-				ctx.shadowColor = 'rgba(0,0,0,0.04)';
-				ctx.fill();
-
-				ctx.strokeStyle = '#f1f5f9';
-				ctx.lineWidth = 1.5;
-				ctx.stroke();
-			}
-			draw();
-		}
-
-		async function init() {
-			const loadingOverlay = document.getElementById('loadingOverlay');
-			if (loadingOverlay) {
-			    loadingOverlay.addEventListener('touchmove', (e) => {
-			        e.preventDefault();
-			    }, { passive: false });
-			
-			    loadingOverlay.addEventListener('wheel', (e) => {
-			        e.preventDefault();
-			    }, { passive: false });
-			}
-			
+		async function loadHistory() {
 			const { data: { session } } = await _supabase.auth.getSession();
+			if (!session) return;
+			const { data: sessions } = await _supabase.from('chat_sessions').select('*').eq('user_id', session.user.id).order('timestamp', { ascending: false });
+			const list = document.getElementById('historyList');
+			list.innerHTML = '';
 
-			if (!session) {
-		        if (loadingOverlay) loadingOverlay.remove();
-		        loginScreen.style.display = 'flex';
-		    } else {
-		        if (session.user && session.user.email) sidebarEmail.innerText = session.user.email;
-		
-		        setTimeout(() => {
-		            if (loadingOverlay) {
-		                loadingOverlay.style.opacity = '0';
-		                loadingOverlay.style.visibility = 'hidden';
-		
-		                setTimeout(() => {
-		                    showApp();
-		                    loadingOverlay.remove();
-		        
-		                    document.body.style.overflow = 'hidden';
-		                }, 500);
-		            } else {
-		                showApp();
-		            }
-		        }, 2000);
-		    }
+			sessions?.forEach(s => {
+				const isActive = s.id === currentSessionId;
+				const container = document.createElement('div');
+				container.className = 'history-item-container';
 
-			const savedLevel = localStorage.getItem('alisa_thinking') || "2";
-			const savedPrompt = localStorage.getItem('alisa_prompt') || MAIN_SYSTEM_PROMPT;
-			const savedModel = localStorage.getItem('alisa_model') || "gemini-3-flash-preview";
-			const savedTemp = localStorage.getItem('alisa_temp') || "1.0";
-			const savedTokens = localStorage.getItem('alisa_tokens') || "65536";
-			const savedVoice = localStorage.getItem('alisa_voice') || "Kore";
-
-			document.getElementById('settings-thinking').value = savedLevel;
-			document.getElementById('label-thinking').innerText = ["LOW", "MEDIUM", "HIGH"][savedLevel - 1];
-			document.getElementById('systemPromptInput').value = savedPrompt;
-			document.getElementById('settings-temp').value = savedTemp;
-			document.getElementById('label-temp').innerText = savedTemp;
-			document.getElementById('settings-tokens').value = savedTokens;
-			document.getElementById('label-tokens').innerText = savedTokens;
-
-			currentSelectedModel = savedModel;
-			const modelMapping = {
-				"gemini-2.5-pro": "Gemini 2.5 Pro",
-				"gemini-2.5-flash": "Gemini 2.5 Flash",
-				"gemini-2.5-flash-lite": "Gemini 2.5 Flash Lite",
-				"gemini-3-flash-preview": "Gemini 3 Flash",
-				"gemini-3-pro-preview": "Gemini 3 Pro",
-				"gemini-3-deep-think-preview": "Gemini 3 Deep Think"
-			};
-			const modelLabelEl = document.getElementById('selected-model-text');
-			if (modelLabelEl) modelLabelEl.innerText = modelMapping[savedModel] || "Gemini 3 Flash";
-
-			currentVoice = savedVoice;
-			const voiceLabelEl = document.getElementById('selected-voice-text');
-			if (voiceLabelEl) {
-				const vMap = { "Kore": "Kore (Default)", "Aoede": "Aoede", "Zephyr": "Zephyr", "Leda": "Leda", "Fenrir": "Fenrir" };
-				voiceLabelEl.innerText = vMap[savedVoice] || "Kore (Default)";
-			}
-
-			document.getElementById('voice-trigger').onclick = (e) => {
-				e.stopPropagation();
-				const menu = document.getElementById('voice-menu');
-				const icon = document.getElementById('voice-icon');
-				const isHidden = menu.classList.toggle('hidden');
-				if (icon) {
-					icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
-				}
-			};
-
-			document.querySelectorAll('.voice-option').forEach(opt => {
-				opt.onclick = function (e) {
+				const delBtn = document.createElement('div');
+				delBtn.className = 'history-item-delete';
+				delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+				delBtn.onclick = (e) => {
 					e.stopPropagation();
-					currentVoice = this.getAttribute('data-value');
-					document.getElementById('selected-voice-text').innerText = this.innerText;
-					document.getElementById('voice-menu').classList.add('hidden');
-					saveAdminSettings();
+					handleDeleteClick(s.id);
 				};
-			});
 
-			document.getElementById('voiceBtn').onclick = openVoiceMode;
-			document.getElementById('backFromVoice').onclick = closeVoiceMode;
-			document.getElementById('endCallBtn').onclick = closeVoiceMode;
-			document.getElementById('cameraToggleBtn').onclick = toggleVoiceCamera;
-			document.getElementById('switchCameraBtn').onclick = switchCamera;
+				const item = document.createElement('div');
+				item.className = `history-item-content w-full py-2.5 px-4 text-[13px] font-semibold select-none cursor-pointer ${isActive ? 'bg-blue-50/50 text-blue-600 border-blue-100' : 'bg-white text-slate-500'}`;
 
-			const savedActiveID = localStorage.getItem(ACTIVE_SESSION_KEY);
-			if (savedActiveID) {
-				currentSessionId = savedActiveID;
-				loadSession(currentSessionId);
-			} else {
-				startNewSession();
-			}
+				const title = document.createElement('div');
+				title.className = "w-full truncate";
+				title.innerText = s.title || "Percakapan Baru";
+				item.appendChild(title);
 
-			loadSidebarHistory();
+				let touchStartX = 0;
+				let isSwiping = false;
 
-			const chatContainer = document.getElementById('chatContainer');
-			const adminScroller = document.getElementById('adminScroller');
-			const historyList = document.getElementById('historyList');
+				// Touch Events
+				item.addEventListener('touchstart', (e) => {
+					touchStartX = e.touches[0].clientX;
+					isSwiping = false;
+				}, { passive: true });
 
-			const setupPreventStick = (el) => {
-				if (!el) return;
-				el.addEventListener('touchstart', () => {
-					const top = el.scrollTop;
-					const totalScroll = el.scrollHeight;
-					const currentScroll = top + el.offsetHeight;
-					if (top === 0) {
-						el.scrollTop = 1;
-					} else if (currentScroll >= totalScroll) {
-						el.scrollTop = top - 1;
+				item.addEventListener('touchend', (e) => {
+					const touchEndX = e.changedTouches[0].clientX;
+					const diff = touchStartX - touchEndX;
+
+					if (Math.abs(diff) > 30) {
+						isSwiping = true;
+						if (diff > 30) { // Swipe Left
+							document.querySelectorAll('.history-item-container').forEach(c => c.classList.remove('swiped-left'));
+							container.classList.add('swiped-left');
+						} else { // Swipe Right
+							container.classList.remove('swiped-left');
+						}
 					}
 				}, { passive: true });
-			};
 
-			setupPreventStick(chatContainer);
-			setupPreventStick(adminScroller);
-			setupPreventStick(historyList);
-		}
-
-		function updateStartLoading() {
-		    const bar = document.getElementById('loadBar');
-		    let progress = 0;
-		    const interval = setInterval(() => {
-		        progress += Math.floor(Math.random() * 15) + 5;
-		        if (progress > 100) progress = 100;
-		        if (bar) bar.style.width = progress + '%';
-		        if (progress >= 100) {
-		            clearInterval(interval);
-		        }
-		    }, 150);
-		}
-		updateStartLoading();
-
-		init();
-		async function getEmbedding(text, token) {
-			const res = await fetch(`${PROXY_URL}?model=text-embedding-004&action=embedContent`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` },
-				body: JSON.stringify({ content: { parts: [{ text: text }] } })
-			});
-			const data = await res.json();
-			return data.embedding.values;
-		}
-
-		async function uploadToSupabaseKB(file) {
-			const { data: { session } } = await _supabase.auth.getSession();
-			if (!session) throw new Error("LOGIN DIBUTUHKAN");
-			const token = session.access_token;
-
-			const text = await file.rawFile.text();
-			const sumRes = await fetch(`${PROXY_URL}?model=gemini-3-flash-preview&action=generateContent`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` },
-				body: JSON.stringify({
-					contents: [{
-						role: "user",
-						parts: [{
-							text: `Tugas: Lakukan ekstraksi informasi mendalam dan teknis dari dokumen berikut untuk basis data pengetahuan.
-			                
-			                Instruksi Khusus:
-			                1. IDENTITAS: Catat nomor surat, tanggal, nama lembaga, dan pejabat terkait jika ada.
-			                2. SUBSTANSI: Ringkas poin-poin utama, temuan, atau regulasi yang dibahas secara detail.
-			                3. DATA KRUSIAL: Jangan lewatkan angka, nilai nominal, atau batas waktu (deadline).
-			                4. KATA KUNCI: Ekstrak daftar istilah teknis, singkatan, dan frasa kunci yang kemungkinan besar akan dicari oleh user.
-			                5. FORMAT: Sajikan dalam struktur yang rapi agar mudah dipahami secara semantik.
-			
-			                Dokumen: ${text}`
-						}]
-					}]
-				})
-			});
-
-			const sumData = await sumRes.json();
-			const summary = sumData.candidates?.[0]?.content?.parts?.[0]?.text || text.substring(0, 200);
-			const embedding = await getEmbedding(summary, token);
-
-			const { error } = await _supabase.from('knowledge_base').insert([{
-				content_full: text,
-				summary_keywords: summary,
-				embedding: embedding,
-				metadata: { filename: file.name, type: "manual_upload" }
-			}]);
-
-			if (error) throw error;
-			return file.name;
-		}
-
-		async function searchKB(query, token) {
-			try {
-				if (query.trim().length < 5) return "";
-
-				const embedding = await getEmbedding(query, token);
-
-				const { data, error } = await _supabase.rpc('hybrid_search_kb', {
-					query_text: query,
-					query_embedding: embedding,
-					match_count: 2,
-					similarity_threshold: 0.55
+				// Mouse Events for Desktop "Swipe"
+				item.addEventListener('mousedown', (e) => {
+					touchStartX = e.clientX;
+					isSwiping = false;
 				});
 
-				if (error) {
-					console.error("Supabase KB Error:", error);
-					return "";
-				}
+				item.addEventListener('mouseup', (e) => {
+					const touchEndX = e.clientX;
+					const diff = touchStartX - touchEndX;
 
-				if (data && data.length > 0) {
-					return data.map(d => `[DOKUMEN KB: ${d.metadata.filename}]\n${d.content_full}`).join("\n\n");
-				}
+					if (Math.abs(diff) > 30) {
+						isSwiping = true;
+						if (diff > 30) {
+							document.querySelectorAll('.history-item-container').forEach(c => c.classList.remove('swiped-left'));
+							container.classList.add('swiped-left');
+						} else {
+							container.classList.remove('swiped-left');
+						}
+					}
+				});
 
-				return "";
-			} catch (e) {
-				console.error("Search Logic Error:", e);
-				return "";
-			}
+				item.onclick = (e) => {
+					// Ensure we don't open chat if user was just selecting text or swiping
+					const selection = window.getSelection().toString();
+					if (!isSwiping && selection.length === 0) {
+						loadSession(s.id);
+					}
+				};
+
+				container.appendChild(delBtn);
+				container.appendChild(item);
+				list.appendChild(container);
+			});
+			lucide.createIcons();
 		}
 
-		async function handleKbUpload(e) {
-			const files = Array.from(e.target.files);
-			if (!files.length) return;
+		async function handleDeleteClick(id) {
+			await _supabase.from('chat_messages').delete().eq('session_id', id);
+			await _supabase.from('chat_sessions').delete().eq('id', id);
 
-			const statusArea = document.getElementById('kb-upload-status');
-			const bar = document.getElementById('kb-progress');
-			const percentTxt = document.getElementById('kb-percent');
-			const nameTxt = document.getElementById('kb-filename');
-
-			statusArea.classList.remove('hidden');
-
-			for (const file of files) {
-				nameTxt.innerText = file.name;
-				bar.style.width = '30%';
-				percentTxt.innerText = '30%';
-				bar.className = "h-full bg-purple-600 transition-all duration-300";
-
-				try {
-					await uploadToSupabaseKB({ name: file.name, rawFile: file });
-					bar.style.width = '100%';
-					percentTxt.innerText = '100%';
-					nameTxt.innerText = "BERHASIL: " + file.name;
-					await new Promise(r => setTimeout(r, 800));
-				} catch (err) {
-					console.error(err);
-					bar.style.width = '100%';
-					bar.className = "h-full bg-red-500 transition-all duration-300";
-					nameTxt.innerText = "GAGAL: " + file.name;
-					await new Promise(r => setTimeout(r, 1500));
-				}
+			if (currentSessionId === id) {
+				currentSessionId = null;
+				document.getElementById('messagesArea').innerHTML = '';
+				chatHistory = [];
 			}
-
-			statusArea.classList.add('hidden');
-			bar.style.width = '0%';
-			e.target.value = '';
+			loadHistory();
 		}
 
-		const savedGoogle = localStorage.getItem('alisa_google_search');
-		if (savedGoogle !== null) document.getElementById('google-search-toggle').checked = (savedGoogle === 'true');
+		async function loadSession(id) {
+			currentSessionId = id;
+			const { data: msgs } = await _supabase.from('chat_messages').select('*').eq('session_id', id).order('timestamp', { ascending: true });
+			document.getElementById('messagesArea').innerHTML = '';
+			chatHistory = msgs.map(m => ({ role: m.role, parts: [{ text: m.content }] }));
+			msgs.forEach(m => appendMsg(m.role, m.content));
+			loadHistory();
+			toggleSidebar(false);
+		}
 
-		const savedKB = localStorage.getItem('alisa_kb_toggle');
-		if (savedKB !== null) document.getElementById('kb-toggle').checked = (savedKB === 'true');
+		function typeWriter(elementId, text) {
+			return new Promise(resolve => {
+				const element = document.getElementById(elementId);
+				if (!element) { resolve(); return; }
 
-		const savedVoiceEnabled = localStorage.getItem('alisa_voice_enabled');
-		const isVoiceOn = savedVoiceEnabled !== null ? (savedVoiceEnabled === 'true') : true;
-		document.getElementById('voice-feature-toggle').checked = isVoiceOn;
-		if (voiceBtn) voiceBtn.style.display = isVoiceOn ? 'block' : 'none';
+				element.innerHTML = '';
+				let index = 0;
+				const speed = 8;
+				const charsPerTick = 8;
 
-		const savedUploadEnabled = localStorage.getItem('alisa_upload_enabled');
-		const isUploadOn = savedUploadEnabled !== null ? (savedUploadEnabled === 'true') : true;
-		document.getElementById('upload-feature-toggle').checked = isUploadOn;
+				const interval = setInterval(() => {
+					if (index >= text.length) {
+						clearInterval(interval);
+						element.innerHTML = marked.parse(text);
+						resolve();
+						return;
+					}
 
-		const uploadBtn = document.getElementById('uploadBtn');
-		const inputEl = document.getElementById('userInput');
-		if (uploadBtn) {
-			if (isUploadOn) {
-				uploadBtn.style.display = 'block';
-				uploadBtn.classList.remove('hidden');
-				if (inputEl) {
-					inputEl.classList.remove('pl-4');
-					inputEl.classList.add('px-2');
-				}
+					const chunk = text.substring(0, index + charsPerTick);
+					element.innerHTML = marked.parse(chunk);
+
+					const container = document.getElementById('chatContainer');
+					container.scrollTop = container.scrollHeight;
+
+					index += charsPerTick;
+				}, speed);
+			});
+		}
+
+		function setGeneratingState(s) {
+			isGenerating = s;
+			const sendBtn = document.getElementById('sendBtn');
+			if (s) {
+				sendBtn.innerHTML = '<i data-lucide="square" class="w-4 h-4 text-red-500" fill="currentColor"></i>';
+				sendBtn.classList.add('opacity-50');
 			} else {
-				uploadBtn.style.display = 'none';
-				uploadBtn.classList.add('hidden');
-				if (inputEl) {
-					inputEl.classList.add('pl-4');
-					inputEl.classList.remove('px-2');
-				}
+				sendBtn.innerHTML = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 translate-x-0.5" fill="currentColor"><path d="M21.66,12a2,2,0,0,1-1.14,1.81L5.87,20.75A2.08,2.08,0,0,1,5,21a2,2,0,0,1-1.82-2.82L5.46,13H11a1,1,0,0,0,0-2H5.46L3.18,5.87A2,2,0,0,1,5.86,3.25h0l14.65,6.94A2,2,0,0,1,21.66,12Z"></path></svg>';
+				sendBtn.classList.remove('opacity-50');
+			}
+			lucide.createIcons();
+		}
+
+		function toggleSidebar(s) {
+			const sb = document.getElementById('mainSidebar');
+			const ov = document.getElementById('sidebarOverlay');
+			if (s) {
+				sb.classList.remove('-translate-x-full');
+				ov.classList.remove('hidden');
+				setTimeout(() => ov.classList.remove('opacity-0'), 10);
+			} else {
+				sb.classList.add('-translate-x-full');
+				ov.classList.add('opacity-0');
+				setTimeout(() => ov.classList.add('hidden'), 300);
 			}
 		}
 
-		document.getElementById('google-search-toggle').addEventListener('change', saveAdminSettings);
-		document.getElementById('kb-toggle').addEventListener('change', saveAdminSettings);
+		document.getElementById('menuBtn').onclick = () => toggleSidebar(true);
 
-		document.getElementById('voice-feature-toggle').addEventListener('change', saveAdminSettings);
-		document.getElementById('upload-feature-toggle').addEventListener('change', saveAdminSettings);
-		
-		document.addEventListener('click', async (e) => {
-		    const btn = e.target.closest('.copy-btn');
-		    if (!btn) return;
-		
-		    const container = btn.parentElement;
-		    const textElement = container.querySelector('.prose-container') || container.querySelector('.prose');
-		    
-		    if (textElement) {
-		        const textToCopy = textElement.innerText;
-		
-		        try {
-		            await navigator.clipboard.writeText(textToCopy);
-		            
-		            const originalHTML = btn.innerHTML;
-		            btn.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-green-500"></i>';
-		            lucide.createIcons();
-		
-		            setTimeout(() => {
-		                btn.innerHTML = originalHTML;
-		                lucide.createIcons();
-		            }, 2000);
-		        } catch (err) {
-		            console.error('Gagal menyalin teks: ', err);
-		            alert('Gagal menyalin teks.');
-		        }
-		    }
+		document.getElementById('sidebarOverlay').onclick = () => toggleSidebar(false);
+
+		document.getElementById('settingsBtn').onclick = () => {
+			document.getElementById('adminScreen').classList.replace('hidden', 'flex');
+			fetchUsers();
+		};
+
+		document.getElementById('backFromAdmin').onclick = () => {
+			document.getElementById('adminScreen').classList.replace('flex', 'hidden');
+		};
+
+		document.getElementById('newChatSidebarBtn').onclick = () => {
+			currentSessionId = Date.now().toString();
+			document.getElementById('messagesArea').innerHTML = '';
+			chatHistory = [];
+			toggleSidebar(false);
+		};
+
+		document.getElementById('sidebarLogoutBtn').onclick = () => {
+			_supabase.auth.signOut().then(() => location.reload());
+		};
+
+		document.getElementById('loginForm').onsubmit = async (e) => {
+			e.preventDefault();
+			const { error } = await _supabase.auth.signInWithPassword({ email: emailInput.value, password: passwordInput.value });
+			if (error) alert("Login Gagal"); else location.reload();
+		};
+
+		async function init() {
+			const { data: { session } } = await _supabase.auth.getSession();
+			if (session) {
+				document.getElementById('loginScreen').style.display = 'none';
+				document.getElementById('appInterface').style.display = 'flex';
+				document.getElementById('sidebarEmail').innerText = session.user.email;
+
+				loadAdminSettings();
+
+				const { data: sessions } = await _supabase.from('chat_sessions').select('*').eq('user_id', session.user.id).order('timestamp', { ascending: false }).limit(1);
+				if (sessions && sessions.length > 0) {
+					loadSession(sessions[0].id);
+				} else {
+					currentSessionId = Date.now().toString();
+					loadHistory();
+				}
+				lucide.createIcons();
+			} else {
+				document.getElementById('loginScreen').style.display = 'flex';
+				document.getElementById('appInterface').style.display = 'none';
+			}
+		}
+
+		document.addEventListener('click', (e) => {
+			if (!e.target.closest('.history-item-container')) {
+				document.querySelectorAll('.history-item-container.swiped-left').forEach(c => {
+					c.classList.remove('swiped-left');
+				});
+			}
 		});
+
+		const userInput = document.getElementById('userInput');
+		const inputWrapper = document.getElementById('inputWrapper');
+
+		userInput.addEventListener('input', function () {
+			this.style.height = 'auto';
+			this.style.height = this.scrollHeight + 'px';
+
+			const isLongText = this.scrollHeight > 45;
+			if (isLongText) {
+				inputWrapper.classList.remove('rounded-[28px]');
+				inputWrapper.classList.add('rounded-[22px]');
+			} else {
+				inputWrapper.classList.add('rounded-[28px]');
+				inputWrapper.classList.remove('rounded-[22px]');
+			}
+		});
+
+		document.getElementById('chatForm').onsubmit = sendMessage;
+		init();
+		function toggleAddUserForm() {
+			const form = document.getElementById('addUserForm');
+			form.classList.toggle('hidden');
+			if (!form.classList.contains('hidden')) {
+				document.getElementById('newUserEmail').focus();
+			}
+		}
+
+		async function fetchUsers() {
+			const container = document.getElementById('userListContainer');
+			container.innerHTML = `<div class="text-center py-4"><span class="text-xs font-medium text-slate-400">Memuat data user...</span></div>`;
+
+			const { data: { session } } = await _supabase.auth.getSession();
+			if (!session) {
+				container.innerHTML = `<div class="text-center py-4 text-red-500 font-bold text-xs">Sesi Habis, Silakan Login Ulang</div>`;
+				return;
+			}
+
+			try {
+				const res = await fetch(USER_MGMT_URL, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${session.access_token}`
+					},
+					body: JSON.stringify({ action: 'list_users' })
+				});
+
+				const data = await res.json();
+				if (data.error) throw new Error(data.error);
+
+				container.innerHTML = '';
+				if (!data.users || data.users.length === 0) {
+					container.innerHTML = `<div class="text-center py-4"><span class="text-xs font-medium text-slate-400">Tidak ada user lain.</span></div>`;
+					return;
+				}
+
+				data.users.forEach(u => {
+					const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
+					const isMe = u.id === session.user.id;
+
+					const div = document.createElement('div');
+					div.className = "bg-white p-3 rounded-xl border border-slate-100 flex items-center justify-between";
+					div.innerHTML = `
+						<div class="flex items-center gap-3 overflow-hidden">
+							<div class="w-8 h-8 rounded-full ${isBanned ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'} flex items-center justify-center shrink-0">
+								<i data-lucide="${isBanned ? 'lock' : 'user'}" class="w-4 h-4"></i>
+							</div>
+							<div class="min-w-0">
+								<p class="text-sm font-bold text-slate-700 truncate">${u.email}</p>
+								<p class="text-[10px] font-medium text-slate-400 truncate">ID: ${u.id.substring(0, 8)}... ${isMe ? '(YOU)' : ''}</p>
+							</div>
+						</div>
+						<div class="flex gap-2 shrink-0">
+							${!isMe ? `
+							<button onclick="toggleBanUser('${u.id}', ${isBanned})" class="p-2 rounded-lg ${isBanned ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
+								<i data-lucide="${isBanned ? 'unlock' : 'lock'}" class="w-4 h-4"></i>
+							</button>
+							<button onclick="deleteUser('${u.id}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Delete">
+								<i data-lucide="trash-2" class="w-4 h-4"></i>
+							</button>
+							` : ''}
+						</div>
+					`;
+					container.appendChild(div);
+				});
+				lucide.createIcons();
+
+			} catch (e) {
+				console.error(e);
+				container.innerHTML = `<div class="text-center py-4 text-red-500 font-bold text-xs">Gagal memuat user: ${e.message}</div>`;
+			}
+		}
+
+		async function createNewUser() {
+			const email = document.getElementById('newUserEmail').value;
+			const password = document.getElementById('newUserPassword').value;
+
+			if (!email || !password) return alert("Email dan Password harus diisi!");
+
+			const btn = event.target;
+			const originalText = btn.innerText;
+			btn.innerText = "PROSES...";
+			btn.disabled = true;
+
+			try {
+				const { data: { session } } = await _supabase.auth.getSession();
+				const res = await fetch(USER_MGMT_URL, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${session.access_token}`
+					},
+					body: JSON.stringify({ action: 'create_user', email, password })
+				});
+
+				const data = await res.json();
+				if (data.error) throw new Error(data.error);
+
+				alert("User berhasil dibuat!");
+				document.getElementById('newUserEmail').value = '';
+				document.getElementById('newUserPassword').value = '';
+				toggleAddUserForm();
+				fetchUsers();
+
+			} catch (e) {
+				alert("Gagal membuat user: " + e.message);
+			} finally {
+				btn.innerText = originalText;
+				btn.disabled = false;
+			}
+		}
+
+		async function deleteUser(userId) {
+			if (!confirm("Yakin ingin menghapus user ini?")) return;
+
+			try {
+				const { data: { session } } = await _supabase.auth.getSession();
+				const res = await fetch(USER_MGMT_URL, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${session.access_token}`
+					},
+					body: JSON.stringify({ action: 'delete_user', userId })
+				});
+
+				const data = await res.json();
+				if (data.error) throw new Error(data.error);
+
+				fetchUsers();
+			} catch (e) {
+				alert("Gagal menghapus: " + e.message);
+			}
+		}
+
+		async function toggleBanUser(userId, iscurrentlyBanned) {
+			const action = iscurrentlyBanned ? "unfreeze" : "freeze";
+			// If we want to freeze, we set ban duration to a long time (e.g. 100 years ~ 876000 hours).
+			// If unfreeze, we send 'none' or handle it in backend. My backend logic expects banDuration string. 
+			// '876600h' is roughly 100 years. '0h' to unban.
+
+			const duration = iscurrentlyBanned ? '0s' : '876600h';
+
+			if (!confirm(`Yakin ingin ${action} user ini?`)) return;
+
+			try {
+				const { data: { session } } = await _supabase.auth.getSession();
+				const res = await fetch(USER_MGMT_URL, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${session.access_token}`
+					},
+					body: JSON.stringify({ action: 'toggle_ban_user', userId, banDuration: duration })
+				});
+
+				const data = await res.json();
+				if (data.error) throw new Error(data.error);
+
+				fetchUsers();
+			} catch (e) {
+				alert(`Gagal ${action}: ` + e.message);
+			}
+		}
 	</script>
 </body>
+
 
 </html>
