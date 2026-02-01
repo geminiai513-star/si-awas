@@ -25,7 +25,6 @@
 		href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap"
 		rel="stylesheet">
 	<style>
-		/* CSS ASLI DARI FILE ANDA */
 		html,
 		body {
 			margin: 0;
@@ -42,35 +41,39 @@
 			overscroll-behavior: none !important;
 			touch-action: manipulation;
 			touch-action: pan-x pan-y;
-   			 -webkit-text-size-adjust: 100%;
+			-webkit-text-size-adjust: 100%;
 		}
-		
-		*, *::before, *::after {
-		    -webkit-user-select: none;
-		    user-select: none;
-		    -webkit-touch-callout: none;
-		    -webkit-tap-highlight-color: transparent;
+
+		*,
+		*::before,
+		*::after {
+			-webkit-user-select: none;
+			user-select: none;
+			-webkit-touch-callout: none;
+			-webkit-tap-highlight-color: transparent;
 		}
-		
-		.prose, .prose * {
-		    -webkit-user-select: text !important;
-		    user-select: text !important;
-		    cursor: text;
+
+		.prose,
+		.prose * {
+			-webkit-user-select: text !important;
+			user-select: text !important;
+			cursor: text;
 		}
-		
-		input, textarea {
-		    -webkit-user-select: text !important;
-		    user-select: text !important;
-		    -webkit-touch-callout: default;
+
+		input,
+		textarea {
+			-webkit-user-select: text !important;
+			user-select: text !important;
+			-webkit-touch-callout: default;
 		}
-		
+
 		img {
-		    -webkit-user-drag: none;
-		    pointer-events: none;
+			-webkit-user-drag: none;
+			pointer-events: none;
 		}
-		
+
 		.prose img {
-		    pointer-events: auto;
+			pointer-events: auto;
 		}
 
 		#appInterface {
@@ -403,10 +406,13 @@
 							class="flex-1 min-h-[40px] max-h-[150px] py-2.5 px-2 bg-transparent border-none outline-none resize-none text-[15px] font-medium text-slate-700 placeholder:text-slate-400 leading-tight"></textarea>
 
 						<button type="submit" id="sendBtn" ontouchstart="sendMessage(event)"
-						    class="w-10 h-10 flex items-center justify-center bg-transparent text-black shrink-0 active:scale-90 transition-transform">
-						    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor">
-						        <path d="M21.66,12a2,2,0,0,1-1.14,1.81L5.87,20.75A2.08,2.08,0,0,1,5,21a2,2,0,0,1-1.82-2.82L5.46,13H11a1,1,0,0,0,0-2H5.46L3.18,5.87A2,2,0,0,1,5.86,3.25h0l14.65,6.94A2,2,0,0,1,21.66,12Z"></path>
-						    </svg>
+							class="w-10 h-10 flex items-center justify-center bg-transparent text-black shrink-0 active:scale-90 transition-transform">
+							<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6"
+								fill="currentColor">
+								<path
+									d="M21.66,12a2,2,0,0,1-1.14,1.81L5.87,20.75A2.08,2.08,0,0,1,5,21a2,2,0,0,1-1.82-2.82L5.46,13H11a1,1,0,0,0,0-2H5.46L3.18,5.87A2,2,0,0,1,5.86,3.25h0l14.65,6.94A2,2,0,0,1,21.66,12Z">
+								</path>
+							</svg>
 						</button>
 					</div>
 				</form>
@@ -499,9 +505,12 @@
 							<input type="file" id="kb-file-upload" accept=".txt,.md" class="hidden"
 								onchange="handleKbUpload(event)">
 							<button onclick="document.getElementById('kb-file-upload').click()"
-							    class="w-full border border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50/30 transition-colors rounded-2xl py-4 flex items-center justify-center gap-2 group">
-							    <i data-lucide="upload-cloud" class="w-5 h-5 text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
-							    <span class="text-sm font-bold text-slate-500 group-hover:text-emerald-700 tracking-wide">Upload Knowledge Base</span>
+								class="w-full border border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50/30 transition-colors rounded-2xl py-4 flex items-center justify-center gap-2 group">
+								<i data-lucide="upload-cloud"
+									class="w-5 h-5 text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
+								<span
+									class="text-sm font-bold text-slate-500 group-hover:text-emerald-700 tracking-wide">Upload
+									Knowledge Base</span>
 							</button>
 							<div id="kb-upload-status" class="hidden mt-3 text-center">
 								<div class="w-full bg-slate-200 rounded-full h-1.5 mb-2 overflow-hidden">
@@ -571,21 +580,22 @@
 					</div>
 
 					<!-- Form Add User -->
-					<div id="addUserForm" class="hidden mb-6 bg-white p-5 rounded-3xl border border-slate-100 space-y-4 shadow-sm">
-					    <div class="space-y-3">
-					        <input type="email" id="newUserEmail" placeholder="Email User Baru" required
-					            class="w-full px-5 py-4 bg-slate-50 rounded-2xl text-sm font-semibold border-none outline-none text-slate-700 placeholder:text-slate-400">
-					        
-					        <input type="password" id="newUserPassword" placeholder="Password User Baru" required
-					            class="w-full px-5 py-4 bg-slate-50 rounded-2xl text-sm font-semibold border-none outline-none text-slate-700 placeholder:text-slate-400">
-					    </div>
-					
-					    <div class="pt-2">
-					        <button onclick="createNewUser()"
-					            class="w-full py-4 bg-blue-50 text-blue-600 rounded-2xl font-bold text-sm uppercase hover:bg-blue-100 active:scale-95 transition-all">
-					            TAMBAH
-					        </button>
-					    </div>
+					<div id="addUserForm"
+						class="hidden mb-6 bg-white p-5 rounded-3xl border border-slate-100 space-y-4 shadow-sm">
+						<div class="space-y-3">
+							<input type="email" id="newUserEmail" placeholder="Email User Baru" required
+								class="w-full px-5 py-4 bg-slate-50 rounded-2xl text-sm font-semibold border-none outline-none text-slate-700 placeholder:text-slate-400">
+
+							<input type="password" id="newUserPassword" placeholder="Password User Baru" required
+								class="w-full px-5 py-4 bg-slate-50 rounded-2xl text-sm font-semibold border-none outline-none text-slate-700 placeholder:text-slate-400">
+						</div>
+
+						<div class="pt-2">
+							<button onclick="createNewUser()"
+								class="w-full py-4 bg-blue-50 text-blue-600 rounded-2xl font-bold text-sm uppercase hover:bg-blue-100 active:scale-95 transition-all">
+								TAMBAH
+							</button>
+						</div>
 					</div>
 
 					<div id="userListContainer" class="space-y-3">
@@ -609,6 +619,7 @@
 		const SELECTED_MODEL = "gemini-3-flash-preview";
 		const SYSTEM_PROMPT = "Kamu adalah Asisten Virtual yang Ramah, Profesional, dan Sangat Membantu.";
 		const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+		const FILE_CARD_SEPARATOR = "|||FILE_CARDS|||";
 
 		let chatHistory = [];
 		let currentSessionId = null;
@@ -618,7 +629,7 @@
 		let abortController = null;
 		let typingInterval = null;
 		let currentLoadingMsgId = null;
-		let currentStreamedText = ""; 
+		let currentStreamedText = "";
 		let typeWriterResolve = null;
 
 		let currentSelectedModel = localStorage.getItem('awas_model') || "gemini-3-flash-preview";
@@ -878,33 +889,33 @@
 				saveAdminSettings();
 			};
 		}
-		
-		document.addEventListener('touchmove', function(event) {
-		    if (event.scale !== 1) {
-		        event.preventDefault();
-		    }
+
+		document.addEventListener('touchmove', function (event) {
+			if (event.scale !== 1) {
+				event.preventDefault();
+			}
 		}, { passive: false });
-		
+
 		let lastTouchEnd = 0;
-		document.addEventListener('touchend', function(event) {
-		    const now = (new Date()).getTime();
-		    if (now - lastTouchEnd <= 300) {
-		        event.preventDefault();
-		    }
-		    lastTouchEnd = now;
+		document.addEventListener('touchend', function (event) {
+			const now = (new Date()).getTime();
+			if (now - lastTouchEnd <= 300) {
+				event.preventDefault();
+			}
+			lastTouchEnd = now;
 		}, false);
-		
+
 		const metaViewport = document.querySelector('meta[name=viewport]');
-		document.addEventListener('focus', function(event) {
-		    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-		        metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-		    }
+		document.addEventListener('focus', function (event) {
+			if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+				metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+			}
 		}, true);
-		
-		document.addEventListener('blur', function(event) {
-		    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-		        metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-		    }
+
+		document.addEventListener('blur', function (event) {
+			if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+				metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+			}
 		}, true);
 
 
@@ -1071,130 +1082,132 @@
 			pendingFiles.splice(index, 1);
 			renderPreviews();
 		}
-		
+
 		function stopGeneration() {
-		    if (abortController) {
-		        abortController.abort();
-		        abortController = null;
-		    }
-		
-		    if (typingInterval) {
-		        clearInterval(typingInterval);
-		        typingInterval = null;
-		    }
-		
-		    setGeneratingState(false);
-		    
-		    const stopLabel = " <span class='text-red-500 italic'>Respon dihentikan.</span>";
-		    
-		    if (currentLoadingMsgId) {
-		        const el = document.getElementById(currentLoadingMsgId);
-		        if (el) {
-		            if (el.innerHTML.includes('Thinking')) {
-		                el.parentElement.parentElement.remove(); 
-		                currentStreamedText = ""; 
-		            } else {
-		                el.innerHTML += stopLabel;
-		                currentStreamedText += stopLabel; 
-		            }
-		        }
-		    }
-		
-		    if (typeWriterResolve) {
-		        typeWriterResolve(currentStreamedText);
-		        typeWriterResolve = null;
-		    }
-		    
-		    currentLoadingMsgId = null;
+			if (abortController) {
+				abortController.abort();
+				abortController = null;
+			}
+
+			if (typingInterval) {
+				clearInterval(typingInterval);
+				typingInterval = null;
+			}
+
+			setGeneratingState(false);
+
+			const stopLabel = " <span class='text-red-500 italic'>Respon dihentikan.</span>";
+
+			if (currentLoadingMsgId) {
+				const el = document.getElementById(currentLoadingMsgId);
+				if (el) {
+					if (el.innerHTML.includes('Thinking')) {
+						el.parentElement.parentElement.remove();
+						currentStreamedText = "";
+					} else {
+						el.innerHTML += stopLabel;
+						currentStreamedText += stopLabel;
+					}
+				}
+			}
+
+			if (typeWriterResolve) {
+				typeWriterResolve(currentStreamedText);
+				typeWriterResolve = null;
+			}
+
+			currentLoadingMsgId = null;
 		}
-				
+
 		async function sendMessage(e) {
-		    if (e) e.preventDefault();
-		    
-		    if (isGenerating) {
-		        stopGeneration();
-		        return; 
-		    }
-		    
-		    const input = document.getElementById('userInput');
-		    const rawInput = input.value.trim();
-		    
-		    if (!rawInput && pendingFiles.length === 0) return;
-		    input.blur();
-		
-		    abortController = new AbortController();
-		
-		    const currentTemp = parseFloat(document.getElementById('settings-temp').value) || 1.0;
-		    const currentMaxTokens = parseInt(document.getElementById('settings-tokens').value) || 8192;
-		    const sliderVal = document.getElementById('settings-thinking').value;
-		    const currentBudget = thinkingMap[sliderVal] || 16000;
-		    const useGoogleSearch = document.getElementById('google-search-toggle').checked;
-		    const useKbSearch = document.getElementById('kb-search-toggle') ? document.getElementById('kb-search-toggle').checked : false;
-		    let customSystemPrompt = document.getElementById('systemPromptInput').value || SYSTEM_PROMPT;
-		
-		    input.value = '';
-		    input.style.height = 'auto';
-		    inputWrapper.classList.add('rounded-[28px]');
-		    inputWrapper.classList.remove('rounded-[22px]');
-		    
-		    setGeneratingState(true);
-		
-		    let fileCardsHTML = "";
-		    const filesToProcess = [...pendingFiles];
-		    filesToProcess.forEach(f => {
-		        fileCardsHTML += getFileCardHTML(f.name, f.size);
-		    });
-		
-		    appendMsg('user', rawInput, null, fileCardsHTML);
-		    
-		    currentLoadingMsgId = appendTypingBubble();
-		    currentStreamedText = ""; 
-		
-		    let textContext = "";
-		    let kbContext = "";
-		    let apiParts = [];
-		    pendingFiles = [];
-		    renderPreviews();
-		
-		    for (const f of filesToProcess) {
-		        if (f.mime.startsWith('image/') || f.mime === 'application/pdf') {
-		            apiParts.push({ inline_data: { mime_type: f.mime, data: f.base64 } });
-		        } else {
-		            const ext = f.name.split('.').pop().toLowerCase();
-		            textContext += await (['docx', 'xlsx', 'xls', 'pptx'].includes(ext) ? extractTextFromOffice(f) : readCodeFile(f));
-		        }
-		    }
-		
-		    try {
-		        const { data: { session } } = await _supabase.auth.getSession();
-		        const userToken = session.access_token;
-		
-		        if (useKbSearch && rawInput.length > 0) {
-		            const embedRes = await fetch(EMBEDDING_URL, {
-		                method: 'POST',
-		                headers: {
-		                    'Content-Type': 'application/json',
-		                    'Authorization': `Bearer ${userToken}`
-		                },
-		                body: JSON.stringify({ action: 'embed', text: rawInput }),
-		                signal: abortController.signal
-		            });
-		
-		            if (embedRes.ok) {
-		                const { embedding: queryVector } = await embedRes.json();
-		                const { data: documents } = await _supabase.rpc('match_documents', {
-		                    query_embedding: queryVector,
-		                    match_threshold: 0.5,
-		                    match_count: 5
-		                });
-		                if (documents && documents.length > 0) {
-		                    kbContext = "\n\n[INFORMASI DARI KNOWLEDGE BASE]:\n" +
-		                        documents.map((d, i) => `Dokumen ${i + 1} (${d.metadata?.source || 'Unknown'}):\n${d.content}`).join("\n---\n");
-		                }
-		            }
-		        }
-		
-		        const fullPrompt = `
+			if (e) e.preventDefault();
+
+			if (isGenerating) {
+				stopGeneration();
+				return;
+			}
+
+			const input = document.getElementById('userInput');
+			const rawInput = input.value.trim();
+
+			if (!rawInput && pendingFiles.length === 0) return;
+			input.blur();
+
+			abortController = new AbortController();
+
+			const currentTemp = parseFloat(document.getElementById('settings-temp').value) || 1.0;
+			const currentMaxTokens = parseInt(document.getElementById('settings-tokens').value) || 8192;
+			const sliderVal = document.getElementById('settings-thinking').value;
+			const currentBudget = thinkingMap[sliderVal] || 16000;
+			const useGoogleSearch = document.getElementById('google-search-toggle').checked;
+			const useKbSearch = document.getElementById('kb-search-toggle') ? document.getElementById('kb-search-toggle').checked : false;
+			let customSystemPrompt = document.getElementById('systemPromptInput').value || SYSTEM_PROMPT;
+
+			input.value = '';
+			input.style.height = 'auto';
+			inputWrapper.classList.add('rounded-[28px]');
+			inputWrapper.classList.remove('rounded-[22px]');
+
+			setGeneratingState(true);
+
+			let fileCardsHTML = "";
+			const filesToProcess = [...pendingFiles];
+			filesToProcess.forEach(f => {
+				fileCardsHTML += getFileCardHTML(f.name, f.size);
+			});
+
+			appendMsg('user', rawInput, null, fileCardsHTML);
+
+			currentLoadingMsgId = appendTypingBubble();
+			currentStreamedText = "";
+
+			let textContext = "";
+			let kbContext = "";
+			let apiParts = [];
+			pendingFiles = [];
+			renderPreviews();
+
+			for (const f of filesToProcess) {
+				if (f.mime.startsWith('image/') || f.mime === 'application/pdf') {
+					apiParts.push({ inline_data: { mime_type: f.mime, data: f.base64 } });
+				} else {
+					const ext = f.name.split('.').pop().toLowerCase();
+					textContext += await (['docx', 'xlsx', 'xls', 'pptx'].includes(ext) ? extractTextFromOffice(f) : readCodeFile(f));
+				}
+			}
+
+			try {
+				const { data: { session } } = await _supabase.auth.getSession();
+				const userToken = session.access_token;
+
+				if (useKbSearch && rawInput.length > 0) {
+					const embedRes = await fetch(EMBEDDING_URL, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${userToken}`
+						},
+						body: JSON.stringify({ action: 'embed', text: rawInput }),
+						signal: abortController.signal
+					});
+
+					if (embedRes.ok) {
+						const { embedding: queryVector } = await embedRes.json();
+						const { data: documents } = await _supabase.rpc('match_documents', {
+							query_embedding: queryVector,
+							match_threshold: 0.5,
+							match_count: 5
+						});
+						console.log("[KB DEBUG] Query User:", rawInput);
+						console.log("[KB DEBUG] Dokumen Knowledge Base yang ditemukan:", documents);
+						if (documents && documents.length > 0) {
+							kbContext = "\n\n[INFORMASI DARI KNOWLEDGE BASE]:\n" +
+								documents.map((d, i) => `Dokumen ${i + 1} (${d.metadata?.source || 'Unknown'}):\n${d.content}`).join("\n---\n");
+						}
+					}
+				}
+
+				const fullPrompt = `
 		        ${customSystemPrompt}
 		        [INSTRUKSI PENTING]
 		        1. Data di bawah "KNOWLEDGE BASE" adalah fakta mutlak.
@@ -1205,62 +1218,65 @@
 		        PERTANYAAN USER:
 		        ${rawInput}
 		        `;
-		
-		        const payload = {
-		            contents: [
-		                ...chatHistory,
-		                { role: "user", parts: [...apiParts, { text: fullPrompt }] }
-		            ],
-		            generationConfig: {
-		                temperature: currentTemp,
-		                max_output_tokens: currentMaxTokens
-		            }
-		        };
-		
-		        if (useGoogleSearch) payload.tools = [{ google_search: {} }];
-		        if (currentSelectedModel.includes('think')) {
-		            payload.thinking_config = { include_thoughts: true, thinking_budget_tokens: currentBudget };
-		        }
-		
-		        const res = await fetch(`${PROXY_URL}?model=${currentSelectedModel}&action=generateContent`, {
-		            method: 'POST',
-		            headers: {
-		                'Content-Type': 'application/json',
-		                'Authorization': `Bearer ${userToken}`,
-		                'apikey': SUPABASE_KEY
-		            },
-		            body: JSON.stringify(payload),
-		            signal: abortController.signal 
-		        });
-		
-		        const data = await res.json();
-		        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Gagal memproses jawaban.";
-		
-		        await typeWriter(currentLoadingMsgId, aiText);
-		
-		        if (currentStreamedText && currentStreamedText.length > 0) {
-		            chatHistory.push(
-		                { role: "user", parts: [{ text: rawInput }] },
-		                { role: "model", parts: [{ text: currentStreamedText }] }
-		            );
-		            await saveMsg(session.user.id, rawInput, currentStreamedText);
-		        } 
-		
-		    } catch (err) {
-		        if (err.name === 'AbortError') {
-		            return; 
-		        }
-		        console.error(err);
-		        const el = document.getElementById(currentLoadingMsgId);
-		        if (el) el.innerHTML = "Terjadi kesalahan koneksi atau limit API.";
-		    } finally {
-		        if (abortController && !abortController.signal.aborted) {
-		            setGeneratingState(false);
-		            currentLoadingMsgId = null;
-		        }
-		        abortController = null;
-		        typeWriterResolve = null;
-		    }
+
+				console.log("[AI DEBUG] Full Prompt sent to Model:", fullPrompt);
+				if (kbContext) console.log("[AI DEBUG] KB Context used:", kbContext);
+
+				const payload = {
+					contents: [
+						...chatHistory,
+						{ role: "user", parts: [...apiParts, { text: fullPrompt }] }
+					],
+					generationConfig: {
+						temperature: currentTemp,
+						max_output_tokens: currentMaxTokens
+					}
+				};
+
+				if (useGoogleSearch) payload.tools = [{ google_search: {} }];
+				if (currentSelectedModel.includes('think')) {
+					payload.thinking_config = { include_thoughts: true, thinking_budget_tokens: currentBudget };
+				}
+
+				const res = await fetch(`${PROXY_URL}?model=${currentSelectedModel}&action=generateContent`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${userToken}`,
+						'apikey': SUPABASE_KEY
+					},
+					body: JSON.stringify(payload),
+					signal: abortController.signal
+				});
+
+				const data = await res.json();
+				const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Gagal memproses jawaban.";
+
+				await typeWriter(currentLoadingMsgId, aiText);
+
+				if (currentStreamedText && currentStreamedText.length > 0) {
+					chatHistory.push(
+						{ role: "user", parts: [{ text: rawInput }] },
+						{ role: "model", parts: [{ text: currentStreamedText }] }
+					);
+					await saveMsg(session.user.id, rawInput, currentStreamedText, fileCardsHTML);
+				}
+
+			} catch (err) {
+				if (err.name === 'AbortError') {
+					return;
+				}
+				console.error(err);
+				const el = document.getElementById(currentLoadingMsgId);
+				if (el) el.innerHTML = "Terjadi kesalahan koneksi atau limit API.";
+			} finally {
+				if (abortController && !abortController.signal.aborted) {
+					setGeneratingState(false);
+					currentLoadingMsgId = null;
+				}
+				abortController = null;
+				typeWriterResolve = null;
+			}
 		}
 
 		function appendMsg(role, text, timestamp, fileCardsHTML = "") {
@@ -1319,7 +1335,7 @@
 			return msgId;
 		}
 
-		async function saveMsg(uid, uText, aText) {
+		async function saveMsg(uid, uText, aText, fileCardsHTML = "") {
 			const payload = { id: currentSessionId, user_id: uid, timestamp: Date.now() };
 			if (chatHistory.length <= 2) {
 				let cleanTitle = aText.split('\n')[0].replace(/[*#_`]/g, '').trim();
@@ -1327,8 +1343,10 @@
 				payload.title = cleanTitle;
 			}
 
+			const finalUserText = fileCardsHTML ? uText + FILE_CARD_SEPARATOR + fileCardsHTML : uText;
+
 			const { data: s } = await _supabase.from('chat_sessions').upsert(payload).select().single();
-			await _supabase.from('chat_messages').insert([{ session_id: currentSessionId, role: 'user', content: uText, timestamp: Date.now() }, { session_id: currentSessionId, role: 'model', content: aText, timestamp: Date.now() }]);
+			await _supabase.from('chat_messages').insert([{ session_id: currentSessionId, role: 'user', content: finalUserText, timestamp: Date.now() }, { session_id: currentSessionId, role: 'model', content: aText, timestamp: Date.now() }]);
 			loadHistory();
 		}
 
@@ -1435,68 +1453,84 @@
 			currentSessionId = id;
 			const { data: msgs } = await _supabase.from('chat_messages').select('*').eq('session_id', id).order('timestamp', { ascending: true });
 			document.getElementById('messagesArea').innerHTML = '';
-			chatHistory = msgs.map(m => ({ role: m.role, parts: [{ text: m.content }] }));
-			msgs.forEach(m => appendMsg(m.role, m.content));
+			chatHistory = msgs.map(m => {
+				let text = m.content;
+				if (m.content.includes(FILE_CARD_SEPARATOR)) {
+					text = m.content.split(FILE_CARD_SEPARATOR)[0];
+				}
+				return { role: m.role, parts: [{ text: text }] };
+			});
+
+			msgs.forEach(m => {
+				let content = m.content;
+				let fileCards = "";
+				if (content.includes(FILE_CARD_SEPARATOR)) {
+					const parts = content.split(FILE_CARD_SEPARATOR);
+					content = parts[0];
+					fileCards = parts[1];
+				}
+				appendMsg(m.role, content, m.timestamp, fileCards);
+			});
 			loadHistory();
 			toggleSidebar(false);
 		}
 
 		function typeWriter(elementId, text) {
-		    return new Promise(resolve => {
-		        typeWriterResolve = resolve; 
-		        const element = document.getElementById(elementId);
-		        if (!element) { resolve(""); return; }
-		
-		        element.innerHTML = '';
-		        currentStreamedText = ""; 
-		        let index = 0;
-		        const speed = 5;
-		        const charsPerTick = 5;
-		
-		        if (typingInterval) clearInterval(typingInterval);
-		
-		        typingInterval = setInterval(() => {
-		            if (index >= text.length) {
-		                clearInterval(typingInterval);
-		                typingInterval = null;
-		                element.innerHTML = marked.parse(text);
-		                currentStreamedText = text; 
-		                resolve(text);
-		                return;
-		            }
-		
-		            const chunk = text.substring(0, index + charsPerTick);
-		            currentStreamedText = chunk; 
-		            element.innerHTML = marked.parse(chunk);
-		
-		            const container = document.getElementById('chatContainer');
-		            container.scrollTop = container.scrollHeight;
-		
-		            index += charsPerTick;
-		        }, speed);
-		    });
+			return new Promise(resolve => {
+				typeWriterResolve = resolve;
+				const element = document.getElementById(elementId);
+				if (!element) { resolve(""); return; }
+
+				element.innerHTML = '';
+				currentStreamedText = "";
+				let index = 0;
+				const speed = 5;
+				const charsPerTick = 5;
+
+				if (typingInterval) clearInterval(typingInterval);
+
+				typingInterval = setInterval(() => {
+					if (index >= text.length) {
+						clearInterval(typingInterval);
+						typingInterval = null;
+						element.innerHTML = marked.parse(text);
+						currentStreamedText = text;
+						resolve(text);
+						return;
+					}
+
+					const chunk = text.substring(0, index + charsPerTick);
+					currentStreamedText = chunk;
+					element.innerHTML = marked.parse(chunk);
+
+					const container = document.getElementById('chatContainer');
+					container.scrollTop = container.scrollHeight;
+
+					index += charsPerTick;
+				}, speed);
+			});
 		}
 
 		function setGeneratingState(s) {
-		    isGenerating = s;
-		    const sendBtn = document.getElementById('sendBtn');
-		    const userInput = document.getElementById('userInput');
-		    const uploadBtn = document.getElementById('uploadBtn');
-		
-		    userInput.disabled = s;
-		    uploadBtn.disabled = s;
-		
-		    if (s) {
-		        sendBtn.innerHTML = '<i data-lucide="square" class="w-4 h-4 text-red-500 fill-current"></i>';
-		        userInput.style.cursor = 'not-allowed';
-		        uploadBtn.style.cursor = 'not-allowed';
-		    } else {
-		        sendBtn.innerHTML = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 translate-x-0.5" fill="currentColor"><path d="M21.66,12a2,2,0,0,1-1.14,1.81L5.87,20.75A2.08,2.08,0,0,1,5,21a2,2,0,0,1-1.82-2.82L5.46,13H11a1,1,0,0,0,0-2H5.46L3.18,5.87A2,2,0,0,1,5.86,3.25h0l14.65,6.94A2,2,0,0,1,21.66,12Z"></path></svg>';
-		        userInput.style.cursor = 'auto';
-		        uploadBtn.style.cursor = 'pointer';
-		        setTimeout(() => userInput.focus(), 100);
-		    }
-		    lucide.createIcons();
+			isGenerating = s;
+			const sendBtn = document.getElementById('sendBtn');
+			const userInput = document.getElementById('userInput');
+			const uploadBtn = document.getElementById('uploadBtn');
+
+			userInput.disabled = s;
+			uploadBtn.disabled = s;
+
+			if (s) {
+				sendBtn.innerHTML = '<i data-lucide="square" class="w-4 h-4 text-red-500 fill-current"></i>';
+				userInput.style.cursor = 'not-allowed';
+				uploadBtn.style.cursor = 'not-allowed';
+			} else {
+				sendBtn.innerHTML = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 translate-x-0.5" fill="currentColor"><path d="M21.66,12a2,2,0,0,1-1.14,1.81L5.87,20.75A2.08,2.08,0,0,1,5,21a2,2,0,0,1-1.82-2.82L5.46,13H11a1,1,0,0,0,0-2H5.46L3.18,5.87A2,2,0,0,1,5.86,3.25h0l14.65,6.94A2,2,0,0,1,21.66,12Z"></path></svg>';
+				userInput.style.cursor = 'auto';
+				uploadBtn.style.cursor = 'pointer';
+				setTimeout(() => userInput.focus(), 100);
+			}
+			lucide.createIcons();
 		}
 
 		function toggleSidebar(s) {
@@ -1592,6 +1626,13 @@
 			}
 		});
 
+		userInput.addEventListener('keydown', function (e) {
+			if (e.key === 'Enter' && !e.shiftKey) {
+				e.preventDefault();
+				sendMessage(e);
+			}
+		});
+
 		document.getElementById('chatForm').onsubmit = sendMessage;
 		init();
 		function toggleAddUserForm() {
@@ -1601,15 +1642,15 @@
 				document.getElementById('newUserEmail').focus();
 			}
 		}
-		
+
 		function applyNativeKeyboardFix() {
-		    const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], textarea');
-		
-		    inputs.forEach(el => {
-		        el.addEventListener('blur', () => {
-		            window.scrollTo(0, 0);
-		        });
-		    });
+			const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], textarea');
+
+			inputs.forEach(el => {
+				el.addEventListener('blur', () => {
+					window.scrollTo(0, 0);
+				});
+			});
 		}
 
 		async function fetchUsers() {
@@ -1642,11 +1683,11 @@
 				}
 
 				data.users.forEach(u => {
-				    const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
-				    const isMe = u.id === session.user.id;
-				
-				    const div = document.createElement('div');
-				    div.className = "bg-white p-3 rounded-xl border border-slate-100 flex items-center justify-between";
+					const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
+					const isMe = u.id === session.user.id;
+
+					const div = document.createElement('div');
+					div.className = "bg-white p-3 rounded-xl border border-slate-100 flex items-center justify-between";
 					div.innerHTML = `
 					    <div class="flex items-center gap-3 overflow-hidden">
 					        <div class="w-8 h-8 rounded-full ${isBanned ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'} flex items-center justify-center shrink-0">
@@ -1668,7 +1709,7 @@
 					        ` : ''}
 					    </div>
 					`;
-				    container.appendChild(div);
+					container.appendChild(div);
 				});
 				lucide.createIcons();
 
@@ -1767,6 +1808,4 @@
 		}
 	</script>
 </body>
-
-
 </html>
