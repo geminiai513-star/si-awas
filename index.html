@@ -851,35 +851,72 @@
 		};
 
 
+		function findScrollableParent(el, axis) {
+			while (el && el !== document.body) {
+				const style = window.getComputedStyle(el);
+				const overflow = style.getPropertyValue(axis === 'x' ? 'overflow-x' : 'overflow-y');
+				if (overflow === 'auto' || overflow === 'scroll') {
+					const hasScroll = axis === 'x'
+						? el.scrollWidth > el.clientWidth
+						: el.scrollHeight > el.clientHeight;
+					if (hasScroll) return el;
+				}
+				el = el.parentElement;
+			}
+			return null;
+		}
+
+		document.addEventListener('touchstart', function (event) {
+			const touch = event.touches[0];
+			const scrollY = findScrollableParent(event.target, 'y');
+			const scrollX = findScrollableParent(event.target, 'x');
+			if (scrollY) {
+				scrollY._touchStartY = touch.clientY;
+			}
+			if (scrollX) {
+				scrollX._touchStartX = touch.clientX;
+			}
+		}, { passive: true });
+
 		document.addEventListener('touchmove', function (event) {
 			if (event.scale !== 1) {
 				event.preventDefault();
 				return;
 			}
 
-			let target = event.target;
-			let scrollable = null;
-			while (target && target !== document.body) {
-				const style = window.getComputedStyle(target);
-				const overflowY = style.getPropertyValue('overflow-y');
-				if (overflowY === 'auto' || overflowY === 'scroll') {
-					scrollable = target;
-					break;
+			const touch = event.touches[0];
+			const scrollX = findScrollableParent(event.target, 'x');
+			const scrollY = findScrollableParent(event.target, 'y');
+
+			if (scrollX && event.touches.length === 1) {
+				const startX = scrollX._touchStartX || touch.clientX;
+				const startY = (scrollY ? scrollY._touchStartY : null) || touch.clientY;
+				const deltaX = Math.abs(touch.clientX - startX);
+				const deltaY = Math.abs(touch.clientY - startY);
+
+				if (deltaX > deltaY) {
+					const atLeft = scrollX.scrollLeft <= 0;
+					const atRight = scrollX.scrollLeft + scrollX.clientWidth >= scrollX.scrollWidth - 1;
+					const movingRight = touch.clientX - startX > 0;
+					const movingLeft = touch.clientX - startX < 0;
+
+					if ((atLeft && movingRight) || (atRight && movingLeft)) {
+						event.preventDefault();
+					}
+					return;
 				}
-				target = target.parentElement;
 			}
 
-			if (!scrollable) {
+			if (!scrollY) {
 				event.preventDefault();
 				return;
 			}
 
-			const atTop = scrollable.scrollTop <= 0;
-			const atBottom = scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
+			const atTop = scrollY.scrollTop <= 0;
+			const atBottom = scrollY.scrollTop + scrollY.clientHeight >= scrollY.scrollHeight - 1;
 
 			if (event.touches.length === 1) {
-				const touch = event.touches[0];
-				const startY = scrollable._touchStartY || touch.clientY;
+				const startY = scrollY._touchStartY || touch.clientY;
 				const deltaY = touch.clientY - startY;
 
 				if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
@@ -889,19 +926,6 @@
 		}, { passive: false });
 
 		let lastTouchEnd = 0;
-
-		document.addEventListener('touchstart', function (event) {
-			let target = event.target;
-			while (target && target !== document.body) {
-				const style = window.getComputedStyle(target);
-				const overflowY = style.getPropertyValue('overflow-y');
-				if (overflowY === 'auto' || overflowY === 'scroll') {
-					target._touchStartY = event.touches[0].clientY;
-					break;
-				}
-				target = target.parentElement;
-			}
-		}, { passive: true });
 
 		document.addEventListener('touchend', function (event) {
 			const now = (new Date()).getTime();
