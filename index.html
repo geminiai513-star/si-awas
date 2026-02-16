@@ -697,6 +697,103 @@
 		<div class="flex-none w-full bg-white h-[20px] z-50 shrink-0"></div>
 	</div>
 
+	<template id="historyItemTemplate">
+		<div
+			class="history-item-root group relative flex items-center justify-between w-full rounded-xl mb-1 pr-1.5 transition-all hover:bg-slate-50">
+			<button
+				class="history-title-btn flex-1 text-left truncate py-3 pl-4 text-[13px] font-bold font-sans outline-none text-slate-600">
+				Percakapan Baru
+			</button>
+			<div class="relative shrink-0">
+				<button
+					class="history-menu-btn p-1.5 rounded-lg text-slate-400 hover:text-slate-600 transition-all opacity-0 group-hover:opacity-100">
+					<i data-lucide="more-vertical" class="w-4 h-4"></i>
+				</button>
+				<div
+					class="history-dropdown hidden absolute right-0 top-10 w-36 bg-white rounded-xl shadow-xl border border-slate-100 z-50 flex-col p-1.5 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+					<button
+						class="history-rename-btn w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-lg flex items-center gap-2 transition-colors">
+						<i data-lucide="pencil" class="w-3.5 h-3.5 text-slate-400"></i> Ganti Nama
+					</button>
+					<div class="h-px bg-slate-100 my-1"></div>
+					<button
+						class="history-delete-btn w-full text-left px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 transition-colors">
+						<i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-500"></i> Hapus
+					</button>
+				</div>
+			</div>
+		</div>
+	</template>
+
+	<!-- CUSTOM MODALS -->
+	<!-- Rename Modal -->
+	<div id="renameModal"
+		class="fixed inset-0 w-full h-full bg-black/60 z-[9999] hidden flex items-center justify-center backdrop-blur-sm transition-opacity duration-200 opacity-0">
+		<div class="bg-white w-[90%] max-w-[320px] rounded-2xl p-6 shadow-2xl transform scale-95 transition-transform duration-200 relative"
+			id="renameModalContent">
+			<h3 class="text-base font-bold text-slate-800 mb-1">Ganti nama chat ini</h3>
+			<p class="text-xs text-slate-500 mb-4">Masukkan nama baru untuk percakapan ini.</p>
+
+			<input type="text" id="renameInput" onblur="window.scrollTo(0,0)"
+				class="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-semibold text-slate-700 outline-none ring-0 focus:ring-0 transition-all mb-6 placeholder:text-slate-400"
+				placeholder="Nama percakapan..." autocomplete="off">
+
+			<div class="flex gap-2">
+				<button onclick="closeRenameModal()"
+					class="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors">
+					Batal
+				</button>
+				<button onclick="submitRename()"
+					class="flex-1 py-2.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors">
+					Ganti Nama
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- User Action Modal (Delete/Freeze) -->
+	<div id="userActionModal"
+		class="fixed inset-0 w-full h-full bg-black/60 z-[9999] hidden flex items-center justify-center backdrop-blur-sm transition-opacity duration-200 opacity-0">
+		<div class="bg-white w-[90%] max-w-[320px] rounded-2xl p-6 shadow-2xl transform scale-95 transition-transform duration-200 relative"
+			id="userActionModalContent">
+			<h3 id="userActionTitle" class="text-base font-bold text-slate-800 mb-2">Konfirmasi</h3>
+			<p id="userActionMessage" class="text-[13px] text-slate-500 mb-6 leading-relaxed">Apakah Anda yakin?</p>
+
+			<div class="flex gap-2">
+				<button onclick="closeUserActionModal()"
+					class="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors">
+					Batal
+				</button>
+				<button id="userActionConfirmBtn" onclick="confirmUserAction()"
+					class="flex-1 py-2.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">
+					Konfirmasi
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Delete Modal -->
+	<div id="deleteModal"
+		class="fixed inset-0 w-full h-full bg-black/60 z-[9999] hidden flex items-center justify-center backdrop-blur-sm transition-opacity duration-200 opacity-0">
+		<div class="bg-white w-[90%] max-w-[320px] rounded-2xl p-6 shadow-2xl transform scale-95 transition-transform duration-200 relative"
+			id="deleteModalContent">
+			<h3 class="text-base font-bold text-slate-800 mb-2">Hapus chat?</h3>
+			<p class="text-[13px] text-slate-500 mb-6 leading-relaxed">Tindakan ini akan menghapus perintah, respons,
+				dan masukan serta konten apa pun yang Anda buat.</p>
+
+			<div class="flex gap-2">
+				<button onclick="closeDeleteModal()"
+					class="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors">
+					Batal
+				</button>
+				<button onclick="confirmDelete()"
+					class="flex-1 py-2.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">
+					Hapus
+				</button>
+			</div>
+		</div>
+	</div>
+
 	<script>
 		const SUPABASE_URL = "https://wddsihtjvntvipswmbtp.supabase.co";
 		const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkZHNpaHRqdm50dmlwc3dtYnRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMjg2NDMsImV4cCI6MjA4NDYwNDY0M30.fyz5Uv7eOUb9zQIbH2OBuZbGu1FZ1_2aYT6deOmojrY";
@@ -1280,6 +1377,8 @@
 					// Dokumen & Audit
 					'lhp', 'nhp', 'pka', 'kk', 'kertas kerja', 'dokumen', 'file', 'pdf', 'laporan', 'sk', 'spt',
 					'audit', 'pemeriksaan', 'pengawasan', 'monev', 'temuan', 'sanggah', 'rekomendasi', 'saran', 'tindak lanjut', 'tl',
+					// Program & Kegiatan
+					'pkpt', 'program kerja', 'proker', 'rencana', 'jadwal', 'tahun', 'anggaran', 'kegiatan',
 					// Fitur & Teknis
 					'login', 'password', 'sandi', 'akun', 'reset', 'menu', 'tombol', 'ikon', 'icon', 'klik', 'simpan', 'edit', 'ubah', 'tambah', 'hapus', 'upload', 'unggah', 'download', 'bukti', 'evidence', 'feedback', 'jawab', 'validasi', 'verifikasi', 'setujui', 'tolak'
 				];
@@ -1511,67 +1610,64 @@
 			const { data: { session } } = await _supabase.auth.getSession();
 			if (!session) return;
 			const { data: sessions } = await _supabase.from('chat_sessions').select('*').eq('user_id', session.user.id).order('timestamp', { ascending: false });
+
 			const list = document.getElementById('historyList');
 			list.innerHTML = '';
+			const tmpl = document.getElementById('historyItemTemplate');
 
 			sessions?.forEach(s => {
 				const isActive = s.id === currentSessionId;
+				const clone = tmpl.content.cloneNode(true);
 
-				// Container Utama Item
-				const container = document.createElement('div');
-				container.className = `group relative flex items-center justify-between w-full rounded-xl mb-1 pr-1.5 transition-all ${isActive ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`;
+				// Root Container
+				const root = clone.querySelector('.history-item-root');
+				if (isActive) {
+					root.classList.remove('hover:bg-slate-50');
+					root.classList.add('bg-blue-50/80');
+				}
 
-				// Judul Percakapan (Klik untuk buka chat)
-				const titleBtn = document.createElement('button');
-				titleBtn.className = `flex-1 text-left truncate py-3 pl-4 text-[13px] font-bold font-sans outline-none ${isActive ? 'text-blue-600' : 'text-slate-600'}`;
+				// Title Button
+				const titleBtn = clone.querySelector('.history-title-btn');
 				titleBtn.innerText = s.title || "Percakapan Baru";
+				if (isActive) {
+					titleBtn.classList.remove('text-slate-600');
+					titleBtn.classList.add('text-blue-600');
+				}
 				titleBtn.onclick = () => loadSession(s.id);
 
-				// Wrapper Tombol Menu
-				const menuWrapper = document.createElement('div');
-				menuWrapper.className = 'relative shrink-0';
+				// Menu Button
+				const menuBtn = clone.querySelector('.history-menu-btn');
+				if (isActive) {
+					menuBtn.classList.remove('opacity-0');
+					menuBtn.classList.add('opacity-100');
+				}
 
-				// Tombol Titik Tiga (...)
-				const menuBtn = document.createElement('button');
-				menuBtn.className = `p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition-all opacity-0 group-hover:opacity-100 ${isActive ? 'opacity-100' : ''}`;
-				menuBtn.innerHTML = '<i data-lucide="more-vertical" class="w-4 h-4"></i>';
-
-				// Dropdown Menu (Hidden by default)
+				// Dropdown Logic
+				const dropdown = clone.querySelector('.history-dropdown');
 				const dropdownId = `menu-dropout-${s.id}`;
-				const dropdown = document.createElement('div');
 				dropdown.id = dropdownId;
-				dropdown.className = "hidden absolute right-0 top-10 w-36 bg-white rounded-xl shadow-xl border border-slate-100 z-50 flex-col p-1.5 animate-in fade-in zoom-in-95 duration-100 origin-top-right";
-				dropdown.innerHTML = `
-					<button onclick="handleRenameClick('${s.id}', '${(s.title || "").replace(/'/g, "\\'")}')" class="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-lg flex items-center gap-2 transition-colors">
-						<i data-lucide="pencil" class="w-3.5 h-3.5 text-slate-400"></i> Ganti Nama
-					</button>
-					<div class="h-px bg-slate-100 my-1"></div>
-					<button onclick="handleDeleteClick('${s.id}')" class="w-full text-left px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 transition-colors">
-						<i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-500"></i> Hapus
-					</button>
-				`;
 
-				// Logic Toggle Menu
 				menuBtn.onclick = (e) => {
 					e.stopPropagation();
-					// Tutup semua dropdown lain dulu
 					document.querySelectorAll('[id^="menu-dropout-"]').forEach(el => {
 						if (el.id !== dropdownId) el.classList.add('hidden');
 					});
 					dropdown.classList.toggle('hidden');
 				};
 
-				menuWrapper.appendChild(menuBtn);
-				menuWrapper.appendChild(dropdown);
+				// Rename & Delete Actions
+				const renameBtn = clone.querySelector('.history-rename-btn');
+				renameBtn.onclick = () => handleRenameClick(s.id, (s.title || "").replace(/'/g, "\\'"));
 
-				container.appendChild(titleBtn);
-				container.appendChild(menuWrapper);
-				list.appendChild(container);
+				const deleteBtn = clone.querySelector('.history-delete-btn');
+				deleteBtn.onclick = () => handleDeleteClick(s.id);
+
+				list.appendChild(clone);
 			});
 
 			lucide.createIcons();
 
-			// Klik di luar menutup dropdown
+			// Global listener to close dropdowns
 			document.addEventListener('click', (e) => {
 				if (!e.target.closest('[id^="menu-dropout-"]') && !e.target.closest('button')) {
 					document.querySelectorAll('[id^="menu-dropout-"]').forEach(el => el.classList.add('hidden'));
@@ -2208,10 +2304,10 @@
 					    </div>
 					    <div class="flex gap-2 shrink-0 ml-2">
 					        ${!isMe ? `
-					        <button onclick="toggleBanUser('${u.id}', ${isBanned})" class="p-2 rounded-lg ${isBanned ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
+					        <button onclick="openUserActionModal('toggleBan', '${u.id}', '${u.email}', ${isBanned})" class="p-2 rounded-lg ${isBanned ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
 					            <i data-lucide="${isBanned ? 'unlock' : 'lock'}" class="w-4 h-4"></i>
 					        </button>
-					        <button onclick="deleteUser('${u.id}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Delete">
+					        <button onclick="openUserActionModal('delete', '${u.id}', '${u.email}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Delete">
 					            <i data-lucide="trash-2" class="w-4 h-4"></i>
 					        </button>
 					        ` : ''}
@@ -2266,103 +2362,8 @@
 			}
 		}
 
-		async function deleteUser(userId) {
-			if (!confirm("Yakin ingin menghapus user ini?")) return;
 
-			try {
-				const { data: { session } } = await _supabase.auth.getSession();
-				const res = await fetch(USER_MGMT_URL, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${session.access_token}`
-					},
-					body: JSON.stringify({ action: 'delete_user', userId })
-				});
 
-				const data = await res.json();
-				if (data.error) throw new Error(data.error);
-
-				fetchUsers();
-			} catch (e) {
-				showToast("Gagal menghapus: " + e.message, "error");
-			}
-		}
-
-		async function toggleBanUser(userId, iscurrentlyBanned) {
-			const action = iscurrentlyBanned ? "unfreeze" : "freeze";
-			const duration = iscurrentlyBanned ? '0s' : '876600h';
-
-			if (!confirm(`Yakin ingin ${action} user ini?`)) return;
-
-			try {
-				const { data: { session } } = await _supabase.auth.getSession();
-				const res = await fetch(USER_MGMT_URL, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${session.access_token}`
-					},
-					body: JSON.stringify({ action: 'toggle_ban_user', userId, banDuration: duration })
-				});
-
-				const data = await res.json();
-				if (data.error) throw new Error(data.error);
-
-				fetchUsers();
-			} catch (e) {
-				showToast(`Gagal ${action}: ` + e.message, "error");
-			}
-		}
-	</script>
-	<!-- Custom Rename Modal -->
-	<div id="renameModal"
-		class="fixed inset-0 w-full h-full bg-black/60 z-[9999] hidden flex items-center justify-center backdrop-blur-sm transition-opacity duration-200 opacity-0">
-		<div class="bg-white w-[90%] max-w-[320px] rounded-2xl p-6 shadow-2xl transform scale-95 transition-transform duration-200 relative"
-			id="renameModalContent">
-			<h3 class="text-base font-bold text-slate-800 mb-1">Ganti nama chat ini</h3>
-			<p class="text-xs text-slate-500 mb-4">Masukkan nama baru untuk percakapan ini.</p>
-
-			<input type="text" id="renameInput" onblur="window.scrollTo(0,0)"
-				class="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-semibold text-slate-700 outline-none ring-0 focus:ring-0 transition-all mb-6 placeholder:text-slate-400"
-				placeholder="Nama percakapan..." autocomplete="off">
-
-			<div class="flex gap-2">
-				<button onclick="closeRenameModal()"
-					class="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors">
-					Batal
-				</button>
-				<button onclick="submitRename()"
-					class="flex-1 py-2.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors">
-					Ganti Nama
-				</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Custom Delete Modal -->
-	<div id="deleteModal"
-		class="fixed inset-0 w-full h-full bg-black/60 z-[9999] hidden flex items-center justify-center backdrop-blur-sm transition-opacity duration-200 opacity-0">
-		<div class="bg-white w-[90%] max-w-[320px] rounded-2xl p-6 shadow-2xl transform scale-95 transition-transform duration-200 relative"
-			id="deleteModalContent">
-			<h3 class="text-base font-bold text-slate-800 mb-2">Hapus chat?</h3>
-			<p class="text-[13px] text-slate-500 mb-6 leading-relaxed">Tindakan ini akan menghapus perintah, respons,
-				dan masukan serta konten apa pun yang Anda buat.</p>
-
-			<div class="flex gap-2">
-				<button onclick="closeDeleteModal()"
-					class="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors">
-					Batal
-				</button>
-				<button onclick="confirmDelete()"
-					class="flex-1 py-2.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">
-					Hapus
-				</button>
-			</div>
-		</div>
-	</div>
-
-	<script>
 		// --- RENAME LOGIC ---
 		let currentRenameId = null;
 
@@ -2477,6 +2478,7 @@
 					currentSessionId = Date.now().toString();
 					document.getElementById('messagesArea').innerHTML = '';
 					chatHistory = [];
+					toggleSidebar(false);
 				}
 				loadHistory();
 				closeDeleteModal();
@@ -2486,6 +2488,117 @@
 				btn.innerHTML = oldHtml;
 				btn.disabled = false;
 			}
+		}
+
+		// --- USER ACTION LOGIC (DELETE/FREEZE) ---
+		let currentUserAction = null;
+
+		function openUserActionModal(type, uid, identifier, isBanned) {
+			currentUserAction = { type, uid, identifier, isBanned };
+
+			const modal = document.getElementById('userActionModal');
+			const content = document.getElementById('userActionModalContent');
+			const title = document.getElementById('userActionTitle');
+			const msg = document.getElementById('userActionMessage');
+			const btn = document.getElementById('userActionConfirmBtn');
+
+			// Reset styles
+			btn.className = "flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors";
+
+			if (type === 'delete') {
+				title.innerText = "Hapus User?";
+				msg.innerText = `Anda yakin ingin menghapus user ${identifier}? Data tidak bisa dikembalikan.`;
+				btn.innerText = "Hapus";
+				btn.classList.add("bg-red-50", "text-red-600", "hover:bg-red-100");
+			} else if (type === 'toggleBan') {
+				const actionText = isBanned ? "Aktifkan" : "Bekukan";
+				title.innerText = `${actionText} User?`;
+				msg.innerText = `Anda yakin ingin membuat user ${identifier} menjadi ${isBanned ? 'AKTIF' : 'DIBEKUKAN'}?`;
+				btn.innerText = actionText;
+
+				if (isBanned) {
+					btn.classList.add("bg-green-50", "text-green-600", "hover:bg-green-100");
+				} else {
+					btn.classList.add("bg-orange-50", "text-orange-600", "hover:bg-orange-100");
+				}
+			}
+
+			modal.classList.remove('hidden');
+			requestAnimationFrame(() => {
+				modal.classList.remove('opacity-0');
+				content.classList.remove('scale-95');
+				content.classList.add('scale-100');
+			});
+		}
+
+		function closeUserActionModal() {
+			const modal = document.getElementById('userActionModal');
+			const content = document.getElementById('userActionModalContent');
+
+			modal.classList.add('opacity-0');
+			content.classList.remove('scale-100');
+			content.classList.add('scale-95');
+
+			setTimeout(() => {
+				modal.classList.add('hidden');
+				currentUserAction = null;
+			}, 200);
+		}
+
+		async function confirmUserAction() {
+			if (!currentUserAction) return;
+
+			const { type, uid, isBanned } = currentUserAction;
+			const btn = document.getElementById('userActionConfirmBtn');
+			const oldHtml = btn.innerHTML;
+			btn.innerHTML = '<div class="btn-spinner" style="width:14px;height:14px;border-width:2px;"></div>';
+			btn.disabled = true;
+
+			try {
+				if (type === 'delete') {
+					await performDeleteUser(uid);
+				} else if (type === 'toggleBan') {
+					await performToggleBanUser(uid, isBanned);
+				}
+				closeUserActionModal();
+				fetchUsers();
+			} catch (e) {
+				showToast("Gagal: " + e.message, "error");
+			} finally {
+				btn.innerHTML = oldHtml;
+				btn.disabled = false;
+			}
+		}
+
+		async function performDeleteUser(userId) {
+			const { data: { session } } = await _supabase.auth.getSession();
+			const res = await fetch(USER_MGMT_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${session.access_token}`
+				},
+				body: JSON.stringify({ action: 'delete_user', userId })
+			});
+
+			const data = await res.json();
+			if (data.error) throw new Error(data.error);
+		}
+
+		async function performToggleBanUser(userId, isCurrentlyBanned) {
+			const duration = isCurrentlyBanned ? '0s' : '876600h'; // 100 years or reset
+			const { data: { session } } = await _supabase.auth.getSession();
+			const res = await fetch(USER_MGMT_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${session.access_token}`
+				},
+				body: JSON.stringify({ action: 'toggle_ban_user', userId, banDuration: duration })
+			});
+
+			const data = await res.json();
+			if (data.error) throw new Error(data.error);
 		}
 
 		// Close modals logic
@@ -2506,7 +2619,6 @@
 				closeDeleteModal();
 			}
 		});
-
 	</script>
 </body>
 
