@@ -501,7 +501,7 @@
 								class="w-full bg-gray-100 rounded-xl px-5 py-3 text-[15px] font-bold text-slate-700 flex items-center justify-between outline-none">
 								<span id="selected-model-text">Gemini 3 Flash</span>
 								<i data-lucide="chevron-down"
-									class="w-4 h-4 text-slate-400 transition-transform duration-200"
+									class="w-4 h-4 text-slate-400 transition-transform duration-200 transform"
 									id="dropdown-icon"></i>
 							</button>
 							<div id="dropdown-menu"
@@ -966,36 +966,46 @@
 
 		const dropdownTrigger = document.getElementById('dropdown-trigger');
 		const dropdownMenu = document.getElementById('dropdown-menu');
-		const dropdownIcon = document.getElementById('dropdown-icon');
 		const dropdownOptions = document.querySelectorAll('.dropdown-option');
 
-		dropdownTrigger.onclick = (e) => {
-			e.stopPropagation();
-			dropdownMenu.classList.toggle('hidden');
-			dropdownIcon.style.transform = dropdownMenu.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-		};
-
-		document.addEventListener('click', (e) => {
-			if (!dropdownTrigger.contains(e.target) && !dropdownMenu.contains(e.target)) {
-				dropdownMenu.classList.add('hidden');
-				if (dropdownIcon) dropdownIcon.style.transform = 'rotate(0deg)';
-			}
-		});
-
-		dropdownOptions.forEach(option => {
-			option.onclick = () => {
-				const value = option.getAttribute('data-value');
-				const text = option.innerText;
-
-				currentSelectedModel = value;
-				document.getElementById('selected-model-text').innerText = text;
-
-				dropdownMenu.classList.add('hidden');
-				dropdownIcon.style.transform = 'rotate(0deg)';
-
-				saveAdminSettings();
+		if (dropdownTrigger) {
+			dropdownTrigger.onclick = (e) => {
+				e.stopPropagation();
+				const dropdownIcon = document.getElementById('dropdown-icon');
+				dropdownMenu.classList.toggle('hidden');
+				if (dropdownIcon) dropdownIcon.classList.toggle('rotate-180');
 			};
-		});
+
+			document.addEventListener('click', (e) => {
+				if (!dropdownTrigger.contains(e.target) && !dropdownMenu.contains(e.target)) {
+					const dropdownIcon = document.getElementById('dropdown-icon');
+					dropdownMenu.classList.add('hidden');
+					if (dropdownIcon) {
+						dropdownIcon.classList.remove('rotate-180');
+						dropdownIcon.style.transform = '';
+					}
+				}
+			});
+
+			dropdownOptions.forEach(option => {
+				option.onclick = () => {
+					const value = option.getAttribute('data-value');
+					const text = option.innerText;
+					const dropdownIcon = document.getElementById('dropdown-icon');
+
+					currentSelectedModel = value;
+					document.getElementById('selected-model-text').innerText = text;
+
+					dropdownMenu.classList.add('hidden');
+					if (dropdownIcon) {
+						dropdownIcon.classList.remove('rotate-180');
+						dropdownIcon.style.transform = '';
+					}
+
+					saveAdminSettings();
+				};
+			});
+		}
 
 		document.getElementById('google-search-toggle').onchange = () => {
 			saveAdminSettings();
@@ -2092,7 +2102,7 @@
 								<p class="text-[10px] font-medium text-slate-400">${doc.chunk_count || 0} chunks • ${new Date(doc.created_at).toLocaleDateString('id-ID')}</p>
 							</div>
 						</div>
-						<button onclick="deleteKBDocument('${doc.id}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors shrink-0 ml-2">
+						<button onclick="openUserActionModal('deleteKB', '${doc.id}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors shrink-0 ml-2">
 							<i data-lucide="trash-2" class="w-4 h-4"></i>
 						</button>`;
 					container.appendChild(div);
@@ -2104,17 +2114,7 @@
 			}
 		}
 
-		async function deleteKBDocument(docId) {
-			if (!confirm('Yakin ingin menghapus dokumen knowledge base ini?')) return;
-			try {
-				// Chunks dihapus otomatis via ON DELETE CASCADE
-				await _supabase.from('kb_documents').delete().eq('id', docId);
-				showToast('Dokumen berhasil dihapus', 'success');
-				loadKBDocuments();
-			} catch (e) {
-				showToast('Gagal menghapus: ' + e.message, 'error');
-			}
-		}
+
 
 		async function searchKnowledgeBase(query) {
 			try {
@@ -2490,7 +2490,7 @@
 			}
 		}
 
-		// --- USER ACTION LOGIC (DELETE/FREEZE) ---
+		// --- ACTION MODAL LOGIC (User & KB) ---
 		let currentUserAction = null;
 
 		function openUserActionModal(type, uid, identifier, isBanned) {
@@ -2521,6 +2521,11 @@
 				} else {
 					btn.classList.add("bg-orange-50", "text-orange-600", "hover:bg-orange-100");
 				}
+			} else if (type === 'deleteKB') {
+				title.innerText = "Hapus Dokumen?";
+				msg.innerText = "Anda yakin ingin menghapus dokumen Knowledge Base ini? Semua data terkait akan hilang.";
+				btn.innerText = "Hapus";
+				btn.classList.add("bg-red-50", "text-red-600", "hover:bg-red-100");
 			}
 
 			modal.classList.remove('hidden');
@@ -2559,9 +2564,12 @@
 					await performDeleteUser(uid);
 				} else if (type === 'toggleBan') {
 					await performToggleBanUser(uid, isBanned);
+				} else if (type === 'deleteKB') {
+					await performDeleteKBDocument(uid);
 				}
 				closeUserActionModal();
-				fetchUsers();
+				if (type === 'deleteKB') loadKBDocuments();
+				else fetchUsers();
 			} catch (e) {
 				showToast("Gagal: " + e.message, "error");
 			} finally {
@@ -2599,6 +2607,12 @@
 
 			const data = await res.json();
 			if (data.error) throw new Error(data.error);
+		}
+
+		async function performDeleteKBDocument(docId) {
+			const { error } = await _supabase.from('kb_documents').delete().eq('id', docId);
+			if (error) throw error;
+			showToast('Dokumen berhasil dihapus', 'success');
 		}
 
 		// Close modals logic
