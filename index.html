@@ -430,8 +430,8 @@
 					<img src="icon/icon.png" alt="Logo" class="h-8 w-auto object-contain">
 				</div>
 				<div class="flex items-center gap-1">
-					<button id="settingsBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95"><i
-							data-lucide="settings-2" class="w-6 h-6"></i></button>
+					<button id="settingsBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95"
+						style="display: none;"><i data-lucide="settings-2" class="w-6 h-6"></i></button>
 					<button id="menuBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95 -mr-2.5"><i
 							data-lucide="menu" class="w-6 h-6"></i></button>
 				</div>
@@ -2166,10 +2166,8 @@
 
 		async function init() {
 			lucide.createIcons();
-			const cachedUpload = localStorage.getItem('awas_allow_upload');
-			if (cachedUpload !== null) {
-				applyUploadUIState(cachedUpload === 'true');
-			}
+			// Initial state: Hidden until permissions loaded
+			applyUploadUIState(false);
 
 			const { data: { session } } = await _supabase.auth.getSession();
 
