@@ -430,8 +430,8 @@
 					<img src="icon/icon.png" alt="Logo" class="h-8 w-auto object-contain">
 				</div>
 				<div class="flex items-center gap-1">
-					<button id="settingsBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95"
-						style="display: none;"><i data-lucide="settings-2" class="w-6 h-6"></i></button>
+					<button id="settingsBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95"><i
+							data-lucide="settings-2" class="w-6 h-6"></i></button>
 					<button id="menuBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95 -mr-2.5"><i
 							data-lucide="menu" class="w-6 h-6"></i></button>
 				</div>
@@ -815,7 +815,6 @@
 		let currentLoadingMsgId = null;
 		let currentStreamedText = "";
 		let typeWriterResolve = null;
-		let currentUserFeatures = { upload: false, google: false, kb: false };
 
 		let currentSelectedModel = localStorage.getItem('awas_model') || "gemini-3-flash-preview";
 		const thinkingMap = { "1": 4000, "2": 16000, "3": 32000 };
@@ -1330,7 +1329,7 @@
 			const currentMaxTokens = parseInt(document.getElementById('settings-tokens').value) || 8192;
 			const sliderVal = document.getElementById('settings-thinking').value;
 			const currentBudget = thinkingMap[sliderVal] || 16000;
-			const useGoogleSearch = document.getElementById('google-search-toggle').checked && currentUserFeatures.google;
+			const useGoogleSearch = document.getElementById('google-search-toggle').checked;
 
 			let customSystemPrompt = document.getElementById('systemPromptInput').value || SYSTEM_PROMPT;
 
@@ -1377,7 +1376,7 @@
 
 				// RAG: Cari knowledge base jika aktif DAN relevan dengan SI-AWAS
 				let finalMessage = userMessage;
-				const useKB = document.getElementById('kb-toggle')?.checked && currentUserFeatures.kb;
+				const useKB = document.getElementById('kb-toggle')?.checked;
 
 				// TRIGGER WORDS: Hanya cari di KB jika ada kata kunci ini
 				const kbKeywords = [
@@ -2166,8 +2165,10 @@
 
 		async function init() {
 			lucide.createIcons();
-			// Initial state: Hidden until permissions loaded
-			applyUploadUIState(false);
+			const cachedUpload = localStorage.getItem('awas_allow_upload');
+			if (cachedUpload !== null) {
+				applyUploadUIState(cachedUpload === 'true');
+			}
 
 			const { data: { session } } = await _supabase.auth.getSession();
 
@@ -2184,28 +2185,10 @@
 					loadKBDocuments();
 				});
 
-				// ROBUST PROFILE FETCHING
-				let profile = null;
-				try {
-					const { data, error } = await _supabase.from('profiles').select('role, features').eq('id', session.user.id).single();
-					if (error) throw error;
-					profile = data;
-				} catch (e) {
-					// Fallback
-					const { data } = await _supabase.from('profiles').select('role').eq('id', session.user.id).single();
-					profile = data;
-				}
+				const { data: profile } = await _supabase.from('profiles').select('role').eq('id', session.user.id).single();
 
-				if (profile) {
-					if (profile.features) currentUserFeatures = profile.features;
-
-					if (profile.role === 'admin') {
-						settingsBtn.style.display = 'block';
-					}
-
-					// Re-apply Upload State with User Permission
-					const globalUpload = localStorage.getItem('awas_allow_upload') === 'true';
-					applyUploadUIState(globalUpload && currentUserFeatures.upload);
+				if (profile && profile.role === 'admin') {
+					settingsBtn.style.display = 'block';
 				}
 
 				const { data: sessions } = await _supabase.from('chat_sessions').select('*').eq('user_id', session.user.id).order('timestamp', { ascending: false }).limit(1);
@@ -2285,7 +2268,6 @@
 			}
 
 			try {
-				// 1. Fetch Auth Users (via Edge Function/API)
 				const res = await fetch(USER_MGMT_URL, {
 					method: 'POST',
 					headers: {
@@ -2298,18 +2280,6 @@
 				const data = await res.json();
 				if (data.error) throw new Error(data.error);
 
-				// 2. Fetch Profiles (for features permission)
-				const { data: profiles, error: profileError } = await _supabase
-					.from('profiles')
-					.select('id, features');
-
-				if (profileError) console.warn("Gagal load profiles features:", profileError);
-
-				const profileMap = {};
-				if (profiles) {
-					profiles.forEach(p => profileMap[p.id] = p.features || { upload: false, google: false, kb: false });
-				}
-
 				container.innerHTML = '';
 				if (!data.users || data.users.length === 0) {
 					container.innerHTML = `<div class="text-center py-4"><span class="text-xs font-medium text-slate-400">Tidak ada user lain.</span></div>`;
@@ -2320,53 +2290,28 @@
 					const isBanned = u.banned_until && new Date(u.banned_until) > new Date();
 					const isMe = u.id === session.user.id;
 
-					// Default features: All TRUE if no record found
-					const features = profileMap[u.id] || { upload: false, google: false, kb: false };
-
 					const div = document.createElement('div');
-					div.className = "bg-white p-4 rounded-xl border border-slate-100 flex flex-col gap-3";
+					div.className = "bg-white p-3 rounded-xl border border-slate-100 flex items-center justify-between";
 					div.innerHTML = `
-					    <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3 overflow-hidden">
-                                <div class="w-9 h-9 rounded-full ${isBanned ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600'} flex items-center justify-center shrink-0">
-                                    <i data-lucide="${isBanned ? 'lock' : 'user'}" class="w-4 h-4"></i>
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-sm font-bold text-slate-800 truncate">${u.email}</p>
-                                    <p class="text-[10px] font-medium text-slate-400 truncate">ID: ${u.id}</p>
-                                </div>
-                            </div>
-                            <div class="flex gap-1 shrink-0 ml-2">
-                                ${!isMe ? `
-                                <button onclick="openUserActionModal('toggleBan', '${u.id}', '${u.email}', ${isBanned})" class="w-8 h-8 flex items-center justify-center rounded-lg ${isBanned ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
-                                    <i data-lucide="${isBanned ? 'unlock' : 'lock'}" class="w-4 h-4"></i>
-                                </button>
-                                <button onclick="openUserActionModal('delete', '${u.id}', '${u.email}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Delete">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
-                                ` : ''}
-                            </div>
-                        </div>
-                        
-                        <!-- Feature Toggles -->
-                        <div class="flex items-center gap-2 pt-3 border-t border-slate-50">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-auto">Permissions</span>
-                            
-                            <button onclick="updateUserFeature('${u.id}', 'google', ${!features.google})" 
-                                class="px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 ${features.google ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-400 border-slate-100 grayscale'}">
-                                <i data-lucide="globe" class="w-3 h-3"></i> Google
-                            </button>
-
-                            <button onclick="updateUserFeature('${u.id}', 'kb', ${!features.kb})" 
-                                class="px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 ${features.kb ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100 grayscale'}">
-                                <i data-lucide="book-open" class="w-3 h-3"></i> KB
-                            </button>
-
-                            <button onclick="updateUserFeature('${u.id}', 'upload', ${!features.upload})" 
-                                class="px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 ${features.upload ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-slate-50 text-slate-400 border-slate-100 grayscale'}">
-                                <i data-lucide="upload" class="w-3 h-3"></i> Upload
-                            </button>
-                        </div>
+					    <div class="flex items-center gap-3 overflow-hidden">
+					        <div class="w-8 h-8 rounded-full ${isBanned ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'} flex items-center justify-center shrink-0">
+					            <i data-lucide="${isBanned ? 'lock' : 'user'}" class="w-4 h-4"></i>
+					        </div>
+					        <div class="min-w-0 flex-1">
+					            <p class="text-sm font-bold text-slate-700 truncate">${u.email}</p>
+					            <p class="text-[10px] font-medium text-slate-400 truncate">ID: ${u.id}</p>
+					        </div>
+					    </div>
+					    <div class="flex gap-2 shrink-0 ml-2">
+					        ${!isMe ? `
+					        <button onclick="openUserActionModal('toggleBan', '${u.id}', '${u.email}', ${isBanned})" class="p-2 rounded-lg ${isBanned ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
+					            <i data-lucide="${isBanned ? 'unlock' : 'lock'}" class="w-4 h-4"></i>
+					        </button>
+					        <button onclick="openUserActionModal('delete', '${u.id}', '${u.email}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Delete">
+					            <i data-lucide="trash-2" class="w-4 h-4"></i>
+					        </button>
+					        ` : ''}
+					    </div>
 					`;
 					container.appendChild(div);
 				});
@@ -2375,30 +2320,6 @@
 			} catch (e) {
 				console.error(e);
 				container.innerHTML = `<div class="text-center py-4 text-red-500 font-bold text-xs">Gagal memuat user: ${e.message}</div>`;
-			}
-		}
-
-		async function updateUserFeature(userId, feature, newValue) {
-			// Optimistic update logic could go here, but for safety we wait for DB
-			try {
-				// 1. Get current features (or default)
-				const { data: profile } = await _supabase.from('profiles').select('features').eq('id', userId).single();
-				const currentFeatures = profile?.features || { upload: false, google: false, kb: false };
-
-				// 2. Update specific feature
-				currentFeatures[feature] = newValue;
-
-				// 3. Save back
-				const { error } = await _supabase.from('profiles').update({ features: currentFeatures }).eq('id', userId);
-
-				if (error) throw error;
-				fetchUsers(); // Refresh UI
-			} catch (e) {
-				showToast(`Gagal update fitur: ${e.message}`, 'error');
-				// Hint to user if column missing
-				if (e.message.includes('features')) {
-					alert("Kolom 'features' belum dibuat di database. Jalankan SQL: alter table profiles add column features jsonb default '{\"upload\": true, \"google\": true, \"kb\": true}';");
-				}
 			}
 		}
 
