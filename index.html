@@ -521,46 +521,7 @@
 					</div>
 				</div>
 
-				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm">
-					<div class="mb-4">
-						<span class="text-xs font-black text-slate-500 uppercase tracking-widest">Sumber Data</span>
-					</div>
-					<div class="space-y-4">
-						<div class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100">
-							<div class="flex items-center gap-3">
-								<div
-									class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-									<i data-lucide="globe" class="w-4 h-4"></i>
-								</div>
-								<div>
-									<span class="text-sm font-bold text-slate-700 block">Google Search</span>
-									<span id="gs-status-label" class="text-[10px] font-medium text-slate-400">Status
-										fitur ini diatur per user</span>
-								</div>
-							</div>
-							<div class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500 uppercase">
-								Managed per User
-							</div>
-						</div>
 
-						<div class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100">
-							<div class="flex items-center gap-3">
-								<div
-									class="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
-									<i data-lucide="paperclip" class="w-4 h-4"></i>
-								</div>
-								<div>
-									<span class="text-sm font-bold text-slate-700 block">Upload File</span>
-									<span id="uf-status-label" class="text-[10px] font-medium text-slate-400">Status
-										fitur ini diatur per user</span>
-								</div>
-							</div>
-							<div class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500 uppercase">
-								Managed per User
-							</div>
-						</div>
-					</div>
-				</div>
 
 				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm">
 					<div class="mb-6">
@@ -613,31 +574,14 @@
 						<span class="text-xs font-black text-slate-500 uppercase tracking-widest">Knowledge Base</span>
 					</div>
 					<div class="space-y-4">
-						<div
-							class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100 mb-3">
-							<div class="flex items-center gap-3">
-								<div
-									class="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-									<i data-lucide="book-open" class="w-4 h-4"></i>
-								</div>
-								<div>
-									<span class="text-sm font-bold text-slate-700 block">Knowledge Base</span>
-									<span id="kb-status-label" class="text-[10px] font-medium text-slate-400">Status
-										fitur ini diatur per user</span>
-								</div>
-							</div>
-							<!-- Toggle dihapus/disembunyikan karena dikelola per user -->
-							<div class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500 uppercase">
-								Managed per User
-							</div>
-						</div>
+
 
 						<div class="flex gap-2">
 							<input type="file" id="kb-file-input" accept=".txt" class="hidden">
 							<button type="button" onclick="document.getElementById('kb-file-input').click()"
 								class="flex-1 flex items-center justify-center gap-2 py-3 bg-white rounded-xl border border-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-50 active:scale-95 transition-all">
 								<i data-lucide="upload" class="w-4 h-4"></i>
-								Upload File .txt
+								Upload Knowledge Base
 							</button>
 						</div>
 
@@ -703,9 +647,9 @@
 
 	<template id="historyItemTemplate">
 		<div
-			class="history-item-root group relative flex items-center justify-between w-full rounded-xl mb-1 pr-1.5 transition-all hover:bg-slate-50">
+			class="history-item-root group relative flex items-center justify-between w-full rounded-xl mb-1 pr-1.5 transition-all">
 			<button
-				class="history-title-btn flex-1 text-left truncate py-3 pl-4 text-[13px] font-bold font-sans outline-none text-slate-600">
+				class="history-title-btn flex-1 text-left truncate py-2 pl-4 text-[13px] font-medium font-sans outline-none text-slate-600">
 				Percakapan Baru
 			</button>
 			<div class="relative shrink-0">
@@ -883,6 +827,7 @@
 				if (globalData && !globalError) {
 					// Global Config
 					currentSelectedModel = globalData.model;
+					localStorage.setItem('awas_model', currentSelectedModel);
 					// Hapus setting global upload/kb/g-search dari sini (pindah ke user profile)
 
 					const elModel = document.getElementById('selected-model-text');
@@ -918,12 +863,8 @@
 					if (elPrompt) elPrompt.value = globalData.system_prompt;
 				}
 
-
-				// 2. Load User-Specific Settings for Current User (Profile)
-				// INI WAJIB JALAN TERLEPAS DARI GLOBAL SETTINGS
 				const { data: { session } } = await _supabase.auth.getSession();
 				if (session) {
-					// Gunakan .maybeSingle() agar tidak error jika row tidak ketemu (walaupun harusnya ada)
 					const { data: profile, error: profErr } = await _supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
 
 					if (profErr) {
@@ -931,10 +872,6 @@
 					}
 
 					if (profile) {
-						// === STRICT BOOLEAN CHECK ===
-						// Pastikan nilai dari DB benar-benar boolean true/false.
-						// Jika null/undefined, kita default ke FALSE (Fail-Safe) atau TRUE sesuai kebutuhan.
-						// Di sini kita ambil nilai DB apa adanya.
 						const useGoogle = profile.use_google_search === true;
 						const useKB = profile.use_knowledge_base === true;
 						const allowUpload = profile.allow_file_upload === true;
@@ -942,39 +879,21 @@
 						console.log(`[PROFILE LOADED] User: ${profile.email}`);
 						console.log(`[SETTINGS] Google: ${useGoogle}, KB: ${useKB}, Upload: ${allowUpload}`);
 
-						// Update Status Label di UI
-						const statusMap = { true: "AKTIF", false: "NONAKTIF" };
-						const colorMap = { true: "text-green-600", false: "text-red-500" };
+						// Update UI state based on permission
 
-						const updateLabel = (id, val) => {
-							const el = document.getElementById(id);
-							if (el) {
-								el.innerText = `Status Akun Anda: ${statusMap[val]}`;
-								el.className = `text-[10px] font-bold ${colorMap[val]}`;
-							}
-						};
 
-						updateLabel('gs-status-label', useGoogle);
-						updateLabel('uf-status-label', allowUpload);
-						updateLabel('kb-status-label', useKB);
-
-						// Save to LocalStorage for sendMessage access
-						// KUNCI: Gunakan 'true' string HANYA jika nilainya benar-benar true
 						localStorage.setItem('awas_settings_google', useGoogle ? 'true' : 'false');
 						localStorage.setItem('awas_settings_kb', useKB ? 'true' : 'false');
 						localStorage.setItem('awas_allow_upload', allowUpload ? 'true' : 'false');
 
-						// Update UI state based on permission
 						applyUploadUIState(allowUpload);
 
-						// If KB is enabled for user, load docs
 						if (useKB) {
 							loadKBDocuments();
 						} else {
 							document.getElementById('kb-doc-list').innerHTML = '<p class="text-xs text-slate-400 text-center py-2">Fitur Knowledge Base dinonaktifkan untuk akun Anda.</p>';
 						}
 					} else {
-						// Profile Fetch NULL? Fallback to OFF (Fail Safe)
 						console.warn("Profile not found for user, defaulting to RESTRICTED.");
 						localStorage.setItem('awas_settings_google', 'false');
 						localStorage.setItem('awas_settings_kb', 'false');
@@ -1015,12 +934,6 @@
 		};
 
 		// --- LISTENERS ---
-		// Hapus listener global untuk fitur yang dipindah ke per-user setting
-		// document.getElementById('upload-toggle').onchange = () => saveAdminSettings();
-		// document.getElementById('google-search-toggle').onchange = () => saveAdminSettings();
-		// document.getElementById('kb-toggle').onchange = () => saveAdminSettings();
-
-		// Setting Global Lainnya Tetap Ada:
 		document.getElementById('settings-tokens').onchange = saveAdminSettings;
 		document.getElementById('settings-temp').onchange = saveAdminSettings;
 		document.getElementById('settings-thinking').onchange = saveAdminSettings;
@@ -1056,6 +969,7 @@
 					const dropdownIcon = document.getElementById('dropdown-icon');
 
 					currentSelectedModel = value;
+					localStorage.setItem('awas_model', value);
 					document.getElementById('selected-model-text').innerText = text;
 
 					dropdownMenu.classList.add('hidden');
@@ -1065,6 +979,7 @@
 					}
 
 					saveAdminSettings();
+					showToast(`Model aktif: ${text}`, 'success');
 				};
 			});
 		}
@@ -1686,7 +1601,34 @@
 			list.innerHTML = '';
 			const tmpl = document.getElementById('historyItemTemplate');
 
+			// DATE GROUPING LOGIC
+			let lastLabel = "";
+			const now = new Date();
+			const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+			const startOfYesterday = startOfToday - 86400000;
+			const startOfLast7Days = startOfToday - (86400000 * 7);
+			const startOfLast30Days = startOfToday - (86400000 * 30);
+
+			const getLabel = (ts) => {
+				if (!ts) return "Lebih Lama";
+				if (ts >= startOfToday) return "Hari Ini";
+				if (ts >= startOfYesterday) return "Kemarin";
+				if (ts >= startOfLast7Days) return "7 Hari Terakhir";
+				if (ts >= startOfLast30Days) return "30 Hari Terakhir";
+				return "Lebih Lama";
+			};
+
 			sessions?.forEach(s => {
+				const currentLabel = getLabel(s.timestamp);
+
+				if (currentLabel !== lastLabel) {
+					const header = document.createElement('div');
+					header.className = "text-[10px] font-black text-slate-400 mt-5 mb-2 px-4 uppercase tracking-widest";
+					header.innerText = currentLabel;
+					list.appendChild(header);
+					lastLabel = currentLabel;
+				}
+
 				const isActive = s.id === currentSessionId;
 				const clone = tmpl.content.cloneNode(true);
 
@@ -1701,8 +1643,8 @@
 				const titleBtn = clone.querySelector('.history-title-btn');
 				titleBtn.innerText = s.title || "Percakapan Baru";
 				if (isActive) {
-					titleBtn.classList.remove('text-slate-600');
-					titleBtn.classList.add('text-blue-600');
+					titleBtn.classList.remove('text-slate-600', 'font-medium');
+					titleBtn.classList.add('text-blue-600', 'font-bold');
 				}
 				titleBtn.onclick = () => loadSession(s.id);
 
@@ -2323,7 +2265,10 @@
 
 		async function fetchUsers() {
 			const container = document.getElementById('userListContainer');
-			container.innerHTML = `<div class="text-center py-4"><span class="text-xs font-medium text-slate-400">Memuat data user...</span></div>`;
+			// Only show loading if empty
+			if (!container.hasChildNodes() || container.innerText.includes('Memuat')) {
+				container.innerHTML = `<div class="text-center py-4"><span class="text-xs font-medium text-slate-400">Memuat data user...</span></div>`;
+			}
 
 			const { data: { session } } = await _supabase.auth.getSession();
 			if (!session) return;
@@ -2361,7 +2306,7 @@
 					div.className = "bg-white p-3 rounded-xl border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3";
 					div.innerHTML = `
 					    <div class="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
-					        <div class="w-8 h-8 rounded-full ${isBanned ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'} flex items-center justify-center shrink-0">
+					        <div class="w-8 h-8 rounded-full ${isBanned ? 'text-red-600' : 'text-green-600'} flex items-center justify-center shrink-0">
 					            <i data-lucide="${isBanned ? 'lock' : 'user'}" class="w-4 h-4"></i>
 					        </div>
 					        <div class="min-w-0 flex-1">
@@ -2372,26 +2317,26 @@
 
 					    <div class="flex items-center gap-2 self-end md:self-auto">
 							<!-- FEATURE TOGGLES -->
-							<button onclick="toggleUserFeature('${u.id}', 'use_google_search', ${!profile.use_google_search})" 
-								class="p-2 rounded-lg transition-colors ${profile.use_google_search ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'}" title="Toggle Google Search">
+							<button id="btn-gs-${u.id}" onclick="toggleUserFeature('${u.id}', 'use_google_search', ${!profile.use_google_search})" 
+								class="p-2 rounded-lg transition-colors ${profile.use_google_search ? 'text-blue-600' : 'text-slate-400'}" title="Toggle Google Search">
 								<i data-lucide="globe" class="w-4 h-4"></i>
 							</button>
-							<button onclick="toggleUserFeature('${u.id}', 'allow_file_upload', ${!profile.allow_file_upload})" 
-								class="p-2 rounded-lg transition-colors ${profile.allow_file_upload ? 'bg-purple-50 text-purple-600' : 'bg-slate-100 text-slate-400'}" title="Toggle File Upload">
+							<button id="btn-uf-${u.id}" onclick="toggleUserFeature('${u.id}', 'allow_file_upload', ${!profile.allow_file_upload})" 
+								class="p-2 rounded-lg transition-colors ${profile.allow_file_upload ? 'text-purple-600' : 'text-slate-400'}" title="Toggle File Upload">
 								<i data-lucide="paperclip" class="w-4 h-4"></i>
 							</button>
-							<button onclick="toggleUserFeature('${u.id}', 'use_knowledge_base', ${!profile.use_knowledge_base})" 
-								class="p-2 rounded-lg transition-colors ${profile.use_knowledge_base ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}" title="Toggle Knowledge Base">
+							<button id="btn-kb-${u.id}" onclick="toggleUserFeature('${u.id}', 'use_knowledge_base', ${!profile.use_knowledge_base})" 
+								class="p-2 rounded-lg transition-colors ${profile.use_knowledge_base ? 'text-emerald-600' : 'text-slate-400'}" title="Toggle Knowledge Base">
 								<i data-lucide="book-open" class="w-4 h-4"></i>
 							</button>
 
 							<div class="w-px h-6 bg-slate-200 mx-1"></div>
 
 					        ${!isMe ? `
-					        <button onclick="openUserActionModal('toggleBan', '${u.id}', '${u.email}', ${isBanned})" class="p-2 rounded-lg ${isBanned ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
+					        <button onclick="openUserActionModal('toggleBan', '${u.id}', '${u.email}', ${isBanned})" class="p-2 rounded-lg ${isBanned ? 'text-green-600 hover:text-green-700' : 'text-orange-600 hover:text-orange-700'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
 					            <i data-lucide="${isBanned ? 'unlock' : 'lock'}" class="w-4 h-4"></i>
 					        </button>
-					        <button onclick="openUserActionModal('delete', '${u.id}', '${u.email}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Delete">
+					        <button onclick="openUserActionModal('delete', '${u.id}', '${u.email}')" class="p-2 rounded-lg text-red-600 hover:text-red-700 transition-colors" title="Delete">
 					            <i data-lucide="trash-2" class="w-4 h-4"></i>
 					        </button>
 					        ` : `<div class="w-8"></div>`}
@@ -2407,22 +2352,59 @@
 		}
 
 		async function toggleUserFeature(userId, feature, newValue) {
-			// Optimistic update logic could be added here, but for safety we'll reload list
+			// IDENTIFY BUTTON
+			let btnId = '';
+			let activeClass = '';
+
+			if (feature === 'use_google_search') {
+				btnId = `btn-gs-${userId}`;
+				activeClass = 'text-blue-600';
+			} else if (feature === 'allow_file_upload') {
+				btnId = `btn-uf-${userId}`;
+				activeClass = 'text-purple-600';
+			} else if (feature === 'use_knowledge_base') {
+				btnId = `btn-kb-${userId}`;
+				activeClass = 'text-emerald-600';
+			}
+
+			const btn = document.getElementById(btnId);
+			const originalClass = btn ? btn.className : '';
+			const originalOnClick = btn ? btn.getAttribute('onclick') : '';
+
+			// 1. OPTIMISTIC UPDATE UI
+			if (btn) {
+				if (newValue) {
+					// Turn ON
+					btn.className = `p-2 rounded-lg transition-colors ${activeClass}`;
+				} else {
+					// Turn OFF
+					btn.className = `p-2 rounded-lg transition-colors text-slate-400`;
+				}
+				// Update onclick agar bisa toggle balik tanpa reload
+				btn.setAttribute('onclick', `toggleUserFeature('${userId}', '${feature}', ${!newValue})`);
+			}
+
+			// 2. BACKGROUND REQUEST
 			try {
 				const { error } = await _supabase
 					.from('profiles')
 					.update({ [feature]: newValue })
 					.eq('id', userId);
 
-				if (error) throw error;
-
-				// Re-fetch users to update UI
-				fetchUsers();
-
-				// Show feedback? maybe too noisy if rapid clicking, but okay for now
+				if (error) {
+					// Revert UI if failed
+					throw error;
+				}
+				// SUCCESS: Do nothing aka Silent Update. No fetchUsers() needed. 
 			} catch (e) {
 				console.error("Gagal update user feature:", e);
-				showToast("Gagal update setting: " + e.message, "error");
+				showToast("Gagal update settings: " + e.message, "error");
+
+				// REVERT UI
+				if (btn) {
+					btn.className = originalClass;
+					btn.setAttribute('onclick', originalOnClick);
+				}
 			}
 		}
 
