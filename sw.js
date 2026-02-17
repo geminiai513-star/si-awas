@@ -1,4 +1,4 @@
-const CACHE_NAME = 'si-awas-v1';
+const CACHE_NAME = 'si-awas-v2';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -47,10 +47,9 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch Event: Network First for HTML, Cache First for others
+// Fetch Event Handler
 self.addEventListener('fetch', (event) => {
-    // Setup request for caching (clone it)
-
-    // Strategy for HTML/Navigation: Network First, Fallback to Cache
+    // 1. Handle Navigation (HTML) Requests: Network First, Fallback to Cache
     if (event.request.mode === 'navigate') {
         event.respondWith(
             fetch(event.request)
@@ -61,37 +60,28 @@ self.addEventListener('fetch', (event) => {
                     });
                 })
                 .catch(() => {
-                    return caches.match(event.request);
+                    return caches.match('./index.html'); // Fallback to offline page
                 })
         );
         return;
     }
 
-    // Strategy for Static Assets: Stale-While-Revalidate
-    // This serves from cache immediately, but updates cache from network in background
+    // 2. Handle Static Assets: Stale-While-Revalidate
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             const fetchPromise = fetch(event.request).then((networkResponse) => {
-                // Check if we received a valid response
-                if (!networkResponse || networkResponse.status !== 200 || networkResponse.type === 'error') {
-                    return networkResponse;
+                // Update cache with new version if network succeeds
+                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
                 }
-
-                // Clone the response because it's a stream and can only be consumed once
-                const responseToCache = networkResponse.clone();
-
-                caches.open(CACHE_NAME).then((cache) => {
-                    // Update the cache
-                    cache.put(event.request, responseToCache);
-                });
-
                 return networkResponse;
-            }).catch(err => {
-                // Network failure, just ignore for stale-while-revalidate
-                console.log('[Service Worker] Network fetch failed for', event.request.url);
+            }).catch(() => {
+                // Network failed, do nothing (we will return cachedResponse if available)
             });
 
-            // Return cached response if available, otherwise wait for network
             return cachedResponse || fetchPromise;
         })
     );
