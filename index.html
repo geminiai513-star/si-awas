@@ -11,6 +11,7 @@
 	<meta name="apple-mobile-web-app-title" content="ASISTEN">
 	<link rel="apple-touch-icon" href="icon/icon-512.png">
 	<link rel="icon" type="image/png" href="icon/icon-512.png">
+	<link rel="manifest" href="manifest.json">
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 	<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -2718,6 +2719,19 @@
 				closeDeleteModal();
 			}
 		});
+	</script>
+	<script>
+		if ('serviceWorker' in navigator) {
+			window.addEventListener('load', () => {
+				navigator.serviceWorker.register('./sw.js')
+					.then(registration => {
+						console.log('ServiceWorker registration successful with scope: ', registration.scope);
+					})
+					.catch(error => {
+						console.log('ServiceWorker registration failed: ', error);
+					});
+			});
+		}
 	</script>
 </body>
 
