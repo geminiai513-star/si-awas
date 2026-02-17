@@ -1,4 +1,4 @@
-const CACHE_NAME = 'si-awas-v3';
+const CACHE_NAME = 'si-awas-v4';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -47,7 +47,6 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch Event: Network First for HTML, Cache First for others
-// Fetch Event Handler
 self.addEventListener('fetch', (event) => {
     // 1. Handle Navigation (HTML) Requests: Network First, Fallback to Cache
     if (event.request.mode === 'navigate') {
@@ -60,7 +59,11 @@ self.addEventListener('fetch', (event) => {
                     });
                 })
                 .catch(() => {
-                    return caches.match('./index.html'); // Fallback to offline page
+                    // Jika offline, kembalikan index.html dari cache
+                    return caches.match('./index.html').then(response => {
+                        // Tambahkan fallback darurat jika index.html entah kenapa tidak ada di cache
+                        return response || new Response("Offline - Apps not available", { status: 503, headers: { 'Content-Type': 'text/plain' } });
+                    });
                 })
         );
         return;
@@ -71,19 +74,24 @@ self.addEventListener('fetch', (event) => {
         caches.match(event.request).then((cachedResponse) => {
             const fetchPromise = fetch(event.request).then((networkResponse) => {
                 // Update cache with new version if network succeeds
-                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                // Allow 'basic' (same-origin) and 'cors' (CDN) response types
+                if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
                     const responseToCache = networkResponse.clone();
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(event.request, responseToCache);
                     });
                 }
                 return networkResponse;
-            }).catch(() => {
-                // Network failed, do nothing (we will return cachedResponse if available)
+            }).catch((err) => {
+                // Network failed
+                console.log('[Service Worker] Fetch failed:', event.request.url);
+                // Return nothing here; the promise resolves to undefined, expected if cachedResponse exists
+                // If no cachedResponse, the next line handles the fallback or error
+                if (!cachedResponse) throw err;
             });
 
+            // Return cached response immediately if available, otherwise wait for network
             return cachedResponse || fetchPromise;
         })
     );
 });
-
