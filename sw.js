@@ -1,4 +1,4 @@
-const CACHE_NAME = 'si-awas-v4';
+const CACHE_NAME = 'si-awas-v5';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -17,8 +17,9 @@ const ASSETS_TO_CACHE = [
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap'
 ];
 
-// Install Event: Cache core assets
+// Install Event: Cache core assets immediate
 self.addEventListener('install', (event) => {
+    self.skipWaiting(); // Force active immediately
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
@@ -26,10 +27,9 @@ self.addEventListener('install', (event) => {
                 return cache.addAll(ASSETS_TO_CACHE);
             })
     );
-    self.skipWaiting();
 });
 
-// Activate Event: Clean up old caches
+// Activate Event: Clean up old caches and claim clients
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -43,12 +43,12 @@ self.addEventListener('activate', (event) => {
             );
         })
     );
-    self.clients.claim();
+    self.clients.claim(); // Take control of all clients immediately
 });
 
-// Fetch Event: Network First for HTML, Cache First for others
+// Fetch Event
 self.addEventListener('fetch', (event) => {
-    // 1. Handle Navigation (HTML) Requests: Network First, Fallback to Cache
+    // 1. Navigation requests (HTML): Network First, Fallback to Cache
     if (event.request.mode === 'navigate') {
         event.respondWith(
             fetch(event.request)
@@ -59,39 +59,44 @@ self.addEventListener('fetch', (event) => {
                     });
                 })
                 .catch(() => {
-                    // Jika offline, kembalikan index.html dari cache
+                    // Offline fallback strictly to index.html
                     return caches.match('./index.html').then(response => {
-                        // Tambahkan fallback darurat jika index.html entah kenapa tidak ada di cache
-                        return response || new Response("Offline - Apps not available", { status: 503, headers: { 'Content-Type': 'text/plain' } });
+                        return response || new Response("<h1>Offline Mode</h1><p>You are currently offline and the app shell is not cached.</p>", {
+                            status: 200,
+                            headers: { 'Content-Type': 'text/html' }
+                        });
                     });
                 })
         );
         return;
     }
 
-    // 2. Handle Static Assets: Stale-While-Revalidate
+    // 2. Static Assets (JS, CSS, Images, Fonts): Stale-While-Revalidate
+    // Fix for CORS/CDN: Attempt to fetch and cache if possible, otherwise just return fetch
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
-            const fetchPromise = fetch(event.request).then((networkResponse) => {
-                // Update cache with new version if network succeeds
-                // Allow 'basic' (same-origin) and 'cors' (CDN) response types
-                if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
-                    const responseToCache = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseToCache);
-                    });
-                }
-                return networkResponse;
-            }).catch((err) => {
-                // Network failed
-                console.log('[Service Worker] Fetch failed:', event.request.url);
-                // Return nothing here; the promise resolves to undefined, expected if cachedResponse exists
-                // If no cachedResponse, the next line handles the fallback or error
-                if (!cachedResponse) throw err;
-            });
+            // Return cached response immediately if available (fastest for iOS)
+            if (cachedResponse) return cachedResponse;
 
-            // Return cached response immediately if available, otherwise wait for network
-            return cachedResponse || fetchPromise;
+            // If not in cache, fetch from network
+            return fetch(event.request).then((networkResponse) => {
+                // Check if valid response to cache
+                if (!networkResponse || networkResponse.status !== 200 ||
+                    (networkResponse.type !== 'basic' && networkResponse.type !== 'cors')) {
+                    return networkResponse;
+                }
+
+                // Cache the new resource
+                const responseToCache = networkResponse.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, responseToCache);
+                });
+
+                return networkResponse;
+            }).catch(err => {
+                // Network failed for static asset, nothing to return
+                console.log('[Service Worker] Fetch failed for:', event.request.url);
+            });
         })
     );
 });
