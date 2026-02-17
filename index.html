@@ -1800,6 +1800,9 @@
 				appendMsg(m.role, content, m.timestamp, fileCards);
 			});
 
+			// Re-apply Highlight.js after rendering history
+			hljs.highlightAll();
+
 			loadHistory();
 
 			if (!isInitialLoad) {
