@@ -513,6 +513,8 @@
 									<div class="dropdown-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
 										data-value="gemini-2.5-flash">Gemini 2.5 Flash</div>
 									<div class="dropdown-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
+										data-value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite</div>
+									<div class="dropdown-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
 										data-value="gemini-3-flash-preview">Gemini 3 Flash</div>
 									<div class="dropdown-option py-3 px-4 rounded-xl hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-800"
 										data-value="gemini-3-pro-preview">Gemini 3 Pro</div>
@@ -545,7 +547,7 @@
 									Tokens</span>
 								<span id="label-tokens" class="text-[11px] font-black text-slate-600">65536</span>
 							</div>
-							<input type="range" id="settings-tokens" min="1024" max="128000" step="1024"
+							<input type="range" id="settings-tokens" min="1024" max="65536" step="1024"
 								class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600">
 						</div>
 
@@ -750,7 +752,7 @@
 
 		const USER_MGMT_URL = `${SUPABASE_URL}/functions/v1/user-management`;
 		const SELECTED_MODEL = "gemini-3-flash-preview";
-		const SYSTEM_PROMPT = "Kamu adalah Asisten Virtual yang Ramah, Profesional, dan Sangat Membantu.";
+		const SYSTEM_PROMPT = `Kamu adalah AI Asisten Inspektorat Provinsi Lampung yang Ramah, Profesional, dan Sangat Membantu. Tugas kamu adalah menjawab semua pertanyaan dengan baik dan akurat, serta menyajikan informasi pengawasan dan peraturan terbaru (gunakan Google Search untuk data terkini).`;
 		const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 		const FILE_CARD_SEPARATOR = "|||FILE_CARDS|||";
 
@@ -836,6 +838,7 @@
 						const modelLabels = {
 							"gemini-2.5-pro": "Gemini 2.5 Pro",
 							"gemini-2.5-flash": "Gemini 2.5 Flash",
+							"gemini-2.5-flash-lite": "Gem Gemini 2.5 Flash-Lite",
 							"gemini-3-flash-preview": "Gemini 3 Flash",
 							"gemini-3-pro-preview": "Gemini 3 Pro"
 						};
@@ -1398,17 +1401,88 @@
 					}
 				};
 
-				if (useGoogleSearch) payload.tools = [{ google_search: {} }];
+				// --- GOOGLE SEARCH RATE LIMITING LOGIC ---
+				// Gemini 2.5: Limit 1500 search queries per DAY
+				// Gemini 3.0: Limit 5000 search queries per MONTH
 
-				// thinkingConfig harus di dalam generationConfig
+				let enableGoogleSearch = useGoogleSearch;
+				const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+				const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
+
+				if (useGoogleSearch) {
+					// --- GLOBAL RATE LIMITING VIA SUPABASE ---
+					// Menggunakan RPC agar penghhitungan terpusat di server (Global Limit untuk semua user)
+					try {
+						let limitCategory = '';
+						let periodKey = '';
+						let maxLimit = 0;
+
+						if (currentSelectedModel.includes('2.5')) {
+							limitCategory = 'google_search_2.5';
+							periodKey = todayStr; // Harian: YYYY-MM-DD
+							maxLimit = 1500;
+						} else if (currentSelectedModel.includes('gemini-3')) {
+							limitCategory = 'google_search_3.0';
+							periodKey = currentMonthStr; // Bulanan: YYYY-MM
+							maxLimit = 5000;
+						}
+
+						if (limitCategory) {
+							// Panggil Stored Function di Supabase
+							const { data: isAllowed, error: limitError } = await _supabase
+								.rpc('check_and_increment_limit', {
+									p_category: limitCategory,
+									p_period_key: periodKey,
+									p_max_limit: maxLimit
+								});
+
+							if (limitError) {
+								console.error("[LIMIT CHECK ERROR]", limitError);
+								// Fallback: Jika server limit error, tetap izinkan (fail-open) atau blokir (fail-closed)?
+								// Disini kita pilih safe-mode: jika error, anggap boleh dulu agar UX tidak rusak, tapi log warning.
+								enableGoogleSearch = true;
+							} else {
+								// isAllowed returns true (masih dalam batas) or false (sudah lewat)
+								if (isAllowed === false) {
+									enableGoogleSearch = false;
+									showToast(`Batas Global ${limitCategory.includes('2.5') ? 'Harian (1500)' : 'Bulanan (5000)'} tercapai. Search dinonaktifkan.`, 'error');
+								} else {
+									enableGoogleSearch = true;
+								}
+							}
+						}
+					} catch (e) {
+						console.error("Error checking global limit:", e);
+						// Fail-open agar user tetap bisa pakai jika koneksi limit bermasalah sesaat
+						enableGoogleSearch = true;
+					}
+				}
+
+				if (enableGoogleSearch) payload.tools = [{ google_search: {} }];
+
+				if (enableGoogleSearch) payload.tools = [{ google_search: {} }];
+
+				// askingConfig logic based on model version
+				// Gemini 3.0 uses thinkingLevel (LOW, HIGH)
+				// Gemini 2.5 uses thinkingBudget (token count)
 				if (currentSelectedModel.includes('gemini-3')) {
-					const thinkingLevelMap = { "1": "LOW", "2": "MEDIUM", "3": "HIGH" };
+					// Gemini 3 strictly uses thinkingLevel
+					const thinkingLevelMap = { "1": "LOW", "2": "MEDIUM", "3": "HIGH" }; // MEDIUM supported on Flash, Pro will fallback or handle
 					payload.generationConfig.thinkingConfig = {
-						thinkingLevel: thinkingLevelMap[sliderVal] || "HIGH"
+						thinkingLevel: thinkingLevelMap[sliderVal] || "HIGH",
+						includeThoughts: false // Set to true if you want to receive the thinking process text
 					};
 				} else if (currentSelectedModel.includes('2.5')) {
+					// Gemini 2.5 uses thinkingBudget
+					// Validation: Flash max ~24k, Pro max ~32k
+					let budget = currentBudget;
+					if (currentSelectedModel.includes('flash') && budget > 24576) {
+						budget = 24576; // Cap for Flash
+					}
+
 					payload.generationConfig.thinkingConfig = {
-						thinkingBudget: currentBudget
+						thinkingBudget: budget,
+						includeThoughts: false
 					};
 				}
 
@@ -2319,25 +2393,25 @@
 					    <div class="flex items-center gap-2 self-end md:self-auto">
 							<!-- FEATURE TOGGLES -->
 							<button id="btn-gs-${u.id}" onclick="toggleUserFeature('${u.id}', 'use_google_search', ${!profile.use_google_search})" 
-								class="p-2 rounded-lg transition-colors ${profile.use_google_search ? 'text-blue-600' : 'text-slate-400'}" title="Toggle Google Search">
+								class="p-2 rounded-lg transition-colors ${profile.use_google_search ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}" title="Toggle Google Search">
 								<i data-lucide="globe" class="w-4 h-4"></i>
 							</button>
 							<button id="btn-uf-${u.id}" onclick="toggleUserFeature('${u.id}', 'allow_file_upload', ${!profile.allow_file_upload})" 
-								class="p-2 rounded-lg transition-colors ${profile.allow_file_upload ? 'text-purple-600' : 'text-slate-400'}" title="Toggle File Upload">
+								class="p-2 rounded-lg transition-colors ${profile.allow_file_upload ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}" title="Toggle File Upload">
 								<i data-lucide="paperclip" class="w-4 h-4"></i>
 							</button>
 							<button id="btn-kb-${u.id}" onclick="toggleUserFeature('${u.id}', 'use_knowledge_base', ${!profile.use_knowledge_base})" 
-								class="p-2 rounded-lg transition-colors ${profile.use_knowledge_base ? 'text-emerald-600' : 'text-slate-400'}" title="Toggle Knowledge Base">
+								class="p-2 rounded-lg transition-colors ${profile.use_knowledge_base ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}" title="Toggle Knowledge Base">
 								<i data-lucide="book-open" class="w-4 h-4"></i>
 							</button>
 
 							<div class="w-px h-6 bg-slate-200 mx-1"></div>
 
 					        ${!isMe ? `
-					        <button onclick="openUserActionModal('toggleBan', '${u.id}', '${u.email}', ${isBanned})" class="p-2 rounded-lg ${isBanned ? 'text-green-600 hover:text-green-700' : 'text-orange-600 hover:text-orange-700'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
+					        <button onclick="openUserActionModal('toggleBan', '${u.id}', '${u.email}', ${isBanned})" class="p-2 rounded-lg ${isBanned ? 'bg-green-50 text-green-600' : 'bg-slate-50 text-slate-400 hover:text-orange-600'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
 					            <i data-lucide="${isBanned ? 'unlock' : 'lock'}" class="w-4 h-4"></i>
 					        </button>
-					        <button onclick="openUserActionModal('delete', '${u.id}', '${u.email}')" class="p-2 rounded-lg text-red-600 hover:text-red-700 transition-colors" title="Delete">
+					        <button onclick="openUserActionModal('delete', '${u.id}', '${u.email}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Delete">
 					            <i data-lucide="trash-2" class="w-4 h-4"></i>
 					        </button>
 					        ` : `<div class="w-8"></div>`}
@@ -2355,17 +2429,15 @@
 		async function toggleUserFeature(userId, feature, newValue) {
 			// IDENTIFY BUTTON
 			let btnId = '';
-			let activeClass = '';
+			const activeClass = 'bg-blue-50 text-blue-600';
+			const inactiveClass = 'bg-slate-50 text-slate-400';
 
 			if (feature === 'use_google_search') {
 				btnId = `btn-gs-${userId}`;
-				activeClass = 'text-blue-600';
 			} else if (feature === 'allow_file_upload') {
 				btnId = `btn-uf-${userId}`;
-				activeClass = 'text-purple-600';
 			} else if (feature === 'use_knowledge_base') {
 				btnId = `btn-kb-${userId}`;
-				activeClass = 'text-emerald-600';
 			}
 
 			const btn = document.getElementById(btnId);
@@ -2379,7 +2451,7 @@
 					btn.className = `p-2 rounded-lg transition-colors ${activeClass}`;
 				} else {
 					// Turn OFF
-					btn.className = `p-2 rounded-lg transition-colors text-slate-400`;
+					btn.className = `p-2 rounded-lg transition-colors ${inactiveClass}`;
 				}
 				// Update onclick agar bisa toggle balik tanpa reload
 				btn.setAttribute('onclick', `toggleUserFeature('${userId}', '${feature}', ${!newValue})`);
@@ -2392,11 +2464,19 @@
 					.update({ [feature]: newValue })
 					.eq('id', userId);
 
-				if (error) {
-					// Revert UI if failed
-					throw error;
+				if (error) throw error;
+
+				// UPDATE LOCAL STORAGE IF CURRENT USER
+				const { data: { session } } = await _supabase.auth.getSession();
+				if (session && session.user.id === userId) {
+					if (feature === 'use_google_search') localStorage.setItem('awas_settings_google', newValue ? 'true' : 'false');
+					if (feature === 'use_knowledge_base') localStorage.setItem('awas_settings_kb', newValue ? 'true' : 'false');
+					if (feature === 'allow_file_upload') {
+						localStorage.setItem('awas_allow_upload', newValue ? 'true' : 'false');
+						applyUploadUIState(newValue);
+					}
 				}
-				// SUCCESS: Do nothing aka Silent Update. No fetchUsers() needed. 
+
 			} catch (e) {
 				console.error("Gagal update user feature:", e);
 				showToast("Gagal update settings: " + e.message, "error");
