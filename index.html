@@ -756,6 +756,31 @@
 		</div>
 	</div>
 
+	<!-- Link Confirmation Modal -->
+	<div id="linkConfirmModal"
+		class="fixed inset-0 w-full h-full bg-black/60 z-[9999] hidden flex items-center justify-center backdrop-blur-sm transition-opacity duration-200 opacity-0">
+		<div class="bg-white w-[90%] max-w-[320px] rounded-2xl p-6 shadow-2xl transform scale-95 transition-transform duration-200 relative"
+			id="linkConfirmModalContent">
+			<h3 class="text-base font-bold text-slate-800 mb-2">Buka Tautan?</h3>
+			<p class="text-[13px] text-slate-500 mb-6 leading-relaxed">Tautan ini mengarah ke luar aplikasi. Buka di
+				browser?</p>
+
+			<!-- URL Preview (Optional, truncated) -->
+			<p id="linkConfirmUrl" class="text-[11px] text-blue-600 mb-6 truncate bg-blue-50 p-2 rounded-lg"></p>
+
+			<div class="flex gap-2">
+				<button onclick="closeLinkConfirmModal()"
+					class="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors">
+					Batal
+				</button>
+				<button id="linkConfirmBtn"
+					class="flex-1 py-2.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors">
+					Buka
+				</button>
+			</div>
+		</div>
+	</div>
+
 	<script>
 		const SUPABASE_URL = "https://wddsihtjvntvipswmbtp.supabase.co";
 		const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkZHNpaHRqdm50dmlwc3dtYnRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMjg2NDMsImV4cCI6MjA4NDYwNDY0M30.fyz5Uv7eOUb9zQIbH2OBuZbGu1FZ1_2aYT6deOmojrY";
