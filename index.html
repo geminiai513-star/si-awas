@@ -2377,13 +2377,19 @@
 			}
 		});
 
-		// --- LINK INTERCEPTION LOGIC ---
+		// --- LINK INTERCEPTION LOGIC (iOS Enhanced) ---
 		let pendingLinkUrl = null;
 
-		document.getElementById('messagesArea').addEventListener('click', function (e) {
+		// Use capturing phase (true) to catch events before they bubble or are handled by other scripts
+		document.addEventListener('click', function (e) {
 			const link = e.target.closest('a');
-			if (link && link.href) {
+			// Only intercept links inside the messages area
+			const messagesArea = document.getElementById('messagesArea');
+
+			if (link && messagesArea.contains(link) && link.href) {
 				e.preventDefault();
+				e.stopPropagation(); // Stop other handlers
+
 				pendingLinkUrl = link.href;
 
 				const modal = document.getElementById('linkConfirmModal');
@@ -2391,21 +2397,34 @@
 				const urlPreview = document.getElementById('linkConfirmUrl');
 				const confirmBtn = document.getElementById('linkConfirmBtn');
 
-				urlPreview.textContent = pendingLinkUrl;
+				if (urlPreview) urlPreview.textContent = pendingLinkUrl;
 
-				modal.classList.remove('hidden');
-				requestAnimationFrame(() => {
-					modal.classList.remove('opacity-0');
-					content.classList.remove('scale-95');
-					content.classList.add('scale-100');
-				});
+				if (modal) {
+					modal.classList.remove('hidden');
+					// Small delay to allow display:block to apply before opacity transition
+					requestAnimationFrame(() => {
+						modal.classList.remove('opacity-0');
+						if (content) {
+							content.classList.remove('scale-95');
+							content.classList.add('scale-100');
+						}
+					});
+				}
 
-				confirmBtn.onclick = () => {
-					window.open(pendingLinkUrl, '_blank');
-					closeLinkConfirmModal();
-				};
+				if (confirmBtn) {
+					// Remove old listeners to prevent multiple opens
+					const newBtn = confirmBtn.cloneNode(true);
+					confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+
+					newBtn.onclick = () => {
+						// For iOS PWA, window.open might still open in-app if not handled carefully
+						// Try forcing _system or just _blank
+						window.open(pendingLinkUrl, '_blank');
+						closeLinkConfirmModal();
+					};
+				}
 			}
-		});
+		}, true);
 
 		function closeLinkConfirmModal() {
 			const modal = document.getElementById('linkConfirmModal');
