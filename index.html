@@ -226,7 +226,8 @@
 
 		.prose table {
 			width: 100%;
-			border-collapse: collapse;
+			border-collapse: separate;
+			border-spacing: 0;
 			margin: 1rem 0;
 			font-size: 0.875rem;
 			border: 1px solid #e2e8f0;
@@ -236,9 +237,19 @@
 
 		.prose th,
 		.prose td {
-			border: 1px solid #e2e8f0;
+			border-bottom: 1px solid #e2e8f0;
+			border-right: 1px solid #e2e8f0;
 			padding: 0.75rem;
 			text-align: left;
+		}
+
+		.prose th:last-child,
+		.prose td:last-child {
+			border-right: none;
+		}
+
+		.prose tr:last-child td {
+			border-bottom: none;
 		}
 
 		.prose th {
@@ -1667,10 +1678,29 @@
 			loadHistory();
 		}
 
+
+		function saveToLocal(key, data) {
+			try { localStorage.setItem(key, JSON.stringify(data)); } catch (e) { console.warn('LocalStorage full/error', e); }
+		}
+
+		function getFromLocal(key) {
+			try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
+		}
+
 		async function loadHistory() {
 			const { data: { session } } = await _supabase.auth.getSession();
 			if (!session) return;
-			const { data: sessions } = await _supabase.from('chat_sessions').select('*').eq('user_id', session.user.id).order('timestamp', { ascending: false });
+
+			let sessions = [];
+			const { data, error } = await _supabase.from('chat_sessions').select('*').eq('user_id', session.user.id).order('timestamp', { ascending: false });
+
+			if (!error && data) {
+				sessions = data;
+				saveToLocal('offline_sessions_' + session.user.id, sessions);
+			} else {
+				console.warn('Offline/Error loading sessions, using cache:', error);
+				sessions = getFromLocal('offline_sessions_' + session.user.id) || [];
+			}
 
 			const list = document.getElementById('historyList');
 			list.innerHTML = '';
@@ -1769,6 +1799,10 @@
 			await _supabase.from('chat_messages').delete().eq('session_id', id);
 			await _supabase.from('chat_sessions').delete().eq('id', id);
 
+			// Clean from cache too
+			const items = getFromLocal('offline_sessions_' + currentSessionId); // Wait, need user id here, but simpler to just reload
+			localStorage.removeItem('offline_chat_' + id);
+
 			if (currentSessionId === id) {
 				currentSessionId = null;
 				document.getElementById('messagesArea').innerHTML = '';
@@ -1779,7 +1813,17 @@
 
 		async function loadSession(id, isInitialLoad = false) {
 			currentSessionId = id;
-			const { data: msgs } = await _supabase.from('chat_messages').select('*').eq('session_id', id).order('timestamp', { ascending: true });
+			let msgs = [];
+			const { data, error } = await _supabase.from('chat_messages').select('*').eq('session_id', id).order('timestamp', { ascending: true });
+
+			if (!error && data) {
+				msgs = data;
+				saveToLocal('offline_chat_' + id, msgs);
+			} else {
+				console.warn('Offline/Error loading chat, using cache:', error);
+				msgs = getFromLocal('offline_chat_' + id) || [];
+			}
+
 			document.getElementById('messagesArea').innerHTML = '';
 			chatHistory = msgs.map(m => {
 				let text = m.content;
@@ -1807,7 +1851,7 @@
 
 			if (!isInitialLoad) {
 				const sidebar = document.getElementById('mainSidebar');
-				if (!sidebar.classList.contains('-translate-x-full')) {
+				if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
 					toggleSidebar(false);
 				}
 			}
