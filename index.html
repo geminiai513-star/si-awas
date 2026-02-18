@@ -2377,6 +2377,50 @@
 			}
 		});
 
+		// --- LINK INTERCEPTION LOGIC ---
+		let pendingLinkUrl = null;
+
+		document.getElementById('messagesArea').addEventListener('click', function (e) {
+			const link = e.target.closest('a');
+			if (link && link.href) {
+				e.preventDefault();
+				pendingLinkUrl = link.href;
+
+				const modal = document.getElementById('linkConfirmModal');
+				const content = document.getElementById('linkConfirmModalContent');
+				const urlPreview = document.getElementById('linkConfirmUrl');
+				const confirmBtn = document.getElementById('linkConfirmBtn');
+
+				urlPreview.textContent = pendingLinkUrl;
+
+				modal.classList.remove('hidden');
+				requestAnimationFrame(() => {
+					modal.classList.remove('opacity-0');
+					content.classList.remove('scale-95');
+					content.classList.add('scale-100');
+				});
+
+				confirmBtn.onclick = () => {
+					window.open(pendingLinkUrl, '_blank');
+					closeLinkConfirmModal();
+				};
+			}
+		});
+
+		function closeLinkConfirmModal() {
+			const modal = document.getElementById('linkConfirmModal');
+			const content = document.getElementById('linkConfirmModalContent');
+
+			modal.classList.add('opacity-0');
+			content.classList.add('scale-95');
+			content.classList.remove('scale-100');
+
+			setTimeout(() => {
+				modal.classList.add('hidden');
+				pendingLinkUrl = null;
+			}, 200);
+		}
+
 		const userInput = document.getElementById('userInput');
 		const inputWrapper = document.getElementById('inputWrapper');
 
