@@ -1,10 +1,12 @@
-const CACHE_NAME = 'si-awas-v8';
+const CACHE_NAME = 'si-awas-v12';
 
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
+    './icon/icon.png',
     './icon/icon-512.png',
+    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap',
     'https://cdn.tailwindcss.com',
     'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
     'https://unpkg.com/lucide@latest',
@@ -12,7 +14,7 @@ const ASSETS_TO_CACHE = [
     'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js',
     'https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css',
+    'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js'
 ];
 
@@ -58,5 +60,3 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
-
-
