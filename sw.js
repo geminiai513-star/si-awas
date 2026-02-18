@@ -1,4 +1,4 @@
-const CACHE_NAME = 'si-awas-v7';
+const CACHE_NAME = 'si-awas-v8';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -58,4 +58,5 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
 
