@@ -487,7 +487,37 @@
 				</form>
 			</div>
 		</footer>
+
+		<!-- Scroll to Bottom Button -->
+		<button id="scrollToBottomBtn"
+			onclick="document.getElementById('chatContainer').scrollTo({ top: document.getElementById('chatContainer').scrollHeight, behavior: 'smooth' })"
+			class="absolute bottom-[100px] right-6 w-10 h-10 bg-slate-400/20 hover:bg-slate-400/40 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-500 transition-all duration-300 opacity-0 pointer-events-none z-50 shadow-sm border border-white/20 active:scale-95">
+			<i data-lucide="chevron-down" class="w-6 h-6"></i>
+		</button>
 	</div>
+
+	<script>
+		// Independent scroll logic to ensure no waiting for other scripts
+		(function () {
+			const container = document.getElementById('chatContainer');
+			const btn = document.getElementById('scrollToBottomBtn');
+
+			if (container && btn) {
+				container.addEventListener('scroll', () => {
+					// Show button if user is not at the very bottom (with 100px threshold)
+					const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+
+					if (!isAtBottom) {
+						btn.classList.remove('opacity-0', 'pointer-events-none');
+						btn.classList.add('opacity-100', 'pointer-events-auto');
+					} else {
+						btn.classList.add('opacity-0', 'pointer-events-none');
+						btn.classList.remove('opacity-100', 'pointer-events-auto');
+					}
+				}, { passive: true });
+			}
+		})();
+	</script>
 
 	<div id="adminScreen" class="fixed inset-0 bg-white z-[200] hidden flex-col">
 		<header class="h-16 px-4 md:px-8 flex items-center border-b border-slate-100 shrink-0 relative">
@@ -1619,9 +1649,19 @@
 				if (err.name === 'AbortError') {
 					return;
 				}
-				console.error(err);
+				console.error("DEBUG ERROR:", err);
 				const el = document.getElementById(currentLoadingMsgId);
-				if (el) el.innerHTML = "Terjadi kesalahan koneksi atau limit API.";
+				if (el) {
+					const specificError = getErrorMessage(err);
+					el.innerHTML = `<div class="text-red-500 font-medium text-[13px] bg-red-50 p-3 rounded-xl border border-red-100 flex flex-col gap-1">
+                        <div class="flex items-center gap-2 font-bold text-red-600">
+                            <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                            Gagal Memproses Permintaan
+                        </div>
+                        <p class="opacity-90 leading-relaxed">${specificError}</p>
+                    </div>`;
+					lucide.createIcons();
+				}
 			} finally {
 				if (abortController && !abortController.signal.aborted) {
 					setGeneratingState(false);
@@ -1630,6 +1670,35 @@
 				abortController = null;
 				typeWriterResolve = null;
 			}
+		}
+
+		function getErrorMessage(err) {
+			if (!err) return "Terjadi kesalahan yang tidak diketahui.";
+
+			const msg = (err.message || err.toString()).toLowerCase();
+
+			if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('network error')) {
+				return "Koneksi internet terputus atau tidak stabil. Periksa jaringan Anda.";
+			}
+			if (msg.includes('429') || msg.includes('quota exceeded') || msg.includes('resource has been exhausted')) {
+				return "Batas penggunaan AI (Limit) tercapai. Silakan coba lagi nanti.";
+			}
+			if (msg.includes('503') || msg.includes('overloaded') || msg.includes('service unavailable')) {
+				return "Server AI sedang sibuk. Silakan coba lagi beberapa saat lagi.";
+			}
+			if (msg.includes('safety') || msg.includes('blocked')) {
+				return "Respon diblokir oleh filter keamanan AI (Konten tidak diizinkan).";
+			}
+			if (msg.includes('abort') || msg.includes('aborted')) {
+				return "Permintaan dibatalkan.";
+			}
+			if (msg.includes('json') || msg.includes('parse')) {
+				return "Gagal memproses respons dari server (Format Invalid).";
+			}
+
+			// Return original message if no match, capitalized
+			const original = err.message || err.toString();
+			return original.charAt(0).toUpperCase() + original.slice(1);
 		}
 
 		function appendMsg(role, text, timestamp, fileCardsHTML = "") {
@@ -1863,8 +1932,8 @@
 				let fileCards = "";
 				if (content.includes(FILE_CARD_SEPARATOR)) {
 					const parts = content.split(FILE_CARD_SEPARATOR);
-					content = parts[0];
-					fileCards = parts[1];
+					content = parts[0]; // Text content
+					fileCards = parts[1]; // HTML for file cards
 				}
 				appendMsg(m.role, content, m.timestamp, fileCards);
 			});
@@ -1979,7 +2048,7 @@
 			if (error) {
 				loginBtnText.innerText = 'Masuk';
 				loginBtn.disabled = false;
-				loginError.innerText = 'Login Gagal';
+				loginError.innerText = error.message || 'Login Gagal';
 				loginError.classList.remove('hidden');
 			} else {
 				location.reload();
@@ -2216,7 +2285,8 @@
 
 			} catch (e) {
 				console.error('KB upload error:', e);
-				showToast('Gagal: ' + e.message, 'error');
+				const errMsg = getErrorMessage(e);
+				showToast('Gagal: ' + errMsg, 'error');
 				progressDiv.classList.add('hidden');
 				progressBar.style.width = '0%';
 			} finally {
