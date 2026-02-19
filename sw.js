@@ -1,4 +1,5 @@
-const CACHE_NAME = 'si-awas-v16';
+const CACHE_NAME = 'si-awas-v17';
+const RUNTIME_CACHE = 'si-awas-runtime-cache';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -6,6 +7,23 @@ const ASSETS_TO_CACHE = [
     './manifest.json',
     './icon/icon.png',
     './icon/icon-512.png',
+    './icon/pdf-file-icon.svg',
+    './icon/docx-file-icon.svg',
+    './icon/excel-file-icon.svg',
+    './icon/ppt-file-icon.svg',
+    './icon/javascript-file-icon.svg',
+    './icon/css-file-icon.svg',
+    './icon/java-file-icon.svg',
+    './icon/html-file-icon.svg',
+    './icon/xml-file-icon.svg',
+    './icon/python-file-icon.svg',
+    './icon/sql-file-icon.svg',
+    './icon/typescript-file-icon.svg',
+    './icon/lua-file-icon.svg',
+    './icon/cpp-file-icon.svg',
+    './icon/swift-file-icon.svg',
+    './icon/image-file-icon.svg',
+    './icon/default-file-icon.svg',
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap',
     'https://cdn.tailwindcss.com',
     'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
@@ -39,7 +57,7 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
+                    if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
                         return caches.delete(cacheName);
                     }
                 })
@@ -50,6 +68,35 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+    const url = new URL(event.request.url);
+
+    // 1. STRATEGI NETWORK-FIRST UNTUK API SUPABASE (CHAT HISTORY)
+    // Hanya untuk GET request ke endpoint REST Supabase
+    if (url.href.includes('supabase.co/rest/v1/') && event.request.method === 'GET') {
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    // Jika sukses mengambil data terbaru, simpan ke cache
+                    if (response && response.status === 200) {
+                        const responseClone = response.clone();
+                        caches.open(RUNTIME_CACHE).then((cache) => {
+                            cache.put(event.request, responseClone);
+                        });
+                    }
+                    return response;
+                })
+                .catch(() => {
+                    // Jika offline/gagal fetch, ambil dari cache
+                    return caches.match(event.request).then(cachedResponse => {
+                        if (cachedResponse) return cachedResponse;
+                        throw new Error('No cache available');
+                    });
+                })
+        );
+        return;
+    }
+
+    // 2. STRATEGI CACHE-FIRST UNTUK STATIC ASSETS
     event.respondWith(
         caches.match(event.request).then((response) => {
             return response || fetch(event.request).catch(() => {
@@ -60,4 +107,3 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
-
