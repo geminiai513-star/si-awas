@@ -525,9 +525,7 @@
 				<form id="chatForm" class="w-full">
 					<div id="inputWrapper"
 						class="relative flex items-end gap-1 bg-slate-50 rounded-[28px] p-1.5 border border-slate-100 transition-all duration-200">
-						<input type="file" id="file-input" multiple
-							accept="image/*,application/pdf,.docx,.xlsx,.xls,.pptx,.js,.css,.java,.html,.xml,.py,.sql,.ts,.cpp,.h,.hpp,.lua,.swift"
-							class="hidden" onchange="handleFileSelect(event)">
+						<input type="file" id="file-input" multiple class="hidden" onchange="handleFileSelect(event)">
 
 						<button type="button" id="uploadBtn" onclick="document.getElementById('file-input').click()"
 							class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 shrink-0 transition-colors">
@@ -1315,27 +1313,53 @@
 		}
 
 		async function handleFileSelect(event) {
-			const files = Array.from(event.target.files);
+			if (!event.target.files) return;
+			const files = [];
+			for (let i = 0; i < event.target.files.length; i++) {
+				files.push(event.target.files[i]);
+			}
 			if (!files.length) return;
+
 			if (pendingFiles.length + files.length > 4) {
 				showToast("Maksimal 4 file dalam satu pengiriman.", "error");
 				event.target.value = '';
 				return;
 			}
+
+			// iOS 15 Safari Fix: Initiate readers immediately and safely to prevent File reference loss
+			const readPromises = files.map(file => {
+				return new Promise((resolve) => {
+					const reader = new FileReader();
+					reader.onload = () => resolve({ file, base64: reader.result });
+					reader.onerror = () => resolve({ file, base64: null });
+					reader.readAsDataURL(file);
+				});
+			});
+
 			try {
-				for (const file of files) {
-					const base64 = await convertToBase64(file);
+				const results = await Promise.all(readPromises);
+				for (const res of results) {
+					if (!res.base64) continue; // Skip failed reads
+
+					const file = res.file;
+					const base64 = res.base64;
 					let mimeType = file.type || '';
-					const ext = file.name ? file.name.split('.').pop().toLowerCase() : '';
+					const fileName = file.name || "Gambar_Galeri.jpg";
+					const ext = fileName.split('.').pop().toLowerCase();
+
+					// Handle missing mime types from older iOS devices / HEIC
 					if (!mimeType && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(ext)) {
 						mimeType = 'image/jpeg';
 					}
+
+					let base64Str = base64.includes(',') ? base64.split(',')[1] : base64;
+
 					pendingFiles.push({
-						name: file.name || "File",
-						size: formatBytes(file.size),
+						name: fileName,
+						size: formatBytes(file.size || 0),
 						type: mimeType,
-						base64: base64.split(',')[1],
-						mime: mimeType,
+						base64: base64Str,
+						mime: mimeType || 'image/jpeg',
 						rawFile: file
 					});
 				}
