@@ -1326,13 +1326,43 @@
 				return;
 			}
 
-			// iOS 15 Safari Fix: Initiate readers immediately and safely to prevent File reference loss
+			// iOS 15 Safari Fix: Use ObjectURL fetch to bypass WebKit Photo Library hanging bug on on-the-fly HEIC conversion
 			const readPromises = files.map(file => {
-				return new Promise((resolve) => {
+				return new Promise(async (resolve) => {
+					let fileToRead = file;
+
+					try {
+						const objUrl = URL.createObjectURL(file);
+						const res = await fetch(objUrl);
+						fileToRead = await res.blob();
+						URL.revokeObjectURL(objUrl);
+					} catch (e) {
+						console.error("Fix blob safari failed:", e);
+					}
+
 					const reader = new FileReader();
-					reader.onload = () => resolve({ file, base64: reader.result });
-					reader.onerror = () => resolve({ file, base64: null });
-					reader.readAsDataURL(file);
+
+					// Timeout safety if Safari still hangs on FileReader
+					const timeoutId = setTimeout(() => {
+						console.warn("FileReader timeout on iOS 15");
+						resolve({ file, base64: null });
+					}, 5000);
+
+					reader.onload = () => {
+						clearTimeout(timeoutId);
+						resolve({ file, base64: reader.result });
+					};
+					reader.onerror = () => {
+						clearTimeout(timeoutId);
+						resolve({ file, base64: null });
+					};
+
+					try {
+						reader.readAsDataURL(fileToRead);
+					} catch (e) {
+						clearTimeout(timeoutId);
+						resolve({ file, base64: null });
+					}
 				});
 			});
 
