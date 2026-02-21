@@ -525,7 +525,9 @@
 				<form id="chatForm" class="w-full">
 					<div id="inputWrapper"
 						class="relative flex items-end gap-1 bg-slate-50 rounded-[28px] p-1.5 border border-slate-100 transition-all duration-200">
-						<input type="file" id="file-input" multiple class="hidden" onchange="handleFileSelect(event)">
+						<input type="file" id="file-input" multiple
+							accept="image/*,application/pdf,.docx,.xlsx,.xls,.pptx,.js,.css,.java,.html,.xml,.py,.sql,.ts,.cpp,.h,.hpp,.lua,.swift"
+							class="hidden" onchange="handleFileSelect(event)">
 
 						<button type="button" id="uploadBtn" onclick="document.getElementById('file-input').click()"
 							class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 shrink-0 transition-colors">
@@ -1313,83 +1315,27 @@
 		}
 
 		async function handleFileSelect(event) {
-			if (!event.target.files) return;
-			const files = [];
-			for (let i = 0; i < event.target.files.length; i++) {
-				files.push(event.target.files[i]);
-			}
+			const files = Array.from(event.target.files);
 			if (!files.length) return;
-
 			if (pendingFiles.length + files.length > 4) {
 				showToast("Maksimal 4 file dalam satu pengiriman.", "error");
 				event.target.value = '';
 				return;
 			}
-
-			// iOS 15 Safari Fix: Use ObjectURL fetch to bypass WebKit Photo Library hanging bug on on-the-fly HEIC conversion
-			const readPromises = files.map(file => {
-				return new Promise(async (resolve) => {
-					let fileToRead = file;
-
-					try {
-						const objUrl = URL.createObjectURL(file);
-						const res = await fetch(objUrl);
-						fileToRead = await res.blob();
-						URL.revokeObjectURL(objUrl);
-					} catch (e) {
-						console.error("Fix blob safari failed:", e);
-					}
-
-					const reader = new FileReader();
-
-					// Timeout safety if Safari still hangs on FileReader
-					const timeoutId = setTimeout(() => {
-						console.warn("FileReader timeout on iOS 15");
-						resolve({ file, base64: null });
-					}, 5000);
-
-					reader.onload = () => {
-						clearTimeout(timeoutId);
-						resolve({ file, base64: reader.result });
-					};
-					reader.onerror = () => {
-						clearTimeout(timeoutId);
-						resolve({ file, base64: null });
-					};
-
-					try {
-						reader.readAsDataURL(fileToRead);
-					} catch (e) {
-						clearTimeout(timeoutId);
-						resolve({ file, base64: null });
-					}
-				});
-			});
-
 			try {
-				const results = await Promise.all(readPromises);
-				for (const res of results) {
-					if (!res.base64) continue; // Skip failed reads
-
-					const file = res.file;
-					const base64 = res.base64;
+				for (const file of files) {
+					const base64 = await convertToBase64(file);
 					let mimeType = file.type || '';
-					const fileName = file.name || "Gambar_Galeri.jpg";
-					const ext = fileName.split('.').pop().toLowerCase();
-
-					// Handle missing mime types from older iOS devices / HEIC
+					const ext = file.name ? file.name.split('.').pop().toLowerCase() : '';
 					if (!mimeType && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(ext)) {
 						mimeType = 'image/jpeg';
 					}
-
-					let base64Str = base64.includes(',') ? base64.split(',')[1] : base64;
-
 					pendingFiles.push({
-						name: fileName,
-						size: formatBytes(file.size || 0),
+						name: file.name || "File",
+						size: formatBytes(file.size),
 						type: mimeType,
-						base64: base64Str,
-						mime: mimeType || 'image/jpeg',
+						base64: base64.split(',')[1],
+						mime: mimeType,
 						rawFile: file
 					});
 				}
