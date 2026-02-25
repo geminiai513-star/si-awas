@@ -664,6 +664,17 @@
 							<input type="range" id="settings-thinking" min="1" max="3" step="1"
 								class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600">
 						</div>
+
+						<!-- NEW SETTINGS: HISTORY LIMIT -->
+						<div class="mt-4">
+							<div class="flex justify-between items-center mb-2">
+								<span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Chat History
+									Limit</span>
+								<span id="label-history" class="text-[11px] font-black text-slate-600">10</span>
+							</div>
+							<input type="range" id="settings-history" min="2" max="50" step="2"
+								class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600">
+						</div>
 					</div>
 				</div>
 
@@ -927,6 +938,7 @@
 				temperature: parseFloat(document.getElementById('settings-temp').value),
 				max_tokens: parseInt(document.getElementById('settings-tokens').value),
 				thinking_level: parseInt(document.getElementById('settings-thinking').value),
+				history_limit: parseInt(document.getElementById('settings-history').value) || 10,
 				system_prompt: document.getElementById('systemPromptInput').value,
 				// use_google_search, kb, upload dihapus dari sini karena pindah ke per-user
 				updated_at: new Date()
@@ -990,6 +1002,15 @@
 					if (elThink) {
 						elThink.value = globalData.thinking_level;
 						document.getElementById('label-thinking').innerText = ["LOW", "MEDIUM", "HIGH"][globalData.thinking_level - 1];
+					}
+
+					const elHistory = document.getElementById('settings-history');
+					if (elHistory) {
+						let hLimit = globalData.history_limit;
+						if (hLimit === undefined || hLimit === null) hLimit = 10;
+						elHistory.value = hLimit;
+						document.getElementById('label-history').innerText = hLimit;
+						localStorage.setItem('awas_history_limit', hLimit); // Simpan ke local user agar gampang dipanggil
 					}
 
 					const elPrompt = document.getElementById('systemPromptInput');
@@ -1066,10 +1087,15 @@
 			document.getElementById('label-thinking').innerText = labels[this.value - 1];
 		};
 
+		document.getElementById('settings-history').oninput = function () {
+			document.getElementById('label-history').innerText = this.value;
+		};
+
 		// --- LISTENERS ---
 		document.getElementById('settings-tokens').onchange = saveAdminSettings;
 		document.getElementById('settings-temp').onchange = saveAdminSettings;
 		document.getElementById('settings-thinking').onchange = saveAdminSettings;
+		document.getElementById('settings-history').onchange = saveAdminSettings;
 		document.getElementById('systemPromptInput').onchange = saveAdminSettings;
 
 		const dropdownTrigger = document.getElementById('dropdown-trigger');
@@ -1525,10 +1551,20 @@
 					console.log('KB Search skipped: Tidak ada kata kunci SI-AWAS yang relevan.');
 				}
 
+				// Mengambil riwayat, jika lebih dari history_limit, sisanya diabaikan
+				const currentHistoryLimit = parseInt(localStorage.getItem('awas_history_limit')) || 10;
+				let limitedChatHistory = [];
+				if (chatHistory.length > currentHistoryLimit) {
+					console.log(`%c[History Limit]`, 'color: orange', `Memotong history dari ${chatHistory.length} menjadi ${currentHistoryLimit} pesan terakhir untuk menghemat token.`);
+					limitedChatHistory = chatHistory.slice(-currentHistoryLimit);
+				} else {
+					limitedChatHistory = chatHistory;
+				}
+
 				const payload = {
 					system_instruction: { parts: [{ text: customSystemPrompt }] },
 					contents: [
-						...chatHistory,
+						...limitedChatHistory,
 						{ role: "user", parts: [...apiParts, { text: finalMessage }] }
 					],
 					generationConfig: {
