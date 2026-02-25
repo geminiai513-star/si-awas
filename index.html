@@ -465,7 +465,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="flex-1 overflow-y-auto px-3 pt-4 pb-2" id="historyList"></div>
+		<div class="flex-1 overflow-y-auto px-3 pt-1 pb-2" id="historyList"></div>
 		<div class="sidebar-bottom-controls">
 			<div class="space-y-2">
 				<button id="newChatSidebarBtn"
@@ -554,7 +554,7 @@
 		<!-- Scroll to Bottom Button -->
 		<button id="scrollToBottomBtn"
 			onclick="document.getElementById('chatContainer').scrollTo({ top: document.getElementById('chatContainer').scrollHeight, behavior: 'smooth' })"
-			class="absolute bottom-[100px] right-6 w-10 h-10 bg-slate-400/20 hover:bg-slate-400/40 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-500 transition-all duration-300 opacity-0 pointer-events-none z-50 shadow-sm border border-white/20 active:scale-95">
+			class="absolute bottom-[100px] right-4 md:right-8 w-10 h-10 bg-slate-400/20 hover:bg-slate-400/40 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-500 transition-all duration-300 opacity-0 pointer-events-none z-50 shadow-sm border border-white/20 active:scale-95">
 			<i data-lucide="chevron-down" class="w-6 h-6"></i>
 		</button>
 	</div>
@@ -1438,6 +1438,11 @@
 
 			let customSystemPrompt = document.getElementById('systemPromptInput').value || SYSTEM_PROMPT;
 
+			// Tambahkan instruksi pemicu internet ke dalam prompt jika admin mengaktifkan Google di profilnya
+			// Supaya AI mandiri tahu kapan dia WAJIB browsing
+			if (localStorage.getItem('awas_settings_google') === 'true') {
+				customSystemPrompt += "\n\nINSTRUKSI KHUSUS PENCARIAN GOOGLE:\nJika pengguna menanyakan informasi terkait 'peraturan', 'pengawasan inspektorat', atau 'informasi/profil pejabat', Anda WAJIB menggunakan alat pencarian (Google Search) agar informasi yang disajikan selalu realtime dan akurat. Jika informasi tidak ditemukan di internet atau bukan topik tersebut, gunakan kemampuan dasar Anda.";
+			}
 			input.value = '';
 			input.style.height = 'auto';
 			inputWrapper.classList.add('rounded-[28px]');
@@ -1493,6 +1498,8 @@
 					'si awas', 'siawas', 'aplikasi', 'sistem', 'web', 'inspektorat', 'lampung',
 					// Role
 					'admin', 'administrator', 'ketua', 'anggota', 'tim', 'dalnis', 'opd', 'operator', 'evalap', 'user', 'pengguna',
+					// Master Data / Kontak / OPD
+					'penanggung jawab', 'pic', 'kontak', 'hubungi', 'telepon', 'nomor', 'wa', 'whatsapp', 'dinas', 'badan', 'biro', 'rsud', 'rs',
 					// Dokumen & Audit
 					'lhp', 'nhp', 'pka', 'kk', 'kertas kerja', 'dokumen', 'file', 'pdf', 'laporan', 'sk', 'spt',
 					'audit', 'pemeriksaan', 'pengawasan', 'monev', 'temuan', 'sanggah', 'rekomendasi', 'saran', 'tindak lanjut', 'tl',
@@ -1538,7 +1545,7 @@
 				const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
 				const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
 
-				if (useGoogleSearch) {
+				if (enableGoogleSearch) {
 					// --- GLOBAL RATE LIMITING VIA SUPABASE ---
 					// Menggunakan RPC agar penghhitungan terpusat di server (Global Limit untuk semua user)
 					try {
@@ -1588,9 +1595,6 @@
 				}
 
 				if (enableGoogleSearch) payload.tools = [{ google_search: {} }];
-
-				if (enableGoogleSearch) payload.tools = [{ google_search: {} }];
-
 				// askingConfig logic based on model version
 				// Gemini 3.0 uses thinkingLevel (LOW, HIGH)
 				// Gemini 2.5 uses thinkingBudget (token count)
@@ -2381,10 +2385,10 @@
 					div.innerHTML = `
 						<div class="flex items-center gap-3 min-w-0 flex-1">
 							<div class="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-								<i data-lucide="file-text" class="w-4 h-4"></i>
+								<i data-lucide="brain" class="w-4 h-4"></i>
 							</div>
 							<div class="min-w-0 flex-1">
-								<p class="text-sm font-bold text-slate-700 truncate">${doc.filename}</p>
+								<p class="text-sm font-bold text-slate-700 truncate">${doc.filename.replace(/\.txt$/i, '')}</p>
 								<p class="text-[10px] font-medium text-slate-400">${doc.chunk_count || 0} chunks • ${new Date(doc.created_at).toLocaleDateString('id-ID')}</p>
 							</div>
 						</div>
@@ -2410,7 +2414,7 @@
 				const { data: chunks, error } = await _supabase
 					.rpc('match_kb_chunks', {
 						query_embedding: embedding,
-						match_threshold: 0.55,
+						match_threshold: 0.35, // Diturunkan agar konteks query santai tetap terdeteksi
 						match_count: 5
 					});
 
@@ -2665,7 +2669,6 @@
 					        </div>
 					        <div class="min-w-0 flex-1">
 					            <p class="text-sm font-bold text-slate-700 truncate">${u.email}</p>
-					            <p class="text-[10px] font-medium text-slate-400 truncate">ID: ${u.id}</p>
 					        </div>
 					    </div>
 
@@ -2681,19 +2684,18 @@
 							</button>
 							<button id="btn-kb-${u.id}" onclick="toggleUserFeature('${u.id}', 'use_knowledge_base', ${!profile.use_knowledge_base})" 
 								class="p-2 rounded-lg transition-colors ${profile.use_knowledge_base ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}" title="Toggle Knowledge Base">
-								<i data-lucide="book-open" class="w-4 h-4"></i>
+								<i data-lucide="brain" class="w-4 h-4"></i>
 							</button>
 
-							<div class="w-px h-6 bg-slate-200 mx-1"></div>
-
 					        ${!isMe ? `
+							<div class="w-px h-6 bg-slate-200 mx-1"></div>
 					        <button onclick="openUserActionModal('toggleBan', '${u.id}', '${u.email}', ${isBanned})" class="p-2 rounded-lg ${isBanned ? 'bg-green-50 text-green-600' : 'bg-slate-50 text-slate-400 hover:text-orange-600'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
 					            <i data-lucide="${isBanned ? 'unlock' : 'lock'}" class="w-4 h-4"></i>
 					        </button>
 					        <button onclick="openUserActionModal('delete', '${u.id}', '${u.email}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Delete">
 					            <i data-lucide="trash-2" class="w-4 h-4"></i>
 					        </button>
-					        ` : `<div class="w-8"></div>`}
+					        ` : ``}
 					    </div>
 					`;
 					container.appendChild(div);
