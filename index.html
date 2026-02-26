@@ -3212,6 +3212,35 @@
 				deferredPrompt = null;
 			}
 		});
+
+		// Fix UI Freeze / Overscroll pada iOS lama
+		if (isIos()) {
+			const preventScrollLock = (e) => {
+				const el = e.currentTarget;
+				const top = el.scrollTop;
+				// Height of the element's content
+				const totalScroll = el.scrollHeight;
+				// Height of the element's visible area
+				const currentScroll = top + el.offsetHeight;
+
+				// Jika di paling atas, geser turun 1px
+				if (top === 0) {
+					el.scrollTop = 1;
+				}
+				// Jika di paling bawah, geser naik 1px
+				else if (currentScroll === totalScroll) {
+					el.scrollTop = top - 1;
+				}
+			};
+
+			// Tunggu DOM siap, lalu tempelkan event ke container yang bisa di-scroll
+			window.addEventListener('load', () => {
+				const scrollableEls = document.querySelectorAll('#chatContainer, #historyList, main, .custom-scroll');
+				scrollableEls.forEach(el => {
+					el.addEventListener('touchstart', preventScrollLock, { passive: true });
+				});
+			});
+		}
 	</script>
 </body>
 
