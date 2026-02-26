@@ -3082,35 +3082,33 @@
 
 	<!-- PWA Install Modal (iOS) -->
 	<div id="iosInstallModal"
-		class="fixed inset-0 bg-black/40 z-[999] hidden flex-col justify-end items-center pb-8 px-4 backdrop-blur-sm transition-opacity duration-300 opacity-0">
+		class="fixed inset-0 bg-black/40 z-[999] hidden items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300 opacity-0">
 		<div id="iosInstallModalContent"
-			class="bg-white rounded-3xl w-full max-w-[360px] p-6 text-center transform translate-y-10 transition-transform duration-300 shadow-xl border border-slate-100 relative">
+			class="bg-white rounded-3xl w-full max-w-[320px] p-6 text-center transform scale-95 transition-transform duration-300 shadow-xl border border-slate-100 relative">
 
-			<button onclick="closeIosInstallModal()"
-				class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 bg-slate-50 rounded-full active:scale-95">
-				<i data-lucide="x" class="w-5 h-5"></i>
-			</button>
-
-			<div
-				class="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+			<div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
 				<img src="icon/icon.png" class="w-10 h-10 object-contain">
 			</div>
-			<h3 class="text-lg font-black text-slate-800 mb-2 font-sans tracking-tight">Pasang di iPhone/iPad</h3>
-			<p class="text-sm text-slate-500 font-medium mb-5 leading-relaxed">
-				Untuk menginstal aplikasi ini, ketuk ikon <b>Bagikan (Share)</b> <i data-lucide="share"
-					class="inline w-4 h-4 mx-1 text-blue-500"></i> di menu bawah browser Anda, lalu pilih <b>"Tambah ke
-					Layar Utama"</b> (Tambahkan ke Layar Utama).
+
+			<h3 class="text-lg font-black text-slate-800 mb-2 font-sans tracking-tight">Install Aplikasi</h3>
+
+			<p class="text-sm text-slate-500 font-medium mb-6 leading-relaxed">
+				Tekan ikon
+				<svg class="inline w-5 h-5 mx-1 text-blue-500 translate-y-[-2px]" viewBox="0 0 24 24" fill="none"
+					stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+					<polyline points="16 6 12 2 8 6" />
+					<line x1="12" y1="2" x2="12" y2="15" />
+				</svg>
+				di Safari, lalu cari <b>"Tambah ke Layar Utama" <i data-lucide="plus-square"
+						class="inline w-[18px] h-[18px] text-slate-600 outline-none translate-y-[-1px]"></i></b> untuk
+				instalasi.
 			</p>
 
 			<button onclick="closeIosInstallModal()"
-				class="w-full py-3.5 bg-slate-800 text-white rounded-2xl font-bold text-sm active:scale-95 transition-all uppercase shadow-md">
+				class="w-full py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-all uppercase shadow-md">
 				Mengerti
 			</button>
-
-			<!-- Panah Petunjuk Arah Bawah -->
-			<div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
-				<i data-lucide="arrow-down" class="w-8 h-8"></i>
-			</div>
 		</div>
 	</div>
 
@@ -3141,14 +3139,11 @@
 
 		// Trigger khusus untuk iOS saat halaman pertama kali dimuat
 		window.addEventListener('load', () => {
-			// Jika user pakai iOS, bukan di mode standalone, dan belum pernah menutup popup hari ini
+			// Jika user pakai iOS dan bukan di mode standalone (belum di-install)
 			if (isIos() && !isInStandaloneMode()) {
-				const hasSeenIosPrompt = localStorage.getItem('hasSeenIosPrompt');
-				if (!hasSeenIosPrompt) {
-					setTimeout(() => {
-						showIosInstallModal();
-					}, 2000); // Munculkan setelah 2 detik agar tidak mengganggu loading pertama
-				}
+				setTimeout(() => {
+					showIosInstallModal();
+				}, 2000); // Munculkan setelah 2 detik
 			}
 		});
 
@@ -3190,8 +3185,8 @@
 
 			requestAnimationFrame(() => {
 				modal.classList.remove('opacity-0');
-				content.classList.remove('translate-y-10');
-				content.classList.add('translate-y-0');
+				content.classList.remove('scale-95');
+				content.classList.add('scale-100');
 			});
 		}
 
@@ -3199,12 +3194,9 @@
 			const modal = document.getElementById('iosInstallModal');
 			const content = document.getElementById('iosInstallModalContent');
 
-			// Simpan ke localStorage agar tidak mengganggu terus-terusan setiap refresh
-			localStorage.setItem('hasSeenIosPrompt', 'true');
-
 			modal.classList.add('opacity-0');
-			content.classList.remove('translate-y-0');
-			content.classList.add('translate-y-10');
+			content.classList.remove('scale-100');
+			content.classList.add('scale-95');
 			setTimeout(() => {
 				modal.classList.add('hidden');
 				modal.classList.remove('flex');
