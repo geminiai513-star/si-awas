@@ -684,20 +684,16 @@
 
 				<!-- KNOWLEDGE BASE SECTION -->
 				<div class="w-full bg-slate-50 rounded-2xl p-5 shadow-sm">
-					<div class="mb-4">
+					<div class="flex justify-between items-center mb-4">
 						<span class="text-xs font-black text-slate-500 uppercase tracking-widest">Knowledge Base</span>
+						<input type="file" id="kb-file-input" accept=".txt" class="hidden">
+						<button type="button" onclick="document.getElementById('kb-file-input').click()"
+							class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors shrink-0 active:scale-95"
+							title="Upload Knowledge Base">
+							<i data-lucide="cloud-upload" class="w-4 h-4"></i>
+						</button>
 					</div>
 					<div class="space-y-4">
-
-
-						<div class="flex gap-2">
-							<input type="file" id="kb-file-input" accept=".txt" class="hidden">
-							<button type="button" onclick="document.getElementById('kb-file-input').click()"
-								class="flex-1 flex items-center justify-center gap-2 py-3 bg-white rounded-xl border border-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-50 active:scale-95 transition-all">
-								<i data-lucide="upload" class="w-4 h-4"></i>
-								Upload Knowledge Base
-							</button>
-						</div>
 
 						<div id="kb-upload-progress" class="hidden">
 							<div class="bg-white p-3 rounded-xl border border-slate-100">
@@ -745,6 +741,16 @@
 								TAMBAH
 							</button>
 						</div>
+					</div>
+
+					<!-- Search User -->
+					<div class="mb-5 relative">
+						<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+							<i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+						</div>
+						<input type="text" id="searchUserEmail" placeholder="Cari email user..."
+							oninput="filterUserList()"
+							class="w-full pl-11 pr-5 py-3.5 bg-white rounded-2xl text-sm font-semibold border border-slate-100 outline-none text-slate-700 placeholder:text-slate-400 shadow-[0_1px_2px_rgba(0,0,0,0.02)] focus:border-blue-200 transition-colors">
 					</div>
 
 					<div id="userListContainer" class="space-y-3">
@@ -2586,6 +2592,21 @@
 			});
 		}
 
+		function filterUserList() {
+			const query = document.getElementById('searchUserEmail').value.toLowerCase();
+			const container = document.getElementById('userListContainer');
+			const items = container.querySelectorAll('.user-item-card');
+
+			items.forEach(item => {
+				const email = item.getAttribute('data-email') || '';
+				if (email.toLowerCase().includes(query)) {
+					item.style.display = 'flex';
+				} else {
+					item.style.display = 'none';
+				}
+			});
+		}
+
 		async function fetchUsers() {
 			const container = document.getElementById('userListContainer');
 			// Only show loading if empty
@@ -2626,38 +2647,41 @@
 					const profile = profileMap[u.id] || { use_google_search: true, use_knowledge_base: true, allow_file_upload: true };
 
 					const div = document.createElement('div');
-					div.className = "bg-white p-3 rounded-xl border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3";
+					div.className = "user-item-card bg-white p-3.5 rounded-2xl border border-slate-100 flex flex-col gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all";
+					div.setAttribute('data-email', u.email);
 					div.innerHTML = `
-					    <div class="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
-					        <div class="w-8 h-8 rounded-full ${isBanned ? 'text-red-600' : 'text-green-600'} flex items-center justify-center shrink-0">
+					    <div class="flex items-center gap-3 w-full px-1 cursor-pointer select-none" onclick="document.getElementById('user-actions-${u.id}').classList.toggle('hidden'); const icon = document.getElementById('user-chevron-${u.id}'); icon.style.transform = icon.style.transform === 'rotate(180deg)' ? 'rotate(0deg)' : 'rotate(180deg)';">
+					        <div class="w-9 h-9 rounded-full ${isBanned ? 'text-red-500 bg-red-50' : 'text-slate-500 bg-slate-50'} flex items-center justify-center shrink-0">
 					            <i data-lucide="${isBanned ? 'lock' : 'user'}" class="w-4 h-4"></i>
 					        </div>
 					        <div class="min-w-0 flex-1">
 					            <p class="text-sm font-bold text-slate-700 truncate">${u.email}</p>
 					        </div>
+							<div class="shrink-0 p-1 text-slate-400">
+								<i data-lucide="chevron-down" id="user-chevron-${u.id}" class="w-4 h-4 transition-transform duration-200"></i>
+							</div>
 					    </div>
 
-					    <div class="flex items-center gap-2 self-end md:self-auto">
+					    <div id="user-actions-${u.id}" class="hidden flex items-center w-full gap-2 pt-1 border-t border-slate-50">
 							<!-- FEATURE TOGGLES -->
 							<button id="btn-gs-${u.id}" onclick="toggleUserFeature('${u.id}', 'use_google_search', ${!profile.use_google_search})" 
-								class="p-2 rounded-lg transition-colors ${profile.use_google_search ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}" title="Toggle Google Search">
+								class="flex-1 flex justify-center p-2.5 rounded-xl transition-colors ${profile.use_google_search ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}" title="Toggle Google Search">
 								<i data-lucide="globe" class="w-4 h-4"></i>
 							</button>
 							<button id="btn-uf-${u.id}" onclick="toggleUserFeature('${u.id}', 'allow_file_upload', ${!profile.allow_file_upload})" 
-								class="p-2 rounded-lg transition-colors ${profile.allow_file_upload ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}" title="Toggle File Upload">
+								class="flex-1 flex justify-center p-2.5 rounded-xl transition-colors ${profile.allow_file_upload ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}" title="Toggle File Upload">
 								<i data-lucide="paperclip" class="w-4 h-4"></i>
 							</button>
 							<button id="btn-kb-${u.id}" onclick="toggleUserFeature('${u.id}', 'use_knowledge_base', ${!profile.use_knowledge_base})" 
-								class="p-2 rounded-lg transition-colors ${profile.use_knowledge_base ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}" title="Toggle Knowledge Base">
+								class="flex-1 flex justify-center p-2.5 rounded-xl transition-colors ${profile.use_knowledge_base ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}" title="Toggle Knowledge Base">
 								<i data-lucide="brain" class="w-4 h-4"></i>
 							</button>
 
 					        ${!isMe ? `
-							<div class="w-px h-6 bg-slate-200 mx-1"></div>
-					        <button onclick="openUserActionModal('toggleBan', '${u.id}', '${u.email}', ${isBanned})" class="p-2 rounded-lg ${isBanned ? 'bg-green-50 text-green-600' : 'bg-slate-50 text-slate-400 hover:text-orange-600'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
+					        <button onclick="openUserActionModal('toggleBan', '${u.id}', '${u.email}', ${isBanned})" class="flex-1 flex justify-center p-2.5 rounded-xl ${isBanned ? 'bg-green-50 text-green-600' : 'bg-slate-50 text-slate-400 hover:text-orange-600'} transition-colors" title="${isBanned ? 'Unfreeze' : 'Freeze'}">
 					            <i data-lucide="${isBanned ? 'unlock' : 'lock'}" class="w-4 h-4"></i>
 					        </button>
-					        <button onclick="openUserActionModal('delete', '${u.id}', '${u.email}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Delete">
+					        <button onclick="openUserActionModal('delete', '${u.id}', '${u.email}')" class="flex-1 flex justify-center p-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Delete">
 					            <i data-lucide="trash-2" class="w-4 h-4"></i>
 					        </button>
 					        ` : ``}
@@ -2694,10 +2718,10 @@
 			if (btn) {
 				if (newValue) {
 					// Turn ON
-					btn.className = `p-2 rounded-lg transition-colors ${activeClass}`;
+					btn.className = `flex-1 flex justify-center p-2.5 rounded-xl transition-colors ${activeClass}`;
 				} else {
 					// Turn OFF
-					btn.className = `p-2 rounded-lg transition-colors ${inactiveClass}`;
+					btn.className = `flex-1 flex justify-center p-2.5 rounded-xl transition-colors ${inactiveClass}`;
 				}
 				// Update onclick agar bisa toggle balik tanpa reload
 				btn.setAttribute('onclick', `toggleUserFeature('${userId}', '${feature}', ${!newValue})`);
