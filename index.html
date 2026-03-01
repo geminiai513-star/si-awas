@@ -85,6 +85,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+	<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 	<link
 		href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap"
 		rel="stylesheet">
@@ -440,6 +441,28 @@
 			opacity: 1;
 			transform: translateX(-50%) translateY(0);
 		}
+
+		[x-cloak] {
+			display: none !important;
+		}
+
+		.scroller::-webkit-scrollbar {
+			width: 6px;
+			display: block;
+		}
+
+		.scroller::-webkit-scrollbar-track {
+			background: #f1f5f9;
+		}
+
+		.scroller::-webkit-scrollbar-thumb {
+			background: #cbd5e1;
+			border-radius: 3px;
+		}
+
+		.scroller::-webkit-scrollbar-thumb:hover {
+			background: #94a3b8;
+		}
 	</style>
 </head>
 
@@ -501,6 +524,8 @@
 					<img src="icon/icon.png" alt="Logo" class="h-8 w-auto object-contain">
 				</div>
 				<div class="flex items-center gap-1">
+					<button id="naskahDinasBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95"
+						title="Naskah Dinas"><i data-lucide="file-text" class="w-6 h-6"></i></button>
 					<button id="settingsBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95"><i
 							data-lucide="settings-2" class="w-6 h-6"></i></button>
 					<button id="menuBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95 -mr-2.5"><i
@@ -763,6 +788,560 @@
 			</div>
 		</main>
 		<div class="flex-none w-full bg-white h-[20px] z-50 shrink-0"></div>
+	</div>
+	<div id="naskahDinasScreen" class="fixed inset-0 bg-white z-[200] hidden flex-col" x-data="naskahDinasApp()">
+		<header class="h-16 px-4 md:px-8 flex items-center border-b border-slate-100 shrink-0 relative bg-white">
+			<div class="flex items-center z-10">
+				<button id="backFromNaskahDinas" class="p-2 -ml-2 text-slate-400 active:scale-90">
+					<i data-lucide="chevron-left" class="w-6 h-6"></i>
+				</button>
+			</div>
+			<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+				<h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Naskah Dinas</h2>
+			</div>
+		</header>
+		<div class="flex-1 overflow-y-auto bg-white relative custom-scroll pb-10">
+			<div class="content-width pt-4 pb-10 space-y-4">
+				<div class="w-full bg-slate-50 rounded-3xl p-5 md:p-6 shadow-sm border border-slate-100">
+					<form id="mainForm" class="space-y-6">
+
+						<!-- Form Fields Container -->
+						<div class="flex flex-col gap-6">
+
+							<!-- Custom Dropdown: Jenis Naskah Dinas -->
+							<div class="space-y-2 relative order-none flex-none mb-4" x-data="{ open: false }">
+								<label class="block text-sm font-semibold text-slate-700 pl-1">Jenis Naskah
+									Dinas</label>
+								<button type="button" @click="open = !open" @click.outside="open = false"
+									class="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-3 text-left focus:ring-0 outline-none flex justify-between items-center transition duration-200 relative z-10">
+									<span class="truncate block pr-8"
+										x-text="jenisNaskah === 'SPT' ? 'Surat Perintah Tugas (SPT)' : 'Surat Perjalanan Dinas (SPPD)'"></span>
+									<svg xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5 text-slate-400 absolute right-4 transition-transform duration-200"
+										:class="{'rotate-180': open}" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd"
+											d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+											clip-rule="evenodd" />
+									</svg>
+								</button>
+								<div x-show="open" x-transition.opacity.duration.200ms x-cloak
+									class="absolute left-0 right-0 z-50 mt-1 bg-white border border-slate-100 rounded-xl shadow-xl w-full overflow-hidden">
+									<div class="max-h-48 overflow-y-auto scroller">
+										<div @click="jenisNaskah = 'SPT'; open = false"
+											class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
+											<span>Surat Perintah Tugas (SPT)</span>
+										</div>
+										<div @click="jenisNaskah = 'SPPD'; open = false"
+											class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
+											<span>Surat Perjalanan Dinas (SPPD)</span>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Custom Dropdown: Jenis Pengawasan -->
+							<div class="space-y-2 relative" :class="jenisNaskah === 'SPPD' ? 'order-3' : 'order-1'"
+								x-data="{ open: false, search: '' }">
+								<label class="block text-sm font-semibold text-slate-700 pl-1">Jenis Pengawasan</label>
+
+								<button type="button" id="btn-pengawasan"
+									@click="open = !open; $nextTick(() => $refs.searchInput.focus())"
+									@click.outside="open = false"
+									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
+									:class="errorField === 'btn-pengawasan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									<span class="truncate block pr-8"
+										x-text="selectedPengawasanObj ? selectedPengawasanObj.label : 'Pilih Jenis Pengawasan...'"
+										:class="{'text-slate-400': !selectedPengawasanObj}"></span>
+									<svg xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5 text-slate-400 absolute right-4 transition-transform duration-200"
+										:class="{'rotate-180': open}" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd"
+											d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+											clip-rule="evenodd" />
+									</svg>
+								</button>
+
+								<div x-show="open" x-transition.opacity.duration.200ms x-cloak
+									class="absolute left-0 right-0 z-50 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl w-full overflow-hidden">
+
+									<div class="p-2 border-b border-slate-100 bg-slate-50">
+										<input x-ref="searchInput" x-model="search" type="text" placeholder="Cari..."
+											class="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-0 outline-none">
+									</div>
+
+									<div class="max-h-60 overflow-y-auto scroller">
+										<template x-for="(item, index) in db.pengawasan" :key="index">
+											<div x-show="item[0].toLowerCase().includes(search.toLowerCase())"
+												@click="selectPengawasan(index); open = false; search = ''"
+												class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
+												<span x-text="item[0]"></span>
+											</div>
+										</template>
+										<div x-show="!db.pengawasan || db.pengawasan.length === 0"
+											class="px-4 py-3 text-sm text-slate-400 text-center">
+											Memuat data...
+										</div>
+										<div x-show="db.pengawasan && db.pengawasan.filter(i => i[0].toLowerCase().includes(search.toLowerCase())).length === 0"
+											class="px-4 py-3 text-sm text-slate-400 text-center">
+											Tidak ditemukan
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Custom Dropdown: OPD -->
+							<div class="space-y-2 relative" :class="jenisNaskah === 'SPPD' ? 'order-4' : 'order-2'"
+								x-data="{ open: false, search: '' }">
+								<label class="block text-sm font-semibold text-slate-700 pl-1">Perangkat Daerah
+									(OPD)</label>
+
+								<button type="button" id="btn-opd"
+									@click="open = !open; $nextTick(() => $refs.searchInput.focus())"
+									@click.outside="open = false"
+									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
+									:class="errorField === 'btn-opd' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									<span class="truncate block pr-8"
+										x-text="selectedOpdObj ? selectedOpdObj.label : 'Pilih OPD...'"
+										:class="{'text-slate-400': !selectedOpdObj}"></span>
+									<svg xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5 text-slate-400 absolute right-4 transition-transform duration-200"
+										:class="{'rotate-180': open}" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd"
+											d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+											clip-rule="evenodd" />
+									</svg>
+								</button>
+
+								<div x-show="open" x-transition.opacity.duration.200ms x-cloak
+									class="absolute left-0 right-0 z-50 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl w-full overflow-hidden">
+
+									<div class="p-2 border-b border-slate-100 bg-slate-50">
+										<input x-ref="searchInput" x-model="search" type="text"
+											placeholder="Cari OPD..."
+											class="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-0 outline-none">
+									</div>
+
+									<div class="max-h-60 overflow-y-auto scroller">
+										<template x-for="(item, index) in db.opd" :key="index">
+											<div x-show="item[0].toLowerCase().includes(search.toLowerCase())"
+												@click="selectOpd(index); open = false; search = ''"
+												class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
+												<span x-text="item[0]"></span>
+											</div>
+										</template>
+										<div x-show="db.opd && db.opd.filter(i => i[0].toLowerCase().includes(search.toLowerCase())).length === 0"
+											class="px-4 py-3 text-sm text-slate-400 text-center">
+											Tidak ditemukan
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Dasar Hukum (Hidden) -->
+							<div class="hidden">
+								<label class="block text-sm font-semibold text-slate-700 mb-2 pl-1">Dasar Hukum</label>
+								<textarea x-model="dasarHukum" rows="4" readonly
+									class="w-full bg-slate-100 border-transparent text-slate-600 rounded-xl p-4 outline-none focus:ring-0 resize-none text-sm leading-relaxed"></textarea>
+							</div>
+
+							<!-- Custom Dropdown: Wilayah -->
+							<div class="space-y-2 relative" :class="jenisNaskah === 'SPPD' ? 'order-5' : 'order-3'"
+								x-data="{ open: false, search: '' }">
+								<label class="block text-sm font-semibold text-slate-700 pl-1">Wilayah</label>
+
+								<button type="button" id="btn-wilayah"
+									@click="open = !open; $nextTick(() => $refs.searchInput.focus())"
+									@click.outside="open = false"
+									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
+									:class="errorField === 'btn-wilayah' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									<span class="truncate block pr-8"
+										x-text="selectedWilayahObj ? selectedWilayahObj.label : 'Pilih Wilayah...'"
+										:class="{'text-slate-400': !selectedWilayahObj}"></span>
+									<svg xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5 text-slate-400 absolute right-4 transition-transform duration-200"
+										:class="{'rotate-180': open}" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd"
+											d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+											clip-rule="evenodd" />
+									</svg>
+								</button>
+
+								<div x-show="open" x-transition.opacity.duration.200ms x-cloak
+									class="absolute left-0 right-0 z-50 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl w-full overflow-hidden">
+
+									<div class="p-2 border-b border-slate-100 bg-slate-50">
+										<input x-ref="searchInput" x-model="search" type="text"
+											placeholder="Cari Wilayah..."
+											class="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-0 outline-none">
+									</div>
+
+									<div class="max-h-60 overflow-y-auto scroller">
+										<template x-for="(item, index) in db.wilayah" :key="index">
+											<div x-show="item[0].toLowerCase().includes(search.toLowerCase())"
+												@click="selectWilayah(index); open = false; search = ''"
+												class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
+												<span x-text="item[0]"></span>
+											</div>
+										</template>
+										<div x-show="db.wilayah && db.wilayah.filter(i => i[0].toLowerCase().includes(search.toLowerCase())).length === 0"
+											class="px-4 py-3 text-sm text-slate-400 text-center">
+											Tidak ditemukan
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Date Stacked -->
+							<div class="grid grid-cols-1 gap-6" :class="jenisNaskah === 'SPPD' ? 'order-6' : 'order-4'">
+								<div>
+									<label class="block text-sm font-semibold text-slate-700 mb-2 pl-1">Tanggal
+										Mulai</label>
+									<input type="date" id="input-tglmulai" x-model="tglMulai"
+										class="w-full rounded-xl p-3 outline-none transition duration-200"
+										:class="errorField === 'input-tglmulai' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'">
+								</div>
+								<div>
+									<label class="block text-sm font-semibold text-slate-700 mb-2 pl-1">Tanggal
+										Berakhir</label>
+									<input type="date" id="input-tglakhir" x-model="tglAkhir"
+										class="w-full rounded-xl p-3 outline-none transition duration-200"
+										:class="errorField === 'input-tglakhir' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'">
+								</div>
+							</div>
+
+							<!-- SPPD Specific Fields -->
+							<!-- Custom Dropdown: Alat Angkut (SPPD Specific) -->
+							<div x-show="jenisNaskah === 'SPPD'" class="space-y-2 relative order-7"
+								x-data="{ open: false, search: '' }">
+								<label class="block text-sm font-semibold text-slate-700 pl-1">Alat Angkut</label>
+								<button type="button" id="btn-angkutan"
+									@click="open = !open; $nextTick(() => $refs.searchAngkutan.focus())"
+									@click.outside="open = false"
+									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
+									:class="errorField === 'btn-angkutan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									<span class="truncate block pr-8"
+										x-text="selectedAngkutanObj ? selectedAngkutanObj.label : 'Pilih Alat Angkut...'"
+										:class="{'text-slate-400': !selectedAngkutanObj}"></span>
+									<svg xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5 text-slate-400 absolute right-4 transition-transform duration-200"
+										:class="{'rotate-180': open}" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd"
+											d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+											clip-rule="evenodd" />
+									</svg>
+								</button>
+								<div x-show="open" x-transition.opacity.duration.200ms x-cloak
+									class="absolute left-0 right-0 z-50 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl w-full overflow-hidden">
+									<div class="p-2 border-b border-slate-100 bg-slate-50">
+										<input x-ref="searchAngkutan" x-model="search" type="text"
+											placeholder="Cari Alat Angkut..."
+											class="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-0 outline-none">
+									</div>
+									<div class="max-h-60 overflow-y-auto scroller">
+										<template x-for="(item, index) in db.angkutan" :key="index">
+											<div x-show="item[0].toLowerCase().includes(search.toLowerCase())"
+												@click="selectAngkutan(index); open = false; search = ''"
+												class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
+												<span x-text="item[0]"></span>
+											</div>
+										</template>
+									</div>
+								</div>
+							</div>
+
+							<!-- Custom Dropdown: PPTK SPPD (dari Data Pejabat) -->
+							<div x-show="jenisNaskah === 'SPPD'" class="space-y-2 relative order-8"
+								x-data="{ open: false, search: '' }">
+								<label class="block text-sm font-semibold text-slate-700 pl-1">PPTK Kegiatan (Pilih
+									Pejabat)</label>
+
+								<button type="button" id="btn-pptk"
+									@click="open = !open; $nextTick(() => $refs.searchPptk.focus())"
+									@click.outside="open = false"
+									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
+									:class="errorField === 'btn-pptk' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									<span class="truncate block pr-8"
+										x-text="selectedPptkObj ? selectedPptkObj.label : 'Pilih PPTK...'"
+										:class="{'text-slate-400': !selectedPptkObj}"></span>
+									<svg xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5 text-slate-400 absolute right-4 transition-transform duration-200"
+										:class="{'rotate-180': open}" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd"
+											d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+											clip-rule="evenodd" />
+									</svg>
+								</button>
+
+								<div x-show="open" x-transition.opacity.duration.200ms x-cloak
+									class="absolute left-0 right-0 z-50 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl w-full overflow-hidden">
+									<div class="p-2 border-b border-slate-100 bg-slate-50">
+										<input x-ref="searchPptk" x-model="search" type="text"
+											placeholder="Cari PPTK..."
+											class="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-0 outline-none">
+									</div>
+									<div class="max-h-60 overflow-y-auto scroller">
+										<template x-for="(item, index) in db.pejabat" :key="index">
+											<div x-show="item[1].toLowerCase().includes(search.toLowerCase())"
+												@click="selectPptk(index); open = false; search = ''"
+												class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
+												<span x-text="item[1]"></span>
+											</div>
+										</template>
+									</div>
+								</div>
+							</div>
+
+							<!-- Custom Dropdown: Pegawai Utama (SPPD Only) -->
+							<div x-show="jenisNaskah === 'SPPD'" class="space-y-2 relative"
+								:class="jenisNaskah === 'SPPD' ? 'order-1' : 'hidden'"
+								x-data="{ open: false, search: '' }">
+								<label class="block text-sm font-semibold text-slate-700 pl-1">Pilih Pegawai
+									Utama</label>
+								<button type="button" id="btn-utama"
+									@click="open = !open; $nextTick(() => $refs.searchUtama.focus())"
+									@click.outside="open = false"
+									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
+									:class="errorField === 'btn-utama' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									<span class="truncate block pr-8"
+										x-text="selectedUtamaObj ? selectedUtamaObj.label : 'Cari Pegawai Utama...'"
+										:class="{'text-slate-400': !selectedUtamaObj}"></span>
+									<svg xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5 text-slate-400 absolute right-4 transition-transform duration-200"
+										:class="{'rotate-180': open}" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd"
+											d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+											clip-rule="evenodd" />
+									</svg>
+								</button>
+								<div x-show="open" x-transition.opacity.duration.200ms x-cloak
+									class="absolute left-0 right-0 z-50 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl w-full overflow-hidden">
+									<div class="p-2 border-b border-slate-100 bg-slate-50">
+										<input x-ref="searchUtama" x-model="search" type="text"
+											placeholder="Cari Pegawai Utama..."
+											class="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-0 outline-none">
+									</div>
+									<div class="max-h-60 overflow-y-auto scroller">
+										<template x-for="(item, index) in db.pegawai" :key="index">
+											<div x-show="item[1].toLowerCase().includes(search.toLowerCase())"
+												@click="selectUtama(index); open = false; search = ''"
+												class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
+												<span x-text="item[1]"></span>
+											</div>
+										</template>
+									</div>
+								</div>
+							</div>
+
+							<!-- Bagian Pemilihan Pegawai (Inline) -->
+							<div x-data="{ tempIdx: null, tempLabel: '', tempRole: '' }" class="space-y-6"
+								:class="jenisNaskah === 'SPPD' ? 'order-2' : 'order-1'">
+								<!-- Pilih Pegawai Input -->
+								<div class="space-y-2 relative" x-data="{ openPegawai: false, searchPegawai: '' }">
+									<label class="block text-sm font-semibold text-slate-700 pl-1"
+										x-text="jenisNaskah === 'SPPD' ? 'Pilih Pegawai Pengikut (Opsional)' : 'Pilih Pegawai'"></label>
+									<div class="flex gap-2">
+										<button type="button" id="btn-pegawai"
+											@click="openPegawai = !openPegawai; $nextTick(() => $refs.searchP.focus())"
+											@click.outside="openPegawai = false"
+											class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none flex justify-between items-center transition duration-200 relative z-20"
+											:class="errorField === 'btn-pegawai' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+											<span class="truncate block pr-8" x-text="tempLabel || 'Pilih Pegawai...'"
+												:class="{'text-slate-400': !tempLabel}"></span>
+											<svg xmlns="http://www.w3.org/2000/svg"
+												class="h-5 w-5 text-slate-400 absolute right-4 transition-transform duration-200"
+												:class="{'rotate-180': openPegawai}" viewBox="0 0 20 20"
+												fill="currentColor">
+												<path fill-rule="evenodd"
+													d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+													clip-rule="evenodd" />
+											</svg>
+										</button>
+										<button type="button" x-show="jenisNaskah === 'SPPD'"
+											@click="if(tempIdx !== null) { employees.push({idx: tempIdx, label: tempLabel, nip: db.pegawai[tempIdx][2], role: '-'}); tempIdx = null; tempLabel = ''; } else { showError('btn-pegawai'); }"
+											class="flex-none bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 w-12 rounded-xl flex items-center justify-center transition-all shadow-sm">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+												viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+													d="M12 4v16m8-8H4" />
+											</svg>
+										</button>
+									</div>
+									<div x-show="openPegawai" x-transition.opacity.duration.200ms x-cloak
+										class="absolute left-0 right-0 z-[60] mt-1 bg-white border border-slate-100 rounded-xl shadow-xl w-full overflow-hidden">
+										<div class="p-2 border-b border-slate-100 bg-slate-50">
+											<input x-ref="searchP" x-model="searchPegawai" type="text"
+												placeholder="Cari..."
+												class="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-0 outline-none">
+										</div>
+										<div class="max-h-48 overflow-y-auto scroller">
+											<template x-for="(p, i) in db.pegawai" :key="i">
+												<div x-show="p[1].toLowerCase().includes(searchPegawai.toLowerCase())"
+													@click="tempIdx = i; tempLabel = p[1]; openPegawai = false; searchPegawai = ''"
+													class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
+													<span x-text="p[1]"></span>
+												</div>
+											</template>
+										</div>
+									</div>
+								</div>
+
+								<!-- Pilih Jabatan Input (SPT Specific) -->
+								<div class="space-y-2 relative" x-show="jenisNaskah === 'SPT'"
+									x-data="{ openJabatan: false }">
+									<label class="block text-sm font-semibold text-slate-700 pl-1">Jabatan dalam
+										Tim</label>
+									<div class="flex gap-2">
+										<button type="button" id="btn-jabatan" @click="openJabatan = !openJabatan"
+											@click.outside="openJabatan = false"
+											class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none flex justify-between items-center transition duration-200 relative z-10"
+											:class="errorField === 'btn-jabatan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+											<span class="truncate block pr-8" x-text="tempRole || 'Pilih Jabatan...'"
+												:class="{'text-slate-400': !tempRole}"></span>
+											<svg xmlns="http://www.w3.org/2000/svg"
+												class="h-5 w-5 text-slate-400 absolute right-4 transition-transform duration-200"
+												:class="{'rotate-180': openJabatan}" viewBox="0 0 20 20"
+												fill="currentColor">
+												<path fill-rule="evenodd"
+													d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+													clip-rule="evenodd" />
+											</svg>
+										</button>
+										<button type="button" x-show="jenisNaskah === 'SPT'"
+											@click="if(tempIdx !== null && tempRole) { employees.push({idx: tempIdx, label: tempLabel, nip: db.pegawai[tempIdx][2], role: tempRole}); tempIdx = null; tempLabel = ''; tempRole = ''; } else { if (tempIdx === null) showError('btn-pegawai'); else showError('btn-jabatan'); }"
+											class="flex-none bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 w-12 rounded-xl flex items-center justify-center transition-all shadow-sm">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+												viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+													d="M12 4v16m8-8H4" />
+											</svg>
+										</button>
+									</div>
+									<div x-show="openJabatan" x-transition.opacity.duration.200ms x-cloak
+										class="absolute left-0 right-0 z-50 mt-1 bg-white border border-slate-100 rounded-xl shadow-xl w-full max-h-48 overflow-y-auto scroller">
+										<template x-for="(jab, jIdx) in db.jabatanTim" :key="jIdx">
+											<div @click="tempRole = jab[0]; openJabatan = false"
+												class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
+												<span x-text="jab[0]"></span>
+											</div>
+										</template>
+									</div>
+								</div>
+
+								<!-- Daftar Pegawai Terpilih -->
+								<div class="bg-indigo-50/50 rounded-xl border border-indigo-100 mt-4 overflow-hidden shadow-sm"
+									:class="{'hidden': employees.length === 0}">
+									<div class="max-h-64 overflow-y-auto scroller">
+										<template x-for="(emp, index) in employees" :key="index">
+											<div
+												class="flex items-center gap-4 py-3 px-4 border-b border-indigo-100 last:border-0 hover:bg-indigo-50/80 transition-colors duration-150 animate-fade-in-up">
+
+												<div class="flex-none text-slate-700 text-base">
+													<span x-text="(index + 1) + '.'"></span>
+												</div>
+
+												<div class="flex-grow min-w-0 flex items-center">
+													<span class="text-slate-700 text-base truncate block w-full">
+														<span x-text="emp.label"></span>
+														<span class="text-slate-500 text-sm ml-1"
+															x-text="emp.nip ? ' - ' + emp.nip : ''"></span>
+													</span>
+												</div>
+
+												<!-- Delete Button -->
+												<button type="button" @click="removeEmployee(index)" title="Hapus"
+													class="flex-none text-slate-400 hover:text-slate-600 hover:bg-slate-200 h-8 w-8 flex items-center justify-center rounded-lg transition-all duration-200">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+														viewBox="0 0 24 24" stroke="currentColor">
+														<path stroke-linecap="round" stroke-linejoin="round"
+															stroke-width="2"
+															d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+													</svg>
+												</button>
+
+											</div>
+										</template>
+									</div>
+								</div>
+							</div>
+
+							<!-- Custom Dropdown: Pejabat (For SPT ONLY) -->
+							<div x-show="jenisNaskah === 'SPT'" class="space-y-2 relative"
+								:class="jenisNaskah === 'SPT' ? 'order-6' : 'hidden'"
+								x-data="{ open: false, search: '' }">
+								<label class="block text-sm font-semibold text-slate-700 pl-1">Pejabat Penandatangan
+									SPT</label>
+
+								<button type="button" id="btn-pejabat"
+									@click="open = !open; $nextTick(() => $refs.searchInput.focus())"
+									@click.outside="open = false"
+									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
+									:class="errorField === 'btn-pejabat' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									<span class="truncate block pr-8"
+										x-text="selectedPejabatObj ? selectedPejabatObj.label : 'Pilih Pejabat...'"
+										:class="{'text-slate-400': !selectedPejabatObj}"></span>
+									<svg xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5 text-slate-400 absolute right-4 transition-transform duration-200"
+										:class="{'rotate-180': open}" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd"
+											d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+											clip-rule="evenodd" />
+									</svg>
+								</button>
+
+								<div x-show="open" x-transition.opacity.duration.200ms x-cloak
+									class="absolute left-0 right-0 z-50 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl w-full overflow-hidden">
+
+									<div class="p-2 border-b border-slate-100 bg-slate-50">
+										<input x-ref="searchInput" x-model="search" type="text"
+											placeholder="Cari Pejabat..."
+											class="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-0 outline-none">
+									</div>
+
+									<div class="max-h-60 overflow-y-auto scroller">
+										<template x-for="(item, index) in db.pejabat" :key="index">
+											<div x-show="item[1].toLowerCase().includes(search.toLowerCase())"
+												@click="selectPejabat(index); open = false; search = ''"
+												class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
+												<span x-text="item[1]"></span>
+											</div>
+										</template>
+										<div x-show="db.pejabat && db.pejabat.filter(i => i[1].toLowerCase().includes(search.toLowerCase())).length === 0"
+											class="px-4 py-3 text-sm text-slate-400 text-center">
+											Tidak ditemukan
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Submit Button -->
+							<div class="order-last mt-6">
+								<button type="button" @click="handleGenerate()" :disabled="loading"
+									:class="{'opacity-75 cursor-not-allowed': loading}"
+									class="w-full bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-bold py-3 rounded-xl focus:ring-0 transition-all text-sm shadow-sm flex justify-center items-center relative">
+									<span :class="{'invisible': loading}">BUAT SURAT</span>
+									<div x-show="loading" class="absolute inset-0 flex items-center justify-center">
+										<svg class="animate-spin h-5 w-5 text-blue-600"
+											xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+												stroke-width="4">
+											</circle>
+											<path class="opacity-75" fill="currentColor"
+												d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+											</path>
+										</svg>
+									</div>
+								</button>
+							</div>
+
+							<!-- Output container -->
+							<div id="out" class="empty:hidden order-last mt-4" x-html="outputHtml"></div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+	</div>
 	</div>
 
 	<template id="historyItemTemplate">
@@ -2438,6 +3017,24 @@
 				document.getElementById('appInterface').style.display = 'flex';
 				document.getElementById('sidebarEmail').innerText = session.user.email;
 
+				const naskahDinasBtn = document.getElementById('naskahDinasBtn');
+				const naskahDinasScreen = document.getElementById('naskahDinasScreen');
+				const backFromNaskahDinas = document.getElementById('backFromNaskahDinas');
+
+				if (naskahDinasBtn) {
+					naskahDinasBtn.addEventListener('click', () => {
+						naskahDinasScreen.classList.remove('hidden');
+						naskahDinasScreen.classList.add('flex');
+						if (window.lucide) window.lucide.createIcons();
+					});
+				}
+
+				if (backFromNaskahDinas) {
+					backFromNaskahDinas.addEventListener('click', () => {
+						naskahDinasScreen.classList.add('hidden');
+						naskahDinasScreen.classList.remove('flex');
+					});
+				}
 				const settingsBtn = document.getElementById('settingsBtn');
 				settingsBtn.style.display = 'none';
 
@@ -3264,6 +3861,277 @@
 					el.addEventListener('touchstart', preventScrollLock, { passive: true });
 				});
 			});
+		}
+	</script>
+	<script>
+		function naskahDinasApp() {
+			return {
+				db: {},
+				loading: false,
+				loadingData: false,
+				outputHtml: '',
+				isSuccess: false,
+
+				// Form State
+				errorField: null,
+				showError(fieldId) {
+					this.errorField = fieldId;
+					setTimeout(() => { this.errorField = null; }, 3000);
+					const el = document.getElementById(fieldId);
+					if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				},
+
+				jenisNaskah: 'SPT',
+				selectedPengawasanIdx: null,
+				selectedPengawasanObj: null,
+				selectedOpdIdx: null,
+				selectedOpdObj: null,
+				selectedWilayahIdx: null,
+				selectedWilayahObj: null,
+				selectedPejabatIdx: null,
+				selectedPejabatObj: null,
+
+				selectedPptkIdx: null,
+				selectedPptkObj: null,
+
+				selectedUtamaIdx: null,
+				selectedUtamaObj: null,
+
+				selectedAngkutanIdx: null,
+				selectedAngkutanObj: null,
+
+				dasarHukum: '',
+				tglMulai: '',
+				tglAkhir: '',
+				employees: [],
+				alatAngkut: '',
+
+				async init() {
+					const today = new Date().toISOString().split('T')[0];
+					this.tglMulai = today;
+					this.tglAkhir = today;
+
+					// Cek LocalStorage - Gunakan v2 untuk load ulang default & alat angkut
+					const cachedData = localStorage.getItem('spt_db_v2');
+					if (cachedData) {
+						this.db = JSON.parse(cachedData);
+						this.setDefaults();
+					} else {
+						await this.syncData();
+					}
+				},
+
+				async syncData() {
+					this.loadingData = true;
+					try {
+						const URL_BACKEND = 'https://script.google.com/macros/s/AKfycbzqxHzsJfNfZb3ok1JPLjw-TKYK_2MmeJe0V0HgJDP0HWEFa2OWcdb18469NclWRQiRrg/exec';
+						const response = await fetch(URL_BACKEND, {
+							method: 'POST',
+							body: JSON.stringify({ action: 'getInitialData' })
+						});
+						const data = await response.json();
+						this.db = data;
+						localStorage.setItem('spt_db_v2', JSON.stringify(data));
+						this.setDefaults();
+
+						// Opsional: feedback visual jika mau
+					} catch (e) {
+						alert("Gagal memuat data: " + e);
+					} finally {
+						this.loadingData = false;
+					}
+				},
+
+				selectPengawasan(index) {
+					this.selectedPengawasanIdx = index;
+					this.selectedPengawasanObj = { label: this.db.pengawasan[index][0], val: this.db.pengawasan[index] };
+					// Sync Dasar Hukum
+					if (this.db.pengawasan[index]) {
+						this.dasarHukum = this.db.pengawasan[index][1];
+					}
+				},
+
+				selectOpd(index) {
+					this.selectedOpdIdx = index;
+					this.selectedOpdObj = { label: this.db.opd[index][0], val: this.db.opd[index] };
+				},
+
+				selectWilayah(index) {
+					this.selectedWilayahIdx = index;
+					this.selectedWilayahObj = { label: this.db.wilayah[index][0], val: this.db.wilayah[index] };
+				},
+
+				selectPejabat(index) {
+					this.selectedPejabatIdx = index;
+					this.selectedPejabatObj = { label: this.db.pejabat[index][1], val: this.db.pejabat[index] };
+				},
+
+				selectPptk(index) {
+					this.selectedPptkIdx = index;
+					this.selectedPptkObj = { label: this.db.pejabat[index][1], val: this.db.pejabat[index] };
+				},
+
+				selectUtama(index) {
+					this.selectedUtamaIdx = index;
+					this.selectedUtamaObj = { label: this.db.pegawai[index][1], val: this.db.pegawai[index] };
+				},
+
+				selectAngkutan(index) {
+					this.selectedAngkutanIdx = index;
+					this.selectedAngkutanObj = { label: this.db.angkutan[index][0], val: this.db.angkutan[index] };
+					this.alatAngkut = this.db.angkutan[index][0];
+				},
+
+				setDefaults() {
+					// Default Wilayah: Provinsi Lampung
+					if (this.db.wilayah) {
+						const wIdx = this.db.wilayah.findIndex(w => w[0].toLowerCase().includes('provinsi lampung'));
+						if (wIdx !== -1) this.selectWilayah(wIdx);
+					}
+					// Default Pejabat: Dra. Bayana, M.Si., CGCEA
+					if (this.db.pejabat) {
+						const pIdx = this.db.pejabat.findIndex(p =>
+							p[1] && p[1].toLowerCase().includes('bayana')
+						);
+						if (pIdx !== -1) {
+							this.selectPejabat(pIdx);
+						} else {
+							// Fallback jika tidak ketemu, cari yang ada kata 'Inspektur'
+							const altIdx = this.db.pejabat.findIndex(p =>
+								(p[4] && p[4].toLowerCase().includes('inspektur'))
+							);
+							if (altIdx !== -1) this.selectPejabat(altIdx);
+						}
+					}
+				},
+
+				addEmployee() {
+					this.employees.push({ idx: null, label: null, role: '' });
+				},
+
+				removeEmployee(index) {
+					this.employees.splice(index, 1);
+				},
+
+				async handleGenerate() {
+					this.loading = true;
+					this.outputHtml = '';
+
+					try {
+						// Validation
+						if (this.selectedPengawasanIdx === null) { this.loading = false; return this.showError('btn-pengawasan'); }
+						if (this.selectedOpdIdx === null) { this.loading = false; return this.showError('btn-opd'); }
+						if (this.selectedWilayahIdx === null) { this.loading = false; return this.showError('btn-wilayah'); }
+						if (!this.tglMulai) { this.loading = false; return this.showError('input-tglmulai'); }
+						if (!this.tglAkhir) { this.loading = false; return this.showError('input-tglakhir'); }
+
+						// Safely unwrap proxies
+						const rawDb = JSON.parse(JSON.stringify(this.db));
+						const rawEmpsList = JSON.parse(JSON.stringify(this.employees));
+
+						if (this.jenisNaskah === 'SPT' && rawEmpsList.length === 0) { this.loading = false; return this.showError('btn-pegawai'); }
+
+						let emps = rawEmpsList.map(e => {
+							if (e.idx === null) throw new Error("Pilih Nama Pegawai");
+							const p = rawDb.pegawai[e.idx];
+							return { nama: p[1], nip: p[2], pangkat: p[3], jabatan: p[4], tglLahir: p[5], jabatanTim: e.role };
+						});
+
+						// Jika SPPD, sisipkan pegawai utama ke paling awal daftar
+						if (this.jenisNaskah === 'SPPD') {
+							if (this.selectedUtamaIdx === null) { this.loading = false; return this.showError('btn-utama'); }
+							const u = rawDb.pegawai[this.selectedUtamaIdx];
+							const utamaEmp = { nama: u[1], nip: u[2], pangkat: u[3], jabatan: u[4], tglLahir: u[5], jabatanTim: '' };
+							emps = [utamaEmp, ...emps];
+						}
+
+						// Default Pejabat Penandatangan untuk SPT
+						let pjData = {};
+						if (this.jenisNaskah === 'SPT') {
+							const pj = rawDb.pejabat[this.selectedPejabatIdx];
+							if (!pj) { this.loading = false; return this.showError('btn-pejabat'); }
+							pjData = { nama: pj[1], nip: pj[2], pangkat: pj[3], jabatan: pj[4] };
+						}
+
+						// PPTK validation for SPPD
+						let pptkObj = {};
+						if (this.jenisNaskah === 'SPPD') {
+							if (this.selectedAngkutanIdx === null) { this.loading = false; return this.showError('btn-angkutan'); }
+							const pk = rawDb.pejabat[this.selectedPptkIdx];
+							if (!pk) { this.loading = false; return this.showError('btn-pptk'); }
+							pptkObj = { nama: pk[1], nip: pk[2], pangkat: pk[3], jabatan: pk[4] };
+						}
+
+						const payload = {
+							action: 'generateDocument',
+							data: {
+								jenisNaskah: this.jenisNaskah,
+								jenisPengawasan: rawDb.pengawasan[this.selectedPengawasanIdx][0],
+								dasarHukum: this.dasarHukum,
+								opd: rawDb.opd[this.selectedOpdIdx][0],
+								wilayah: rawDb.wilayah[this.selectedWilayahIdx][0],
+								tglMulai: this.tglMulai,
+								tglBerakhir: this.tglAkhir,
+								selectedEmployees: emps,
+								pejabatData: pjData,
+								pptkData: pptkObj,
+
+								// SPPD Extras
+								alatAngkut: this.selectedAngkutanObj ? this.selectedAngkutanObj.label : ''
+							}
+						};
+
+						const URL_BACKEND = 'https://script.google.com/macros/s/AKfycbzqxHzsJfNfZb3ok1JPLjw-TKYK_2MmeJe0V0HgJDP0HWEFa2OWcdb18469NclWRQiRrg/exec';
+						const response = await fetch(URL_BACKEND, { method: 'POST', body: JSON.stringify(payload) });
+						const res = await response.json();
+
+						if (res.error) throw new Error(res.error);
+						if (!res.fileId) throw new Error("Gagal: ID File tidak diterima dari server.");
+
+						// URLs
+						const urlDocx = `https://docs.google.com/document/d/${res.fileId}/export?format=docx`;
+						const urlPdf = `https://docs.google.com/document/d/${res.fileId}/export?format=pdf`;
+
+						this.isSuccess = true;
+
+						// Tampilkan Pilihan Download
+						this.outputHtml = `
+                            <div class="mt-2 animate-fade-in-up">
+                                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p class="text-emerald-700 text-sm font-semibold">Silahkan Pilih Format Dokumen untuk di Unduh</p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <a href="${urlPdf}" download class="flex items-center justify-center bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 font-bold py-3 rounded-xl transition-all shadow-sm text-sm tracking-wide">
+                                        PDF
+                                    </a>
+                                    <a href="${urlDocx}" download class="flex items-center justify-center bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 font-bold py-3 rounded-xl transition-all shadow-sm text-sm tracking-wide">
+                                        DOCX
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+					} catch (e) {
+						this.outputHtml = `
+                            <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center gap-3">
+                                 <svg class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                 <div>
+                                    <p class="font-bold">Terjadi Kesalahan</p>
+                                    <p class="text-sm">${e.message}</p>
+                                </div>
+                            </div>
+                        `;
+					} finally {
+						this.loading = false;
+						setTimeout(() => {
+							const outEl = document.getElementById('out');
+							if (outEl) outEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+						}, 100);
+					}
+				}
+			}
 		}
 	</script>
 </body>
