@@ -809,10 +809,11 @@
 						<div class="flex flex-col gap-6">
 
 							<!-- Custom Dropdown: Jenis Naskah Dinas -->
-							<div class="space-y-2 relative order-none flex-none mb-4" x-data="{ open: false }">
+							<div class="space-y-2 relative order-none flex-none mb-4" x-data="{ open: false }"
+								@click.outside="open = false">
 								<label class="block text-sm font-semibold text-slate-700 pl-1">Jenis Naskah
 									Dinas</label>
-								<button type="button" @click="open = !open" @click.outside="open = false"
+								<button type="button" @click="open = !open"
 									class="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-3 text-left focus:ring-0 outline-none flex justify-between items-center transition duration-200 relative z-10">
 									<span class="truncate block pr-8"
 										x-text="jenisNaskah === 'SPT' ? 'Surat Perintah Tugas (SPT)' : 'Surat Perjalanan Dinas (SPPD)'"></span>
@@ -841,12 +842,11 @@
 
 							<!-- Custom Dropdown: Jenis Pengawasan -->
 							<div class="space-y-2 relative" :class="jenisNaskah === 'SPPD' ? 'order-3' : 'order-1'"
-								x-data="{ open: false, search: '' }">
+								x-data="{ open: false, search: '' }" @click.outside="open = false">
 								<label class="block text-sm font-semibold text-slate-700 pl-1">Jenis Pengawasan</label>
 
 								<button type="button" id="btn-pengawasan"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
-									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-pengawasan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
 									<span class="truncate block pr-8"
@@ -891,13 +891,12 @@
 
 							<!-- Custom Dropdown: OPD -->
 							<div class="space-y-2 relative" :class="jenisNaskah === 'SPPD' ? 'order-4' : 'order-2'"
-								x-data="{ open: false, search: '' }">
+								x-data="{ open: false, search: '' }" @click.outside="open = false">
 								<label class="block text-sm font-semibold text-slate-700 pl-1">Perangkat Daerah
 									(OPD)</label>
 
 								<button type="button" id="btn-opd"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
-									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-opd' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
 									<span class="truncate block pr-8"
@@ -946,12 +945,11 @@
 
 							<!-- Custom Dropdown: Wilayah -->
 							<div class="space-y-2 relative" :class="jenisNaskah === 'SPPD' ? 'order-5' : 'order-3'"
-								x-data="{ open: false, search: '' }">
+								x-data="{ open: false, search: '' }" @click.outside="open = false">
 								<label class="block text-sm font-semibold text-slate-700 pl-1">Wilayah</label>
 
 								<button type="button" id="btn-wilayah"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
-									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-wilayah' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
 									<span class="truncate block pr-8"
@@ -1012,11 +1010,10 @@
 							<!-- SPPD Specific Fields -->
 							<!-- Custom Dropdown: Alat Angkut (SPPD Specific) -->
 							<div x-show="jenisNaskah === 'SPPD'" class="space-y-2 relative order-7"
-								x-data="{ open: false, search: '' }">
+								x-data="{ open: false, search: '' }" @click.outside="open = false">
 								<label class="block text-sm font-semibold text-slate-700 pl-1">Alat Angkut</label>
 								<button type="button" id="btn-angkutan"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchAngkutan.focus())"
-									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-angkutan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
 									<span class="truncate block pr-8"
@@ -1051,13 +1048,12 @@
 
 							<!-- Custom Dropdown: PPTK SPPD (dari Data Pejabat) -->
 							<div x-show="jenisNaskah === 'SPPD'" class="space-y-2 relative order-8"
-								x-data="{ open: false, search: '' }">
+								x-data="{ open: false, search: '' }" @click.outside="open = false">
 								<label class="block text-sm font-semibold text-slate-700 pl-1">PPTK Kegiatan (Pilih
 									Pejabat)</label>
 
 								<button type="button" id="btn-pptk"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchPptk.focus())"
-									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-pptk' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
 									<span class="truncate block pr-8"
@@ -1094,12 +1090,11 @@
 							<!-- Custom Dropdown: Pegawai Utama (SPPD Only) -->
 							<div x-show="jenisNaskah === 'SPPD'" class="space-y-2 relative"
 								:class="jenisNaskah === 'SPPD' ? 'order-1' : 'hidden'"
-								x-data="{ open: false, search: '' }">
+								x-data="{ open: false, search: '' }" @click.outside="open = false">
 								<label class="block text-sm font-semibold text-slate-700 pl-1">Pilih Pegawai
 									Utama</label>
 								<button type="button" id="btn-utama"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchUtama.focus())"
-									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-utama' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
 									<span class="truncate block pr-8"
@@ -1136,13 +1131,13 @@
 							<div x-data="{ tempIdx: null, tempLabel: '', tempRole: '' }" class="space-y-6"
 								:class="jenisNaskah === 'SPPD' ? 'order-2' : 'order-1'">
 								<!-- Pilih Pegawai Input -->
-								<div class="space-y-2 relative" x-data="{ openPegawai: false, searchPegawai: '' }">
+								<div class="space-y-2 relative" x-data="{ openPegawai: false, searchPegawai: '' }"
+									@click.outside="openPegawai = false">
 									<label class="block text-sm font-semibold text-slate-700 pl-1"
 										x-text="jenisNaskah === 'SPPD' ? 'Pilih Pegawai Pengikut (Opsional)' : 'Pilih Pegawai'"></label>
 									<div class="flex gap-2">
 										<button type="button" id="btn-pegawai"
 											@click="openPegawai = !openPegawai; window.innerWidth > 768 && $nextTick(() => $refs.searchP.focus())"
-											@click.outside="openPegawai = false"
 											class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none flex justify-between items-center transition duration-200 relative z-20"
 											:class="errorField === 'btn-pegawai' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
 											<span class="truncate block pr-8" x-text="tempLabel || 'Pilih Pegawai...'"
@@ -1187,12 +1182,11 @@
 
 								<!-- Pilih Jabatan Input (SPT Specific) -->
 								<div class="space-y-2 relative" x-show="jenisNaskah === 'SPT'"
-									x-data="{ openJabatan: false }">
+									x-data="{ openJabatan: false }" @click.outside="openJabatan = false">
 									<label class="block text-sm font-semibold text-slate-700 pl-1">Jabatan dalam
 										Tim</label>
 									<div class="flex gap-2">
 										<button type="button" id="btn-jabatan" @click="openJabatan = !openJabatan"
-											@click.outside="openJabatan = false"
 											class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none flex justify-between items-center transition duration-200 relative z-10"
 											:class="errorField === 'btn-jabatan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
 											<span class="truncate block pr-8" x-text="tempRole || 'Pilih Jabatan...'"
@@ -1267,13 +1261,12 @@
 							<!-- Custom Dropdown: Pejabat (For SPT ONLY) -->
 							<div x-show="jenisNaskah === 'SPT'" class="space-y-2 relative"
 								:class="jenisNaskah === 'SPT' ? 'order-6' : 'hidden'"
-								x-data="{ open: false, search: '' }">
+								x-data="{ open: false, search: '' }" @click.outside="open = false">
 								<label class="block text-sm font-semibold text-slate-700 pl-1">Pejabat Penandatangan
 									SPT</label>
 
 								<button type="button" id="btn-pejabat"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
-									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-pejabat' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
 									<span class="truncate block pr-8"
