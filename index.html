@@ -1339,28 +1339,16 @@
 
 	<template id="historyItemTemplate">
 		<div
-			class="history-item-root group relative flex items-center justify-between w-full rounded-xl mb-1 pr-1.5 transition-all">
+			class="history-item-root group relative flex items-center justify-between w-full rounded-xl mb-1 px-2 transition-all">
 			<button
-				class="history-title-btn flex-1 text-left truncate py-2 pl-4 text-[13px] font-medium font-sans outline-none text-slate-600">
+				class="history-title-btn flex-1 text-left truncate py-2 pl-2 text-[13px] font-medium font-sans outline-none text-slate-600">
 				Percakapan Baru
 			</button>
-			<div class="relative shrink-0">
+			<div class="relative shrink-0 flex items-center ml-1">
 				<button
-					class="history-menu-btn p-1.5 rounded-lg text-slate-400 hover:text-slate-600 transition-all opacity-0 group-hover:opacity-100">
-					<i data-lucide="more-vertical" class="w-4 h-4"></i>
+					class="history-delete-btn p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100">
+					<i data-lucide="trash-2" class="w-[13px] h-[13px]"></i>
 				</button>
-				<div
-					class="history-dropdown hidden absolute right-0 top-10 w-36 bg-white rounded-xl shadow-xl border border-slate-100 z-50 flex-col p-1.5 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-					<button
-						class="history-rename-btn w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-lg flex items-center gap-2 transition-colors">
-						<i data-lucide="pencil" class="w-3.5 h-3.5 text-slate-400"></i> Ganti Nama
-					</button>
-					<div class="h-px bg-slate-100 my-1"></div>
-					<button
-						class="history-delete-btn w-full text-left px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 transition-colors">
-						<i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-500"></i> Hapus
-					</button>
-				</div>
 			</div>
 		</div>
 	</template>
@@ -2457,44 +2445,18 @@
 				}
 				titleBtn.onclick = () => loadSession(s.id);
 
-				// Menu Button
-				const menuBtn = clone.querySelector('.history-menu-btn');
-				if (isActive) {
-					menuBtn.classList.remove('opacity-0');
-					menuBtn.classList.add('opacity-100');
-				}
-
-				// Dropdown Logic
-				const dropdown = clone.querySelector('.history-dropdown');
-				const dropdownId = `menu-dropout-${s.id}`;
-				dropdown.id = dropdownId;
-
-				menuBtn.onclick = (e) => {
-					e.stopPropagation();
-					document.querySelectorAll('[id^="menu-dropout-"]').forEach(el => {
-						if (el.id !== dropdownId) el.classList.add('hidden');
-					});
-					dropdown.classList.toggle('hidden');
-				};
-
-				// Rename & Delete Actions
-				const renameBtn = clone.querySelector('.history-rename-btn');
-				renameBtn.onclick = () => handleRenameClick(s.id, (s.title || "").replace(/'/g, "\\'"));
-
+				// Delete Button
 				const deleteBtn = clone.querySelector('.history-delete-btn');
-				deleteBtn.onclick = () => handleDeleteClick(s.id);
+
+				deleteBtn.onclick = (e) => {
+					e.stopPropagation();
+					handleDeleteClick(s.id);
+				};
 
 				list.appendChild(clone);
 			});
 
 			lucide.createIcons();
-
-			// Global listener to close dropdowns
-			document.addEventListener('click', (e) => {
-				if (!e.target.closest('[id^="menu-dropout-"]') && !e.target.closest('button')) {
-					document.querySelectorAll('[id^="menu-dropout-"]').forEach(el => el.classList.add('hidden'));
-				}
-			});
 		}
 
 		// handleRenameClick dipindahkan ke bagian bawah file (menggunakan Modal)
@@ -3457,8 +3419,6 @@
 		let currentDeleteId = null;
 
 		function handleDeleteClick(id) {
-			// Sembunyikan dropdown menu
-			document.getElementById(`menu-dropout-${id}`)?.classList.add('hidden');
 
 			currentDeleteId = id;
 			const modal = document.getElementById('deleteModal');
