@@ -301,7 +301,7 @@
 
 		.prose th,
 		.prose td {
-			border: 1px solid #cbd5e1;
+			border: 0.5px solid #e2e8f0;
 			padding: 0.75rem 1rem;
 			text-align: left;
 			white-space: normal;
@@ -312,6 +312,8 @@
 		.prose th {
 			font-weight: 700;
 			color: #475569;
+			text-align: center;
+			vertical-align: middle;
 		}
 
 		.prose blockquote {
@@ -521,7 +523,7 @@
 				</div>
 				<div class="flex items-center gap-1">
 					<button id="naskahDinasBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95"
-						title="Naskah Dinas"><i data-lucide="file-text" class="w-6 h-6"></i></button>
+						title="Naskah Dinas"><i data-lucide="file-signature" class="w-6 h-6"></i></button>
 					<button id="settingsBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95"><i
 							data-lucide="settings-2" class="w-6 h-6"></i></button>
 					<button id="menuBtn" class="p-2.5 text-slate-400 rounded-xl active:scale-95 -mr-2.5"><i
@@ -787,9 +789,15 @@
 	</div>
 	<div id="naskahDinasScreen" class="fixed inset-0 bg-white z-[200] hidden flex-col" x-data="naskahDinasApp()">
 		<header class="h-16 px-4 md:px-8 flex items-center border-b border-slate-100 shrink-0 relative bg-white">
-			<div class="flex items-center z-10">
-				<button id="backFromNaskahDinas" class="p-2 -ml-2 text-slate-400 active:scale-90">
+			<div class="flex items-center z-10 w-full justify-between">
+				<button id="backFromNaskahDinas" class="p-2 -ml-2 text-slate-400 active:scale-90 transition-transform">
 					<i data-lucide="chevron-left" class="w-6 h-6"></i>
+				</button>
+				<button @click="syncData()"
+					class="p-2 -mr-2 text-slate-400 active:scale-90 hover:text-slate-600 transition-all flex items-center justify-center"
+					title="Sinkronkan Database Master">
+					<i data-lucide="refresh-cw" class="w-5 h-5"
+						:class="{'animate-spin text-blue-500': loadingData}"></i>
 				</button>
 			</div>
 			<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -807,10 +815,12 @@
 							<!-- Custom Dropdown: Jenis Naskah Dinas -->
 							<div class="space-y-2 relative order-none flex-none mb-4" x-data="{ open: false }"
 								@click.outside="open = false">
-								<label class="block text-sm font-semibold text-slate-700 pl-1">Jenis Naskah
+								<label
+									class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Jenis
+									Naskah
 									Dinas</label>
 								<button type="button" @click="open = !open"
-									class="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-3 text-left focus:ring-0 outline-none flex justify-between items-center transition duration-200 relative z-10">
+									class="w-full bg-slate-100 border-none text-slate-700 rounded-xl p-3 text-left focus:ring-0 outline-none flex justify-between items-center transition duration-200 relative z-10">
 									<span class="truncate block pr-8"
 										x-text="jenisNaskah === 'SPT' ? 'Surat Perintah Tugas (SPT)' : 'Surat Perjalanan Dinas (SPPD)'"></span>
 									<svg xmlns="http://www.w3.org/2000/svg"
@@ -839,12 +849,14 @@
 							<!-- Custom Dropdown: Jenis Pengawasan -->
 							<div class="space-y-2 relative" :class="jenisNaskah === 'SPPD' ? 'order-3' : 'order-1'"
 								x-data="{ open: false, search: '' }" @click.outside="open = false">
-								<label class="block text-sm font-semibold text-slate-700 pl-1">Jenis Pengawasan</label>
+								<label
+									class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Jenis
+									Pengawasan</label>
 
 								<button type="button" id="btn-pengawasan"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
-									:class="errorField === 'btn-pengawasan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									:class="errorField === 'btn-pengawasan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border-none text-slate-700'">
 									<span class="truncate block pr-8"
 										x-text="selectedPengawasanObj ? selectedPengawasanObj.label : 'Pilih Jenis Pengawasan...'"
 										:class="{'text-slate-400': !selectedPengawasanObj}"></span>
@@ -888,13 +900,14 @@
 							<!-- Custom Dropdown: OPD -->
 							<div class="space-y-2 relative" :class="jenisNaskah === 'SPPD' ? 'order-4' : 'order-2'"
 								x-data="{ open: false, search: '' }" @click.outside="open = false">
-								<label class="block text-sm font-semibold text-slate-700 pl-1">Perangkat Daerah
-									(OPD)</label>
+								<label
+									class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">OPD
+									TUJUAN</label>
 
 								<button type="button" id="btn-opd"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
-									:class="errorField === 'btn-opd' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									:class="errorField === 'btn-opd' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border-none text-slate-700'">
 									<span class="truncate block pr-8"
 										x-text="selectedOpdObj ? selectedOpdObj.label : 'Pilih OPD...'"
 										:class="{'text-slate-400': !selectedOpdObj}"></span>
@@ -934,7 +947,9 @@
 
 							<!-- Dasar Hukum (Hidden) -->
 							<div class="hidden">
-								<label class="block text-sm font-semibold text-slate-700 mb-2 pl-1">Dasar Hukum</label>
+								<label
+									class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Dasar
+									Hukum</label>
 								<textarea x-model="dasarHukum" rows="4" readonly
 									class="w-full bg-slate-100 border-transparent text-slate-600 rounded-xl p-4 outline-none focus:ring-0 resize-none text-sm leading-relaxed"></textarea>
 							</div>
@@ -942,12 +957,14 @@
 							<!-- Custom Dropdown: Wilayah -->
 							<div class="space-y-2 relative" :class="jenisNaskah === 'SPPD' ? 'order-5' : 'order-3'"
 								x-data="{ open: false, search: '' }" @click.outside="open = false">
-								<label class="block text-sm font-semibold text-slate-700 pl-1">Wilayah</label>
+								<label
+									class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">WILAYAH
+									TUJUAN</label>
 
 								<button type="button" id="btn-wilayah"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
-									:class="errorField === 'btn-wilayah' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									:class="errorField === 'btn-wilayah' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border-none text-slate-700'">
 									<span class="truncate block pr-8"
 										x-text="selectedWilayahObj ? selectedWilayahObj.label : 'Pilih Wilayah...'"
 										:class="{'text-slate-400': !selectedWilayahObj}"></span>
@@ -988,18 +1005,20 @@
 							<!-- Date Stacked -->
 							<div class="grid grid-cols-1 gap-6" :class="jenisNaskah === 'SPPD' ? 'order-6' : 'order-4'">
 								<div>
-									<label class="block text-sm font-semibold text-slate-700 mb-2 pl-1">Tanggal
+									<label
+										class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Tanggal
 										Mulai</label>
 									<input type="date" id="input-tglmulai" x-model="tglMulai"
 										class="w-full rounded-xl p-3 outline-none transition duration-200"
-										:class="errorField === 'input-tglmulai' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'">
+										:class="errorField === 'input-tglmulai' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border-none text-slate-700 focus:ring-2 focus:ring-slate-300 focus:border-slate-300'">
 								</div>
 								<div>
-									<label class="block text-sm font-semibold text-slate-700 mb-2 pl-1">Tanggal
+									<label
+										class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Tanggal
 										Berakhir</label>
 									<input type="date" id="input-tglakhir" x-model="tglAkhir"
 										class="w-full rounded-xl p-3 outline-none transition duration-200"
-										:class="errorField === 'input-tglakhir' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'">
+										:class="errorField === 'input-tglakhir' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border-none text-slate-700 focus:ring-2 focus:ring-slate-300 focus:border-slate-300'">
 								</div>
 							</div>
 
@@ -1007,11 +1026,13 @@
 							<!-- Custom Dropdown: Alat Angkut (SPPD Specific) -->
 							<div x-show="jenisNaskah === 'SPPD'" class="space-y-2 relative order-7"
 								x-data="{ open: false, search: '' }" @click.outside="open = false">
-								<label class="block text-sm font-semibold text-slate-700 pl-1">Alat Angkut</label>
+								<label
+									class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Alat
+									Angkut</label>
 								<button type="button" id="btn-angkutan"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchAngkutan.focus())"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
-									:class="errorField === 'btn-angkutan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									:class="errorField === 'btn-angkutan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border-none text-slate-700'">
 									<span class="truncate block pr-8"
 										x-text="selectedAngkutanObj ? selectedAngkutanObj.label : 'Pilih Alat Angkut...'"
 										:class="{'text-slate-400': !selectedAngkutanObj}"></span>
@@ -1042,16 +1063,17 @@
 								</div>
 							</div>
 
-							<!-- Custom Dropdown: PPTK SPPD (dari Data Pejabat) -->
+							<!-- Custom Dropdown: PPTK SPPD (dari Data PPTK) -->
 							<div x-show="jenisNaskah === 'SPPD'" class="space-y-2 relative order-8"
 								x-data="{ open: false, search: '' }" @click.outside="open = false">
-								<label class="block text-sm font-semibold text-slate-700 pl-1">PPTK Kegiatan (Pilih
-									Pejabat)</label>
+								<label
+									class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">PPTK
+									KEGIATAN</label>
 
 								<button type="button" id="btn-pptk"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchPptk.focus())"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
-									:class="errorField === 'btn-pptk' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									:class="errorField === 'btn-pptk' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border-none text-slate-700'">
 									<span class="truncate block pr-8"
 										x-text="selectedPptkObj ? selectedPptkObj.label : 'Pilih PPTK...'"
 										:class="{'text-slate-400': !selectedPptkObj}"></span>
@@ -1072,7 +1094,7 @@
 											class="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:ring-0 outline-none">
 									</div>
 									<div class="max-h-60 overflow-y-auto scroller">
-										<template x-for="(item, index) in db.pejabat" :key="index">
+										<template x-for="(item, index) in db.pptk" :key="index">
 											<div x-show="item[1].toLowerCase().includes(search.toLowerCase())"
 												@click="selectPptk(index); open = false; search = ''"
 												class="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0 transition-colors duration-150">
@@ -1087,12 +1109,13 @@
 							<div x-show="jenisNaskah === 'SPPD'" class="space-y-2 relative"
 								:class="jenisNaskah === 'SPPD' ? 'order-1' : 'hidden'"
 								x-data="{ open: false, search: '' }" @click.outside="open = false">
-								<label class="block text-sm font-semibold text-slate-700 pl-1">Pilih Pegawai
-									Utama</label>
+								<label
+									class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">PEGAWAI
+									UTAMA</label>
 								<button type="button" id="btn-utama"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchUtama.focus())"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
-									:class="errorField === 'btn-utama' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									:class="errorField === 'btn-utama' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border-none text-slate-700'">
 									<span class="truncate block pr-8"
 										x-text="selectedUtamaObj ? selectedUtamaObj.label : 'Cari Pegawai Utama...'"
 										:class="{'text-slate-400': !selectedUtamaObj}"></span>
@@ -1129,13 +1152,14 @@
 								<!-- Pilih Pegawai Input -->
 								<div class="space-y-2 relative" x-data="{ openPegawai: false, searchPegawai: '' }"
 									@click.outside="openPegawai = false">
-									<label class="block text-sm font-semibold text-slate-700 pl-1"
-										x-text="jenisNaskah === 'SPPD' ? 'Pilih Pegawai Pengikut (Opsional)' : 'Pilih Pegawai'"></label>
+									<label
+										class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1"
+										x-text="jenisNaskah === 'SPPD' ? 'PEGAWAI PENGIKUT' : 'PILIH PEGAWAI'"></label>
 									<div class="flex gap-2">
 										<button type="button" id="btn-pegawai"
 											@click="openPegawai = !openPegawai; window.innerWidth > 768 && $nextTick(() => $refs.searchP.focus())"
 											class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none flex justify-between items-center transition duration-200 relative z-20"
-											:class="errorField === 'btn-pegawai' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+											:class="errorField === 'btn-pegawai' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border-none text-slate-700'">
 											<span class="truncate block pr-8" x-text="tempLabel || 'Pilih Pegawai...'"
 												:class="{'text-slate-400': !tempLabel}"></span>
 											<svg xmlns="http://www.w3.org/2000/svg"
@@ -1149,7 +1173,7 @@
 										</button>
 										<button type="button" x-show="jenisNaskah === 'SPPD'"
 											@click="if(tempIdx !== null) { employees.push({idx: tempIdx, label: tempLabel, nip: db.pegawai[tempIdx][2], role: '-'}); tempIdx = null; tempLabel = ''; } else { showError('btn-pegawai'); }"
-											class="flex-none bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 w-12 rounded-xl flex items-center justify-center transition-all shadow-sm">
+											class="flex-none text-slate-400 hover:text-slate-600 active:scale-90 w-12 rounded-xl flex items-center justify-center transition-all">
 											<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
 												viewBox="0 0 24 24" stroke="currentColor">
 												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1179,12 +1203,14 @@
 								<!-- Pilih Jabatan Input (SPT Specific) -->
 								<div class="space-y-2 relative" x-show="jenisNaskah === 'SPT'"
 									x-data="{ openJabatan: false }" @click.outside="openJabatan = false">
-									<label class="block text-sm font-semibold text-slate-700 pl-1">Jabatan dalam
+									<label
+										class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Jabatan
+										dalam
 										Tim</label>
 									<div class="flex gap-2">
 										<button type="button" id="btn-jabatan" @click="openJabatan = !openJabatan"
 											class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none flex justify-between items-center transition duration-200 relative z-10"
-											:class="errorField === 'btn-jabatan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+											:class="errorField === 'btn-jabatan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border-none text-slate-700'">
 											<span class="truncate block pr-8" x-text="tempRole || 'Pilih Jabatan...'"
 												:class="{'text-slate-400': !tempRole}"></span>
 											<svg xmlns="http://www.w3.org/2000/svg"
@@ -1198,7 +1224,7 @@
 										</button>
 										<button type="button" x-show="jenisNaskah === 'SPT'"
 											@click="if(tempIdx !== null && tempRole) { employees.push({idx: tempIdx, label: tempLabel, nip: db.pegawai[tempIdx][2], role: tempRole}); tempIdx = null; tempLabel = ''; tempRole = ''; } else { if (tempIdx === null) showError('btn-pegawai'); else showError('btn-jabatan'); }"
-											class="flex-none bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 w-12 rounded-xl flex items-center justify-center transition-all shadow-sm">
+											class="flex-none text-slate-400 hover:text-slate-600 active:scale-90 w-12 rounded-xl flex items-center justify-center transition-all">
 											<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
 												viewBox="0 0 24 24" stroke="currentColor">
 												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1218,21 +1244,21 @@
 								</div>
 
 								<!-- Daftar Pegawai Terpilih -->
-								<div class="bg-indigo-50/50 rounded-xl border border-indigo-100 mt-4 overflow-hidden shadow-sm"
+								<div class="bg-slate-50/50 rounded-xl border border-slate-100 mt-4 overflow-hidden shadow-sm"
 									:class="{'hidden': employees.length === 0}">
 									<div class="max-h-64 overflow-y-auto scroller">
 										<template x-for="(emp, index) in employees" :key="index">
 											<div
-												class="flex items-center gap-4 py-3 px-4 border-b border-indigo-100 last:border-0 hover:bg-indigo-50/80 transition-colors duration-150 animate-fade-in-up">
+												class="flex items-center gap-4 py-3 px-4 border-b border-slate-100 last:border-0 hover:bg-slate-100 transition-colors duration-150 animate-fade-in-up">
 
-												<div class="flex-none text-slate-700 text-base">
+												<div class="flex-none text-slate-700 text-sm font-semibold">
 													<span x-text="(index + 1) + '.'"></span>
 												</div>
 
 												<div class="flex-grow min-w-0 flex items-center">
-													<span class="text-slate-700 text-base truncate block w-full">
+													<span class="text-slate-700 text-sm truncate block w-full">
 														<span x-text="emp.label"></span>
-														<span class="text-slate-500 text-sm ml-1"
+														<span class="text-slate-500 ml-1"
 															x-text="emp.nip ? ' - ' + emp.nip : ''"></span>
 													</span>
 												</div>
@@ -1258,13 +1284,14 @@
 							<div x-show="jenisNaskah === 'SPT'" class="space-y-2 relative"
 								:class="jenisNaskah === 'SPT' ? 'order-6' : 'hidden'"
 								x-data="{ open: false, search: '' }" @click.outside="open = false">
-								<label class="block text-sm font-semibold text-slate-700 pl-1">Pejabat Penandatangan
-									SPT</label>
+								<label
+									class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">PEJABAT
+									PENANDATANGAN</label>
 
 								<button type="button" id="btn-pejabat"
 									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
-									:class="errorField === 'btn-pejabat' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
+									:class="errorField === 'btn-pejabat' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border-none text-slate-700'">
 									<span class="truncate block pr-8"
 										x-text="selectedPejabatObj ? selectedPejabatObj.label : 'Pilih Pejabat...'"
 										:class="{'text-slate-400': !selectedPejabatObj}"></span>
@@ -1306,11 +1333,11 @@
 							<div class="order-last mt-6">
 								<button type="button" @click="handleGenerate()" :disabled="loading"
 									:class="{'opacity-75 cursor-not-allowed': loading}"
-									class="w-full bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-bold py-3 rounded-xl focus:ring-0 transition-all text-sm shadow-sm flex justify-center items-center relative">
+									class="w-full bg-slate-900 text-white border-none hover:bg-slate-800 font-bold py-3.5 rounded-xl focus:ring-0 transition-all text-sm shadow-sm flex justify-center items-center relative">
 									<span :class="{'invisible': loading}">BUAT SURAT</span>
 									<div x-show="loading" class="absolute inset-0 flex items-center justify-center">
-										<svg class="animate-spin h-5 w-5 text-blue-600"
-											xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+										<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
+											fill="none" viewBox="0 0 24 24">
 											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
 												stroke-width="4">
 											</circle>
@@ -1323,7 +1350,7 @@
 							</div>
 
 							<!-- Output container -->
-							<div id="out" class="empty:hidden order-last mt-4" x-html="outputHtml"></div>
+							<div id="out" class="empty:hidden order-last mt-2" x-html="outputHtml"></div>
 						</div>
 					</form>
 				</div>
@@ -2167,11 +2194,28 @@
 				const reader = res.body.getReader();
 				const decoder = new TextDecoder();
 				let fullText = "";
+				let displayedText = "";
 				let buffer = "";
 				let isFirstChunk = true;
 				const element = document.getElementById(currentLoadingMsgId);
-				let lastRenderTime = 0;
-				const RENDER_INTERVAL = 50; // Render setiap 50ms untuk performa optimal
+
+				// Efek mengetik yang mulus per karakter
+				if (window.currentTypeWriterInterval) clearInterval(window.currentTypeWriterInterval);
+				window.currentTypeWriterInterval = setInterval(() => {
+					if (displayedText.length < fullText.length) {
+						const diff = fullText.length - displayedText.length;
+						// Kecepatan adaptif: pelan jika sisa sedikit, cepat jika huruf menumpuk (biar tidak ngelag)
+						const charsToAppend = Math.max(1, Math.floor(diff / 8));
+
+						displayedText += fullText.substring(displayedText.length, displayedText.length + charsToAppend);
+
+						if (element) {
+							element.innerHTML = marked.parse(displayedText);
+							const container = document.getElementById('chatContainer');
+							container.scrollTop = container.scrollHeight;
+						}
+					}
+				}, 15);
 
 				while (true) {
 					const { done, value } = await reader.read();
@@ -2202,17 +2246,6 @@
 								}
 								fullText += textParts;
 								currentStreamedText = fullText;
-
-								// Throttle rendering untuk performa optimal
-								const now = performance.now();
-								if (now - lastRenderTime >= RENDER_INTERVAL) {
-									if (element) {
-										element.innerHTML = marked.parse(fullText);
-										const container = document.getElementById('chatContainer');
-										container.scrollTop = container.scrollHeight;
-									}
-									lastRenderTime = now;
-								}
 							}
 						} catch (parseErr) {
 							// Skip invalid JSON chunks (bisa terjadi di boundary)
@@ -2220,8 +2253,14 @@
 					}
 				}
 
-				// Render final setelah stream selesai
-				if (element && fullText) {
+				// Tunggu sampai animasi mengetik selesai dengan mulus
+				while (!abortController.signal.aborted && displayedText.length < fullText.length) {
+					await new Promise(r => setTimeout(r, 15));
+				}
+				clearInterval(window.currentTypeWriterInterval);
+
+				// Render final setelah stream selesai (pastikan tidak ada yang tertinggal)
+				if (element && fullText && !abortController.signal.aborted) {
 					element.innerHTML = marked.parse(fullText);
 					// Highlight code blocks
 					element.querySelectorAll('pre code').forEach(block => {
@@ -2257,6 +2296,7 @@
 					lucide.createIcons();
 				}
 			} finally {
+				if (window.currentTypeWriterInterval) clearInterval(window.currentTypeWriterInterval);
 				if (abortController && !abortController.signal.aborted) {
 					setGeneratingState(false);
 					currentLoadingMsgId = null;
@@ -3634,10 +3674,9 @@
 		class="fixed inset-0 bg-black/40 z-[999] hidden items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300 opacity-0">
 		<div id="installAppModalContent"
 			class="bg-white rounded-3xl w-full max-w-[320px] p-6 text-center transform scale-95 transition-transform duration-300 shadow-xl border border-slate-100">
-			<div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+			<div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
 				<img src="icon/icon.png" class="w-10 h-10 object-contain">
 			</div>
-			<h3 class="text-lg font-black text-slate-800 mb-2 font-sans tracking-tight">Install Aplikasi</h3>
 			<p class="text-sm text-slate-500 font-medium mb-6 leading-relaxed">Install aplikasi Asisten di perangkat
 				Anda untuk akses lebih cepat dan pengalaman terbaik.</p>
 
@@ -3656,11 +3695,9 @@
 		<div id="iosInstallModalContent"
 			class="bg-white rounded-3xl w-full max-w-[320px] p-6 text-center transform scale-95 transition-transform duration-300 shadow-xl border border-slate-100 relative">
 
-			<div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+			<div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
 				<img src="icon/icon.png" class="w-10 h-10 object-contain">
 			</div>
-
-			<h3 class="text-lg font-black text-slate-800 mb-2 font-sans tracking-tight">Install Aplikasi</h3>
 
 			<p class="text-sm text-slate-500 font-medium mb-6 leading-relaxed">
 				Tekan ikon
@@ -3860,8 +3897,8 @@
 					this.tglMulai = today;
 					this.tglAkhir = today;
 
-					// Cek LocalStorage - Gunakan v2 untuk load ulang default & alat angkut
-					const cachedData = localStorage.getItem('spt_db_v2');
+					// Cek LocalStorage - Gunakan v3 untuk load ulang default & alat angkut
+					const cachedData = localStorage.getItem('spt_db_v3');
 					if (cachedData) {
 						this.db = JSON.parse(cachedData);
 						this.setDefaults();
@@ -3880,7 +3917,7 @@
 						});
 						const data = await response.json();
 						this.db = data;
-						localStorage.setItem('spt_db_v2', JSON.stringify(data));
+						localStorage.setItem('spt_db_v3', JSON.stringify(data));
 						this.setDefaults();
 
 						// Opsional: feedback visual jika mau
@@ -3917,7 +3954,7 @@
 
 				selectPptk(index) {
 					this.selectedPptkIdx = index;
-					this.selectedPptkObj = { label: this.db.pejabat[index][1], val: this.db.pejabat[index] };
+					this.selectedPptkObj = { label: this.db.pptk[index][1], val: this.db.pptk[index] };
 				},
 
 				selectUtama(index) {
@@ -4006,7 +4043,7 @@
 						let pptkObj = {};
 						if (this.jenisNaskah === 'SPPD') {
 							if (this.selectedAngkutanIdx === null) { this.loading = false; return this.showError('btn-angkutan'); }
-							const pk = rawDb.pejabat[this.selectedPptkIdx];
+							const pk = rawDb.pptk[this.selectedPptkIdx];
 							if (!pk) { this.loading = false; return this.showError('btn-pptk'); }
 							pptkObj = { nama: pk[1], nip: pk[2], pangkat: pk[3], jabatan: pk[4] };
 						}
@@ -4045,18 +4082,14 @@
 
 						// Tampilkan Pilihan Download
 						this.outputHtml = `
-                            <div class="mt-2 animate-fade-in-up">
-                                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm mb-4">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <p class="text-emerald-700 text-sm font-semibold">Silahkan Pilih Format Dokumen untuk di Unduh</p>
-                                </div>
+                            <div class="animate-fade-in-up">
                                 <div class="grid grid-cols-2 gap-3">
-                                    <a href="${urlPdf}" download class="flex items-center justify-center bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 font-bold py-3 rounded-xl transition-all shadow-sm text-sm tracking-wide">
+                                    <a href="${urlPdf}" target="_blank" rel="noopener noreferrer" download class="flex items-center justify-center gap-2 bg-slate-100 text-red-600 hover:bg-slate-200 font-bold py-3.5 rounded-xl transition-all shadow-sm text-sm tracking-wide">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                                         PDF
                                     </a>
-                                    <a href="${urlDocx}" download class="flex items-center justify-center bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 font-bold py-3 rounded-xl transition-all shadow-sm text-sm tracking-wide">
+                                    <a href="${urlDocx}" target="_blank" rel="noopener noreferrer" download class="flex items-center justify-center gap-2 bg-slate-100 text-blue-600 hover:bg-slate-200 font-bold py-3.5 rounded-xl transition-all shadow-sm text-sm tracking-wide">
+                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                                         DOCX
                                     </a>
                                 </div>
