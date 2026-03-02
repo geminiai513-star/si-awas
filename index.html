@@ -804,8 +804,8 @@
 				<h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Naskah Dinas</h2>
 			</div>
 		</header>
-		<div class="flex-1 overflow-y-auto bg-white relative custom-scroll pb-10">
-			<div class="content-width pt-4 pb-10 space-y-4">
+		<div class="flex-1 overflow-y-auto bg-white relative custom-scroll">
+			<div class="content-width pt-4 pb-20 space-y-4">
 				<div class="w-full bg-slate-50 rounded-3xl p-5 md:p-6 shadow-sm border border-slate-100">
 					<form id="mainForm" class="space-y-6">
 
@@ -1009,7 +1009,7 @@
 										class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Tanggal
 										Mulai</label>
 									<input type="date" id="input-tglmulai" x-model="tglMulai"
-										class="w-full block appearance-none rounded-xl p-3 outline-none transition duration-200"
+										class="w-full text-left block appearance-none rounded-xl p-3 outline-none transition duration-200"
 										:class="errorField === 'input-tglmulai' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border border-transparent text-slate-700 focus:ring-2 focus:ring-slate-300 focus:border-slate-300'">
 								</div>
 								<div>
@@ -1017,7 +1017,7 @@
 										class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Tanggal
 										Berakhir</label>
 									<input type="date" id="input-tglakhir" x-model="tglAkhir"
-										class="w-full block appearance-none rounded-xl p-3 outline-none transition duration-200"
+										class="w-full text-left block appearance-none rounded-xl p-3 outline-none transition duration-200"
 										:class="errorField === 'input-tglakhir' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-100 border border-transparent text-slate-700 focus:ring-2 focus:ring-slate-300 focus:border-slate-300'">
 								</div>
 							</div>
@@ -1356,8 +1356,7 @@
 				</div>
 			</div>
 		</div>
-
-	</div>
+		<div class="flex-none w-full bg-white h-[20px] z-50 shrink-0"></div>
 	</div>
 
 	<template id="historyItemTemplate">
