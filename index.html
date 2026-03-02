@@ -845,7 +845,7 @@
 								<label class="block text-sm font-semibold text-slate-700 pl-1">Jenis Pengawasan</label>
 
 								<button type="button" id="btn-pengawasan"
-									@click="open = !open; $nextTick(() => $refs.searchInput.focus())"
+									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
 									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-pengawasan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
@@ -896,7 +896,7 @@
 									(OPD)</label>
 
 								<button type="button" id="btn-opd"
-									@click="open = !open; $nextTick(() => $refs.searchInput.focus())"
+									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
 									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-opd' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
@@ -950,7 +950,7 @@
 								<label class="block text-sm font-semibold text-slate-700 pl-1">Wilayah</label>
 
 								<button type="button" id="btn-wilayah"
-									@click="open = !open; $nextTick(() => $refs.searchInput.focus())"
+									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
 									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-wilayah' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
@@ -1015,7 +1015,7 @@
 								x-data="{ open: false, search: '' }">
 								<label class="block text-sm font-semibold text-slate-700 pl-1">Alat Angkut</label>
 								<button type="button" id="btn-angkutan"
-									@click="open = !open; $nextTick(() => $refs.searchAngkutan.focus())"
+									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchAngkutan.focus())"
 									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-angkutan' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
@@ -1056,7 +1056,7 @@
 									Pejabat)</label>
 
 								<button type="button" id="btn-pptk"
-									@click="open = !open; $nextTick(() => $refs.searchPptk.focus())"
+									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchPptk.focus())"
 									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-pptk' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
@@ -1098,7 +1098,7 @@
 								<label class="block text-sm font-semibold text-slate-700 pl-1">Pilih Pegawai
 									Utama</label>
 								<button type="button" id="btn-utama"
-									@click="open = !open; $nextTick(() => $refs.searchUtama.focus())"
+									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchUtama.focus())"
 									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-utama' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
@@ -1141,7 +1141,7 @@
 										x-text="jenisNaskah === 'SPPD' ? 'Pilih Pegawai Pengikut (Opsional)' : 'Pilih Pegawai'"></label>
 									<div class="flex gap-2">
 										<button type="button" id="btn-pegawai"
-											@click="openPegawai = !openPegawai; $nextTick(() => $refs.searchP.focus())"
+											@click="openPegawai = !openPegawai; window.innerWidth > 768 && $nextTick(() => $refs.searchP.focus())"
 											@click.outside="openPegawai = false"
 											class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none flex justify-between items-center transition duration-200 relative z-20"
 											:class="errorField === 'btn-pegawai' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
@@ -1272,7 +1272,7 @@
 									SPT</label>
 
 								<button type="button" id="btn-pejabat"
-									@click="open = !open; $nextTick(() => $refs.searchInput.focus())"
+									@click="open = !open; window.innerWidth > 768 && $nextTick(() => $refs.searchInput.focus())"
 									@click.outside="open = false"
 									class="w-full rounded-xl p-3 text-left focus:ring-0 outline-none transition duration-200 flex justify-between items-center relative z-10"
 									:class="errorField === 'btn-pejabat' ? 'bg-red-50 border border-red-300 text-red-600 ring-2 ring-red-100' : 'bg-slate-50 border border-slate-200 text-slate-700'">
