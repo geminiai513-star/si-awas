@@ -1,4 +1,4 @@
-const CACHE_NAME = 'si-awas-v41';
+const CACHE_NAME = 'si-awas-v43';
 const RUNTIME_CACHE = 'si-awas-runtime-cache';
 
 const ASSETS_TO_CACHE = [
@@ -24,8 +24,8 @@ const ASSETS_TO_CACHE = [
     './icon/swift-file-icon.svg',
     './icon/image-file-icon.svg',
     './icon/default-file-icon.svg',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap',
     'https://cdn.tailwindcss.com',
+    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap',
     'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
     'https://unpkg.com/lucide@latest',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
@@ -40,12 +40,16 @@ self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            return Promise.all(
+            return Promise.allSettled(
                 ASSETS_TO_CACHE.map((url) => {
                     return fetch(url).then((res) => {
-                        if (!res.ok) throw Error('Gagal memuat: ' + url);
-                        return cache.put(url, res);
-                    }).catch((err) => { });
+                        // Memastikan respon oke atau opaque (untuk cross origin)
+                        if (res.ok || res.type === 'opaque') {
+                            return cache.put(url, res);
+                        }
+                    }).catch((err) => {
+                        console.error('Failed to cache during install:', url, err);
+                    });
                 })
             );
         })
@@ -71,12 +75,10 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
     // 1. STRATEGI NETWORK-FIRST UNTUK API SUPABASE (CHAT HISTORY)
-    // Hanya untuk GET request ke endpoint REST Supabase
     if (url.href.includes('supabase.co/rest/v1/') && event.request.method === 'GET') {
         event.respondWith(
             fetch(event.request)
                 .then((response) => {
-                    // Jika sukses mengambil data terbaru, simpan ke cache
                     if (response && response.status === 200) {
                         const responseClone = response.clone();
                         caches.open(RUNTIME_CACHE).then((cache) => {
@@ -86,7 +88,6 @@ self.addEventListener('fetch', (event) => {
                     return response;
                 })
                 .catch(() => {
-                    // Jika offline/gagal fetch, ambil dari cache
                     return caches.match(event.request).then(cachedResponse => {
                         if (cachedResponse) return cachedResponse;
                         throw new Error('No cache available');
@@ -96,38 +97,37 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 2. STRATEGI CACHE-FIRST UNTUK STATIC ASSETS
+    // 2. STRATEGI STALE-WHILE-REVALIDATE / CACHE-FIRST UNTUK STATIC ASSETS
     event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request).catch(() => {
+        caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
+            const fetchPromise = fetch(event.request).then((networkResponse) => {
+                // Dinamis caching: simpan respons baru ke cache jika valid (mencakup font woff2, script dll)
+                if (networkResponse && (networkResponse.ok || networkResponse.type === 'opaque')) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        // Jangan cache request POST atau skema non-http
+                        if (event.request.method === 'GET' && event.request.url.startsWith('http')) {
+                            cache.put(event.request, responseClone);
+                        }
+                    });
+                }
+                return networkResponse;
+            }).catch(() => {
+                // Abaikan error fetch jika sedang offline
+            });
+
+            // Kembalikan cache jika ada, sambil secara diam-diam (jika online) mengupdate cache
+            // Jika tidak ada di cache, tunggu hasil fetch
+            return cachedResponse || fetchPromise.then(res => {
+                if (!res && event.request.mode === 'navigate') {
+                    return caches.match('./index.html', { ignoreSearch: true });
+                }
+                return res;
+            }).catch(() => {
                 if (event.request.mode === 'navigate') {
-                    return caches.match('./index.html');
+                    return caches.match('./index.html', { ignoreSearch: true });
                 }
             });
         })
     );
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
