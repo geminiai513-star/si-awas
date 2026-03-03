@@ -1,4 +1,4 @@
-const CACHE_NAME = 'si-awas-v43';
+const CACHE_NAME = 'si-awas-v44';
 const RUNTIME_CACHE = 'si-awas-runtime-cache';
 
 const ASSETS_TO_CACHE = [
@@ -131,3 +131,4 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
